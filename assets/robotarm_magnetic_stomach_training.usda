@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    defaultPrim = "RobotarmMagneticStomachScene"
+    doc = """Stomach-task overlay for the validated robot and magnetic scene.
+
+The original bench task remains unchanged for regression testing. This layer
+removes only bench-specific collision and visual landmarks before the stomach
+asset is spawned separately by Isaac Lab.
+"""
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "RobotarmMagneticStomachScene" (
+    prepend references = @./robotarm_magnetic_training.usda@</RobotarmMagneticScene>
+)
+{
+    over "MagneticDemo"
+    {
+        over "ground" (
+            active = false
+        )
+        {
+        }
+
+        over "fiducials" (
+            active = false
+        )
+        {
+        }
+    }
+}

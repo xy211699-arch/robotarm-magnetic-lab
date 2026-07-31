@@ -1,0 +1,135 @@
+#usda 1.0
+(
+    defaultPrim = "StomachEnvironment"
+    doc = """Isaac Lab wrapper for stomach_capsule_test_v1.usd.
+
+The source asset is Y-up and contains its own PhysicsScene and test capsule.
+This layer converts it to the project's Z-up world, removes duplicate runtime
+objects, preserves the textured visual mesh, and keeps only the inward-facing
+static stomach collision mesh.
+"""
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "StomachEnvironment"
+{
+    # Keep conversion below the default prim. Isaac Lab authors the spawned
+    # asset's root pose and would otherwise override conversion xformOps placed
+    # directly on StomachEnvironment.
+    def Xform "ConvertedSource" (
+        prepend references = @./stomach_capsule_test_v1_source.usd@</World>
+    )
+    {
+        # Keep the stomach's authored longitudinal axis aligned with world Y
+        # while the Isaac Lab stage itself remains Z-up for gravity, robot
+        # kinematics and magnetic calculations. A 180-degree world-Y rotation
+        # flips the stomach top-to-bottom without changing its Y-axis alignment.
+        # Uniform 1.7x scaling gives an approximately 251 mm long stomach.
+        #
+        # After the flip, the source upper surface becomes the world lower
+        # contact wall. A source-mesh vertical ray at the authored Test_Capsule
+        # X/Y gives Z=0.205637190948 m for that surface. Translation maps it to
+        # world Z=0 and preserves the existing 6.5 mm capsule reset height.
+        # Translation was recomputed about the validated lower-wall contact
+        # anchor (1.0608155, 0.1145374, 0.0), so changing 1.8x to 1.7x does
+        # not shift the operating region relative to the robot and capsule.
+        quatf xformOp:orient = (0, 0, 1, 0)
+        float3 xformOp:scale = (1.7, 1.7, 1.7)
+        double3 xformOp:translate = (1.3792906443, -0.3648581537, 0.3528071209)
+        uniform token[] xformOpOrder = [
+            "xformOp:translate",
+            "xformOp:orient",
+            "xformOp:scale",
+        ]
+
+    # Isaac Lab owns the only PhysicsScene and supplies Z-down gravity at
+    # 240 Hz. The source PhysicsScene contains zero gravity direction and
+    # -Infinity magnitude, so it must never enter the composed task.
+        over "PhysicsScene" (
+            active = false
+        )
+        {
+        }
+
+    # The project already owns the dynamic 25 x 13 mm magnetic capsule.
+    # Keep the source test body only as an authored alignment reference.
+        over "Test_Capsule" (
+            active = false
+        )
+        {
+        }
+
+        over "Environment"
+        {
+            over "Stomach"
+            {
+                over "VisualMesh"
+                {
+                    over "Stomach"
+                    {
+                        # The camera operates inside the closed surface.
+                        bool doubleSided = true
+                        bool physics:collisionEnabled = false
+                    }
+                }
+
+                # This is currently an exact duplicate of the visual mesh and
+                # is not needed by PhysX. Keep it out of traversal until a
+                # simplified planning-only mesh is authored.
+                over "Planning_Collsion_Mesh" (
+                    active = false
+                )
+                {
+                }
+
+                over "Physics_Collision_Mesh"
+                {
+                    over "Stomach"
+                    {
+                        # The source left-handed winding intentionally faces
+                        # the cavity. It remains a static triangle mesh. Hide
+                        # it from RTX while retaining collision: this mesh is
+                        # an exact duplicate of VisualMesh but has no tissue
+                        # material, so rendering it produced a hard grey/white
+                        # surface that occluded the textured stomach.
+                        token visibility = "invisible"
+                        bool doubleSided = true
+                        uniform token physics:approximation = "none"
+                        bool physics:collisionEnabled = true
+                    }
+                }
+            }
+        }
+
+        over "Physics_Materials"
+        {
+            over "Stomach_Wall_Material"
+            {
+                # Conservative wet-wall bring-up values. Static friction must
+                # not be below dynamic friction.
+                float physics:staticFriction = 0.2
+                float physics:dynamicFriction = 0.15
+                float physics:restitution = 0
+            }
+        }
+
+        over "Looks"
+        {
+            over "mtl1_003"
+            {
+                over "mtl1_003"
+                {
+                    # Preserve a wet mucosal highlight, but broaden it enough
+                    # to avoid a hard white patch at millimetre working range.
+                    # This remains provisional until measured tissue BRDF and
+                    # DS01 exposure-response data are available.
+                    float inputs:roughness = 0.62
+                    float inputs:metallic = 0
+                    float inputs:ior = 1.38
+                }
+            }
+        }
+    }
+}

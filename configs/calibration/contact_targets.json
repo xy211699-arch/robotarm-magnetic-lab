@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "status": "MEASUREMENT_REQUIRED",
+  "notes": [
+    "Replace null values with measurements from the physical capsule and tissue phantom.",
+    "Use at least five repeats per condition and enter the mean; retain raw measurements separately.",
+    "scale is the acceptable physical error or measurement standard deviation used to normalize residuals."
+  ],
+  "targets": {
+    "drop": {
+      "5": {
+        "peak_normal_force_N": {"value": null, "scale": null},
+        "contact_time_s": {"value": null, "scale": null}
+      },
+      "15": {
+        "peak_normal_force_N": {"value": null, "scale": null},
+        "contact_time_s": {"value": null, "scale": null}
+      },
+      "30": {
+        "peak_normal_force_N": {"value": null, "scale": null},
+        "contact_time_s": {"value": null, "scale": null}
+      }
+    },
+    "incline_slide": {
+      "region_left": {
+        "planar_displacement_m": {"value": null, "scale": null}
+      },
+      "region_forward": {
+        "planar_displacement_m": {"value": null, "scale": null}
+      },
+      "region_diagonal": {
+        "planar_displacement_m": {"value": null, "scale": null}
+      }
+    }
+  }
+}

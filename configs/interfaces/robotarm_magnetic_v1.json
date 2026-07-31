@@ -1,0 +1,82 @@
+{
+  "schema_name": "robotarm_magnetic_policy",
+  "schema_version": "1.0.0",
+  "task_id": "Template-Robotarm-Magnetic-Lab-v0",
+  "coordinate_conventions": {
+    "world_frame": "Isaac world, right-handed, +Z up",
+    "quaternion_order": "xyzw",
+    "linear_units": "m",
+    "angular_units": "rad",
+    "force_units": "N",
+    "torque_units": "N*m"
+  },
+  "rates_hz": {
+    "physics": 240,
+    "policy": 20,
+    "camera": 30
+  },
+  "inputs": {
+    "rgb": {
+      "shape": [720, 1280, 3],
+      "dtype_on_disk": "uint8_png",
+      "range": [0, 255],
+      "optical_model": "circular equidistant, 120 deg diameter FOV",
+      "invalid_region": "pixels outside circular FOV are zero"
+    },
+    "depth": {
+      "shape": [720, 1280],
+      "dtype_on_disk": "uint16_png",
+      "scale_m_per_unit": 0.0001,
+      "invalid_value": 0,
+      "maximum_m": 0.3
+    },
+    "policy_state": {
+      "shape": [31],
+      "dtype": "float32",
+      "layout": [
+        {"name": "joint_pos_rel", "start": 0, "length": 9},
+        {"name": "joint_vel_rel", "start": 9, "length": 9},
+        {"name": "magnetic_wrench", "start": 18, "length": 12},
+        {"name": "asm_clearance", "start": 30, "length": 1}
+      ]
+    },
+    "joint_order": [
+      "j1", "j2", "j3", "j4", "j5", "j6",
+      "ballxj", "ballyj", "ballzj"
+    ]
+  },
+  "outputs": {
+    "action": {
+      "shape": [9],
+      "dtype": "float32",
+      "range": [-1.0, 1.0],
+      "semantics": "normalized absolute position offset about reset pose; not an incremental delta",
+      "joint_order": [
+        "j1", "j2", "j3", "j4", "j5", "j6",
+        "ballxj", "ballyj", "ballzj"
+      ],
+      "scale_rad": [
+        0.05, 0.05, 0.05, 0.05, 0.05, 0.05,
+        1.5707963267948966, 1.5707963267948966, 1.5707963267948966
+      ],
+      "control_rate_hz": 20
+    },
+    "action_chunk_default": {
+      "horizon_steps": 8,
+      "duration_s": 0.4
+    }
+  },
+  "teacher_only": {
+    "description": "Privileged simulator state for supervision, reward and diagnostics; exclude from the final image-only deployment policy.",
+    "fields": [
+      "capsule_pose_world_xyzw",
+      "capsule_velocity_world",
+      "main_magnet_pose_world_xyzw",
+      "magnetic_wrench",
+      "asm_clearance_m",
+      "collision",
+      "reward",
+      "termination_reason"
+    ]
+  }
+}

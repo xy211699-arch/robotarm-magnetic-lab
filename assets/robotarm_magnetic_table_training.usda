@@ -1,0 +1,54 @@
+#usda 1.0
+(
+    defaultPrim = "RobotarmMagneticTableScene"
+    doc = """Flat-table magnetic-capsule benchmark.
+
+The validated robot/ASM/capsule composition is referenced without modifying
+the stomach task.  This overlay freezes the bench contact material and adds a
+visual-only roll stripe to the passive capsule.
+"""
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "RobotarmMagneticTableScene" (
+    prepend references = @./robotarm_magnetic_training.usda@</RobotarmMagneticScene>
+)
+{
+    over "MagneticDemo"
+    {
+        over "PhysicsMaterials"
+        {
+            over "capsule_ground"
+            {
+                # Initial polymer-on-smooth-bench calibration.  These values
+                # preserve the stable contact behavior established previously.
+                float physics:staticFriction = 0.55
+                float physics:dynamicFriction = 0.48
+                float physics:restitution = 0
+            }
+        }
+
+        over "target_magnet"
+        {
+            # Air/bench dynamics for the simplified benchmark.  The stomach
+            # asset retains its deliberately high 25 s^-1 angular damping.
+            float physxRigidBody:linearDamping = 0.10
+            float physxRigidBody:angularDamping = 0.50
+
+            def Cube "roll_marker"
+            {
+                uniform bool doubleSided = 1
+                float size = 1
+                color3f[] primvars:displayColor = [(0.95, 0.02, 0.02)]
+                double3 xformOp:translate = (0.00645, 0, 0)
+                double3 xformOp:scale = (0.00035, 0.003, 0.006)
+                uniform token[] xformOpOrder = [
+                    "xformOp:translate",
+                    "xformOp:scale"
+                ]
+            }
+        }
+    }
+}

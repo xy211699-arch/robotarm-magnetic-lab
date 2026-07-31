@@ -1,0 +1,110 @@
+#usda 1.0
+(
+    defaultPrim = "RobotarmMagneticScene"
+    doc = """Isaac Lab compatibility layer for the validated interactive scene.
+
+The source scene remains untouched. The URDF importer authored
+PhysicsArticulationRootAPI directly on the root rigid body. PhysX tensor views
+in Isaac Lab 3.0 expect the API on the parent articulation container, so this
+layer moves only that API one level upward.
+"""
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "RobotarmMagneticScene" (
+    prepend references = @/home/multirobo/Desktop/sim of FF/Stage.usd@</World>
+)
+{
+    over "robotarm"
+    {
+        over "Geometry"
+        {
+            over "world" (
+                prepend apiSchemas = ["PhysicsArticulationRootAPI"]
+            )
+            {
+                # This property originally lived on base_link together with the
+                # articulation-root API.  Isaac Lab requires the root API here,
+                # so the PhysX articulation settings must move with it.
+                bool physxArticulation:enabledSelfCollisions = 0
+
+                over "base_link" (
+                    delete apiSchemas = ["PhysicsArticulationRootAPI"]
+                )
+                {
+                }
+            }
+        }
+    }
+
+    over "MagneticDemo"
+    {
+        over "field_vectors"
+        {
+            # Debug overlay only. Exclude non-physical magnetic field lines
+            # from capsule RGB/depth sensor products.
+            uniform token purpose = "guide"
+        }
+
+        over "PhysicsMaterials"
+        {
+            over "capsule_ground" (
+                prepend apiSchemas = ["PhysxMaterialAPI"]
+            )
+            {
+                # Provisional polymer-on-bench contact.  The previous 1.6/1.3
+                # pair produced non-physical stick-slip: magnetic torque built
+                # up while the capsule was stuck, then released in one violent
+                # flip.  These values permit controlled rolling.
+                float physics:staticFriction = 0.18
+                float physics:dynamicFriction = 0.15
+                float physics:restitution = 0
+
+                # Acceleration-spring compliant contact.  With k=25000 s^-2,
+                # static gravity produces about 0.39 mm nominal compression;
+                # the near-critical damping suppresses rigid-contact launch.
+                bool physxMaterial:compliantContactAccelerationSpring = 1
+                float physxMaterial:compliantContactStiffness = 25000
+                float physxMaterial:compliantContactDamping = 300
+                uniform token physxMaterial:frictionCombineMode = "max"
+                uniform token physxMaterial:restitutionCombineMode = "min"
+                uniform token physxMaterial:dampingCombineMode = "max"
+            }
+        }
+
+        over "target_magnet" (
+            prepend apiSchemas = ["PhysxContactReportAPI"]
+        )
+        {
+            # Report even the capsule's small quasi-static wall loads
+            # (its weight is only about 0.056 N). Isaac Lab's contact test
+            # suite consumes this API and performs its own 1e-4 N thresholding.
+            float physxContactReport:threshold = 0
+
+            # UsdGeomCapsule.height is the straight cylindrical section only,
+            # not the end-to-end capsule length.  For a 25 mm capsule with
+            # 6.5 mm radius, the cylinder is 25 - 2*6.5 = 12 mm long.
+            # The source scene had height=25 mm, creating a 38 mm collider.
+            float height = 0.012
+
+            # A perfect rigid capsule on a perfect plane has essentially no
+            # rolling resistance. These values represent shell/ground contact
+            # losses and keep the reset equilibrium from integrating tiny
+            # residual magnetic torques into unbounded rolling.
+            # Free-space damping must not replace gravity or contact physics.
+            # These small values approximate air/bearing losses; the compliant
+            # ground material above supplies the impact dissipation.
+            float physxRigidBody:linearDamping = 0.5
+            float physxRigidBody:angularDamping = 25
+            # Passive numerical safety guards.  maxAngularVelocity is authored
+            # in degrees/s: 57.2958 deg/s = 1 rad/s.  This does not command the
+            # capsule; it prevents unresolved contact impulses from producing
+            # untrainable one-frame spins while the tissue model is unfinished.
+            float physxRigidBody:maxAngularVelocity = 1.0
+            float physxRigidBody:maxLinearVelocity = 0.25
+            float physxRigidBody:maxDepenetrationVelocity = 0.1
+        }
+    }
+}
