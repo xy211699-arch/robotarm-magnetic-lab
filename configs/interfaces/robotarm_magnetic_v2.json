@@ -1,0 +1,98 @@
+{
+  "schema_name": "robotarm_magnetic_policy",
+  "schema_version": "2.0.0",
+  "task_id": "Template-Robotarm-Magnetic-Stomach-Lab-v0",
+  "coordinate_conventions": {
+    "world_frame": "Isaac world, right-handed, +Z up",
+    "quaternion_order": "xyzw",
+    "linear_units": "m",
+    "angular_units": "rad",
+    "force_units": "N",
+    "torque_units": "N*m"
+  },
+  "rates_hz": {
+    "physics": 240,
+    "control": 20,
+    "policy": 1,
+    "camera": 1,
+    "engineering_preview": 30
+  },
+  "timing": {
+    "raw_record_rate_hz": 20,
+    "camera_frame_period_s": 1.0,
+    "control_period_s": 0.05,
+    "nominal_camera_to_control_ratio": 20,
+    "camera_stride_tolerance_control_steps": 1,
+    "alignment": "A new camera frame at time t supervises the 20 control commands executed on [t,t+1s). Low-dimensional state is recorded at every control step.",
+    "stale_frame_semantics": "Between camera acquisitions, control rows reference the most recent frame instead of writing duplicate image files. Actual camera events are timestamped and may be observed one 20 Hz control step early or late because 1 Hz acquisition, 30 Hz rendering and 20 Hz control are asynchronous.",
+    "preview_excluded": true
+  },
+  "inputs": {
+    "rgb": {
+      "shape": [720, 1280, 3],
+      "dtype_on_disk": "uint8_png",
+      "range": [0, 255],
+      "acquisition_rate_hz": 1,
+      "optical_model": "circular equidistant, 120 deg diameter FOV",
+      "invalid_region": "pixels outside circular FOV are zero"
+    },
+    "depth": {
+      "shape": [720, 1280],
+      "dtype_on_disk": "uint16_png",
+      "scale_m_per_unit": 0.0001,
+      "invalid_value": 0,
+      "maximum_m": 0.3,
+      "acquisition_rate_hz": 1
+    },
+    "policy_state": {
+      "shape": [31],
+      "dtype": "float32",
+      "update_rate_hz": 20,
+      "layout": [
+        {"name": "joint_pos_rel", "start": 0, "length": 9},
+        {"name": "joint_vel_rel", "start": 9, "length": 9},
+        {"name": "magnetic_wrench", "start": 18, "length": 12},
+        {"name": "asm_clearance", "start": 30, "length": 1}
+      ]
+    },
+    "joint_order": [
+      "j1", "j2", "j3", "j4", "j5", "j6",
+      "ballxj", "ballyj", "ballzj"
+    ]
+  },
+  "outputs": {
+    "action": {
+      "shape": [9],
+      "dtype": "float32",
+      "range": [-1.0, 1.0],
+      "semantics": "normalized absolute position offset about reset pose; not an incremental delta",
+      "joint_order": [
+        "j1", "j2", "j3", "j4", "j5", "j6",
+        "ballxj", "ballyj", "ballzj"
+      ],
+      "scale_rad": [
+        0.05, 0.05, 0.05, 0.05, 0.05, 0.05,
+        1.5707963267948966, 1.5707963267948966, 1.5707963267948966
+      ],
+      "control_rate_hz": 20
+    },
+    "action_chunk_default": {
+      "horizon_steps": 20,
+      "duration_s": 1.0,
+      "alignment": "one chunk per newly acquired 1 Hz camera frame"
+    }
+  },
+  "teacher_only": {
+    "description": "Privileged simulator state for supervision, reward and diagnostics; exclude from the final deployment policy unless the same signal exists on hardware.",
+    "fields": [
+      "capsule_pose_world_xyzw",
+      "capsule_velocity_world",
+      "main_magnet_pose_world_xyzw",
+      "magnetic_wrench",
+      "asm_clearance_m",
+      "collision",
+      "reward",
+      "termination_reason"
+    ]
+  }
+}

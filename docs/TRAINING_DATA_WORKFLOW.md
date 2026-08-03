@@ -1,156 +1,119 @@
 # Robotarm Magnetic Model I/O and Fine-tuning Workflow
 
-## Scope
+## Canonical timing contract
 
-This document freezes the model-facing interface before the stomach asset is
-introduced. Physics remains at 240 Hz, the policy interface runs at 20 Hz, and
-the camera renders at 30 Hz. A model never writes rigid-body poses or forces
-directly; it emits nine normalized position-offset commands which are executed
-by the existing low-level controllers.
+The current model-facing contract is
+`configs/interfaces/robotarm_magnetic_v2.json`. Version 1 remains readable
+only for the historical bring-up dataset and must not be mixed with v2 data.
 
-The canonical machine-readable contract is:
+The stomach system is asynchronous by design:
 
-`configs/interfaces/robotarm_magnetic_v1.json`
+| Layer | Rate | Meaning |
+|---|---:|---|
+| PhysX and analytical magnetic wrench | 240 Hz | contact and force integration |
+| low-level joint control and raw rows | 20 Hz | one state/action transition every 50 ms |
+| capsule camera acquisition | 1 Hz | physical DS01-class policy observation |
+| VLA/high-level inference | 1 Hz | one inference per newly acquired image |
+| engineering preview | 30 Hz | GUI only; never recorded as policy input |
 
-Every dataset records the contract SHA-256. Changing an order, shape, unit,
-range, camera model, or action meaning requires a new schema version and a new
-dataset root.
+One newly acquired RGB-D frame at time `t` supervises a 20-step action chunk
+executed at 20 Hz over `[t,t+1 s)`. Between acquisitions, raw control rows
+reference the latest frame rather than writing duplicate PNG files. Because
+1 Hz acquisition, 30 Hz rendering and 20 Hz control are asynchronous, the
+control loop can observe consecutive camera events 19, 20 or 21 control steps
+apart. The recorded camera timestamp is authoritative; this measured one-step
+jitter must not be hidden by fabricating frames.
 
 ## Model interface
 
-### Inputs at policy step `t`
+Inputs at each 1 Hz inference point:
 
-- circular RGB: `720 x 1280 x 3`, uint8 PNG on disk;
-- aligned metric depth: `720 x 1280`, uint16 PNG with `0.1 mm/unit`;
-- policy state: 31 float32 values:
-  - 9 relative joint positions;
-  - 9 joint velocities;
-  - 12 magnetic wrench values;
-  - 1 ASM clearance value;
-- language/task instruction stored once in episode metadata.
+- circular RGB, `720 x 1280 x 3`, uint8 PNG;
+- aligned depth, `720 x 1280`, uint16 PNG, `0.1 mm/unit`;
+- a history of distinct 1 Hz camera frames;
+- associated 20 Hz policy state where the selected model permits it;
+- episode language/task instruction.
 
-The deployment policy may use RGB only or RGB plus proprioception. Simulator
-teacher fields must not accidentally become deployment inputs.
+The 31-element policy state contains nine relative joint positions, nine joint
+velocities, twelve magnetic-wrench values and one ASM-clearance value.
+Privileged simulator fields must not silently become deployment inputs.
 
-### Outputs at policy step `t`
-
-Nine float32 values in `[-1, 1]`, ordered:
+Output is a 20-step action chunk. Every step has nine normalized absolute
+position offsets in this fixed order:
 
 `j1, j2, j3, j4, j5, j6, ballxj, ballyj, ballzj`
 
-These are **absolute normalized offsets around the reset pose**, not deltas
-integrated from the previous action. Arm scale is `0.05 rad`; Ball scale is
-`pi/2 rad`. The default fine-tuning target is an eight-step action chunk
-covering 0.4 seconds.
+Arm scale is `0.05 rad`, Ball scale is `pi/2 rad`. Commands are offsets around
+the reset pose, not deltas integrated from the previous action.
 
-## Repository tree
+## Raw episode format
 
-```text
-robotarm_magnetic_lab/
-├── configs/
-│   └── interfaces/
-│       └── robotarm_magnetic_v1.json       # versioned machine contract
-├── docs/
-│   └── TRAINING_DATA_WORKFLOW.md           # this workflow
-├── scripts/
-│   ├── collect_finetune_dataset.py         # Isaac Lab episode capture
-│   ├── build_finetune_index.py             # history -> action chunks
-│   └── validate_dataset.py                 # integrity validation
-├── source/robotarm_magnetic_lab/
-│   └── robotarm_magnetic_lab/
-│       └── io/
-│           ├── schema.py                   # runtime schema checks
-│           └── episode_writer.py           # atomic recorder
-└── datasets/                               # generated; ignored by Git
-    └── robotarm_magnetic_v1/
-        ├── dataset.json                    # dataset + complete interface
-        ├── episodes.jsonl                  # committed episode catalog
-        ├── finetune_index.jsonl            # temporal training samples
-        └── episodes/
-            └── YYYYMMDD_HHMMSS_e0000/
-                ├── episode.json
-                ├── steps.jsonl
-                ├── rgb/000000.png
-                └── depth/000000.png
-```
+Every `steps.jsonl` row is a 20 Hz control transition and contains:
 
-An episode is first written as `.episode_id.incomplete` and atomically renamed
-only after all files and metadata are complete. Interrupted collection cannot
-silently enter training.
+- `control_time_s`;
+- `camera_frame_id`, `camera_timestamp_s`, `camera_is_new`;
+- paths to the latest RGB and depth frame;
+- policy state, command, applied joint target, reward and termination;
+- privileged teacher/diagnostic fields.
+
+Only rows with `camera_is_new=true` write image files. Stale rows reuse the
+latest paths. An episode is first written as a hidden incomplete directory and
+is atomically committed only after successful close.
 
 ## Collection
 
-Run a short deterministic recorder check:
+The default recorder now uses the stomach task and v2 dataset root:
 
 ```bash
 cd /mnt/isaac-linux/robotarm_magnetic_lab
 ./run_isaaclab.sh -p scripts/collect_finetune_dataset.py \
-  --task Template-Robotarm-Magnetic-Lab-v0 \
-  --episodes 1 \
-  --steps 20 \
-  --policy scripted_tilt
+  --episodes 1 --steps 100 --policy scripted_tilt
 ```
 
-`scripted_tilt` validates the pipeline; it is not an expert demonstration.
-Later, replace the action source with a collision-safe magnetic teacher,
-teleoperation, or a trained state policy without changing the writer.
+`scripted_tilt` is a deterministic recorder check, not expert training data.
+The 30 Hz preview can be opened with `--capsule_camera_view`; it does not
+change or enter the 1 Hz recorded observations.
 
-## Validation
+Default output:
+
+```text
+datasets/robotarm_magnetic_v2_bringup/
+├── dataset.json
+├── episodes.jsonl
+├── finetune_index.jsonl
+└── episodes/<episode_id>/
+    ├── episode.json
+    ├── steps.jsonl
+    ├── rgb/<camera_frame_id>.png
+    └── depth/<camera_frame_id>.png
+```
+
+## Validation and temporal index
 
 ```bash
 ./run_isaaclab.sh -p scripts/validate_dataset.py \
-  datasets/robotarm_magnetic_v1 \
-  --check_images
-```
+  datasets/robotarm_magnetic_v2_bringup --check_images
 
-Validation checks committed counts, continuous timestamps, vector dimensions,
-finite values, action range, image existence and image dimensions.
-
-## Build temporal fine-tuning samples
-
-```bash
 ./run_isaaclab.sh -p scripts/build_finetune_index.py \
-  datasets/robotarm_magnetic_v1 \
-  --history 4 \
-  --horizon 8 \
-  --stride 1
+  datasets/robotarm_magnetic_v2_bringup --history 4
 ```
 
-Each row contains four past RGB-D frames and policy states, plus the following
-eight action commands and applied joint-position targets. Data loaders can read
-this JSONL directly or convert it to a framework-specific shard format later.
-The raw episode data remains the source of truth.
-
-## Synchronization convention
-
-One `steps.jsonl` row represents:
-
-1. observation and privileged teacher state at time `t`;
-2. model/teacher command selected from that observation;
-3. actual low-level joint-position target written for the transition;
-4. reward and termination produced by transition `t -> t+1`.
-
-`sim_time_s` is the policy timestamp. Camera frames are the latest available
-30 Hz images when the 20 Hz policy step begins. Physics and magnetic wrenches
-continue at 240 Hz.
+The validator checks 20 Hz timestamps, nominal 1 Hz camera strides with the
+declared +/-1 control-step tolerance, frame IDs, stale
+frame references, vector ranges and image dimensions. The indexer anchors only
+on newly acquired frames, uses four distinct 1 Hz frames by default, and takes
+the 20-step/1-second horizon from the interface contract.
 
 ## Dataset stages
 
-Keep separate dataset roots rather than mixing quality levels:
+Keep quality levels in separate roots:
 
-1. `robotarm_magnetic_v1_bringup`: scripted interface tests;
-2. `robotarm_magnetic_v1_teacher`: state-controller demonstrations;
-3. `robotarm_magnetic_v1_stomach_nominal`: nominal stomach episodes;
-4. `robotarm_magnetic_v1_stomach_randomized`: domain-randomized episodes;
-5. `robotarm_magnetic_v1_real`: time-synchronized physical-system captures.
+1. `robotarm_magnetic_v2_bringup`: scripted interface tests;
+2. `robotarm_magnetic_v2_teacher`: reviewed controller demonstrations;
+3. `robotarm_magnetic_v2_stomach_nominal`: nominal stomach episodes;
+4. `robotarm_magnetic_v2_stomach_randomized`: domain-randomized episodes;
+5. `robotarm_magnetic_v2_real`: synchronized physical captures.
 
-Only successful, reviewed teacher/teleoperation episodes should be used as
-positive behavior-cloning demonstrations. Failure episodes remain useful for
-recovery learning and safety classification but must carry explicit labels.
-
-## Next stage: stomach environment
-
-The stomach scene must conform to this interface rather than redefining it.
-It may add teacher-only contact, surface-normal, goal and segmentation fields.
-Any new deployment input requires schema `1.1.0` or `2.0.0`, depending on
-whether the change is backward-compatible.
+Failure episodes remain useful for recovery and safety classification but must
+carry explicit labels. Never mix v1 and v2 manifests or treat the 30 Hz preview
+as a sensor-rate increase.

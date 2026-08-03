@@ -15,15 +15,16 @@ three-axis magnetic ball assembly, and the external capsule magnet.
 - Task ID: `Template-Robotarm-Magnetic-Lab-v0`
 - Workflow: Manager-Based, single agent
 - Physics: 240 Hz
-- Policy: 20 Hz (`decimation=12`)
-- Action: 9 joint-position increments in this exact order:
+- Low-level control: 20 Hz (`decimation=12`); VLA inference: nominal 1 Hz
+- Action: 9 absolute normalized offsets about the reset pose in this exact order:
   `j1..j6, ballxj, ballyj, ballzj`
 - State observation: 31 values: nine relative joint positions, nine joint
   velocities, 12 magnetic wrench values, and one ASM clearance value
 - Vision observation: capsule-mounted `1280x720` circular RGB and aligned
   metric depth; inactive pixels outside the optical circle are zero
 - Capsule camera: provisional DS01/CX93510-series model, 120-degree horizontal
-  circular FOV, 30 Hz render rate, local `+Z` optical direction, equidistant
+  circular FOV, 1 Hz policy acquisition plus a separate 30 Hz engineering
+  preview, local `+Z` optical direction, equidistant
   wide-angle remap, soft optical border and nominal edge lens shading
 - Illumination: four 5600 K close-range LEDs mounted around the camera axis
 - Reset: directly restores the validated initialization pose; it does not
@@ -127,10 +128,11 @@ interfaces.
 
 The versioned model contract is:
 
-`configs/interfaces/robotarm_magnetic_v1.json`
+`configs/interfaces/robotarm_magnetic_v2.json`
 
 It freezes image shapes, units, state layout, joint order, action semantics and
-control rates. The episode recorder, integrity validator and temporal
+the asynchronous 1 Hz camera / 20 Hz control / 240 Hz physics rates. The 30 Hz
+camera window is preview-only. The episode recorder, integrity validator and temporal
 fine-tuning index are documented in:
 
 [`docs/TRAINING_DATA_WORKFLOW.md`](docs/TRAINING_DATA_WORKFLOW.md)

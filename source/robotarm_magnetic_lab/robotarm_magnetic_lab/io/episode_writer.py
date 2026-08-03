@@ -48,6 +48,10 @@ class EpisodeWriter:
         self._steps_path = self.temp_dir / "steps.jsonl"
         self._steps = self._steps_path.open("w", encoding="utf-8")
         self._count = 0
+        self._camera_frame_count = 0
+        self._last_camera_frame_id: int | None = None
+        self._last_rgb_rel: Path | None = None
+        self._last_depth_rel: Path | None = None
         self._closed = False
         self.interface_spec = interface_spec
         self.interface_sha256 = interface_sha256
@@ -80,7 +84,10 @@ class EpisodeWriter:
         self,
         *,
         step: int,
-        sim_time_s: float,
+        control_time_s: float,
+        camera_frame_id: int,
+        camera_timestamp_s: float,
+        camera_is_new: bool,
         rgb: np.ndarray,
         depth_m: np.ndarray,
         policy_state: np.ndarray,
@@ -91,7 +98,7 @@ class EpisodeWriter:
         terminated: bool,
         truncated: bool,
     ) -> None:
-        """Append one synchronized 20 Hz policy sample."""
+        """Append one 20 Hz control row referencing the latest 1 Hz frame."""
         if self._closed:
             raise RuntimeError("Episode writer is already closed")
         if step != self._count:
@@ -108,20 +115,41 @@ class EpisodeWriter:
         if np.max(np.abs(action)) > 1.0001:
             raise ValueError("Normalized action is outside [-1, 1]")
 
-        stem = f"{step:06d}"
-        rgb_rel = Path("rgb") / f"{stem}.png"
-        depth_rel = Path("depth") / f"{stem}.png"
-        Image.fromarray(self._rgb_uint8(rgb), mode="RGB").save(
-            self.temp_dir / rgb_rel, compress_level=3
-        )
-        Image.fromarray(self._depth_uint16(depth_m), mode="I;16").save(
-            self.temp_dir / depth_rel, compress_level=3
-        )
+        if camera_is_new:
+            expected_frame_id = self._camera_frame_count
+            if camera_frame_id != expected_frame_id:
+                raise ValueError(
+                    f"Expected new camera frame {expected_frame_id}, got {camera_frame_id}"
+                )
+            stem = f"{camera_frame_id:06d}"
+            rgb_rel = Path("rgb") / f"{stem}.png"
+            depth_rel = Path("depth") / f"{stem}.png"
+            Image.fromarray(self._rgb_uint8(rgb), mode="RGB").save(
+                self.temp_dir / rgb_rel, compress_level=3
+            )
+            Image.fromarray(self._depth_uint16(depth_m), mode="I;16").save(
+                self.temp_dir / depth_rel, compress_level=3
+            )
+            self._camera_frame_count += 1
+            self._last_camera_frame_id = camera_frame_id
+            self._last_rgb_rel = rgb_rel
+            self._last_depth_rel = depth_rel
+        else:
+            if self._last_camera_frame_id is None:
+                raise ValueError("The first control row must contain a new camera frame")
+            if camera_frame_id != self._last_camera_frame_id:
+                raise ValueError("A stale row must reference the latest camera frame")
+            rgb_rel = self._last_rgb_rel
+            depth_rel = self._last_depth_rel
+        assert rgb_rel is not None and depth_rel is not None
         record = {
             "schema_version": self.interface_spec["schema_version"],
             "episode_id": self.episode_id,
             "step": step,
-            "sim_time_s": float(sim_time_s),
+            "control_time_s": float(control_time_s),
+            "camera_frame_id": int(camera_frame_id),
+            "camera_timestamp_s": float(camera_timestamp_s),
+            "camera_is_new": bool(camera_is_new),
             "rgb_path": rgb_rel.as_posix(),
             "depth_path": depth_rel.as_posix(),
             "policy_state": state.tolist(),
@@ -153,6 +181,7 @@ class EpisodeWriter:
             "episode_id": self.episode_id,
             "created_utc": datetime.now(timezone.utc).isoformat(),
             "num_steps": self._count,
+            "num_camera_frames": self._camera_frame_count,
             "success": bool(success),
             "termination_reason": termination_reason,
             "metadata": self.metadata,
@@ -167,6 +196,7 @@ class EpisodeWriter:
             "episode_id": self.episode_id,
             "path": f"episodes/{self.episode_id}",
             "num_steps": self._count,
+            "num_camera_frames": self._camera_frame_count,
             "success": bool(success),
             "termination_reason": termination_reason,
         }

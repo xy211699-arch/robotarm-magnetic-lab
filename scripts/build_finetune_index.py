@@ -10,7 +10,12 @@ from pathlib import Path
 parser = argparse.ArgumentParser(description="Build VLA/BC temporal sample index.")
 parser.add_argument("dataset_root", type=Path)
 parser.add_argument("--history", type=int, default=4)
-parser.add_argument("--horizon", type=int, default=8)
+parser.add_argument(
+    "--horizon",
+    type=int,
+    default=None,
+    help="Control steps per target chunk; defaults to the interface contract.",
+)
 parser.add_argument("--stride", type=int, default=1)
 # Accepted for compatibility with the project launcher, which injects Kit
 # workarounds for every ``-p some_script.py`` invocation. This offline tool
@@ -20,7 +25,15 @@ args = parser.parse_args()
 
 
 def main() -> None:
-    if args.history < 1 or args.horizon < 1 or args.stride < 1:
+    manifest = json.loads(
+        (args.dataset_root / "dataset.json").read_text(encoding="utf-8")
+    )
+    interface = manifest["interface"]
+    version = interface["schema_version"]
+    horizon = args.horizon or int(
+        interface["outputs"]["action_chunk_default"]["horizon_steps"]
+    )
+    if args.history < 1 or horizon < 1 or args.stride < 1:
         raise ValueError("history, horizon and stride must be positive")
     output_path = args.dataset_root / "finetune_index.jsonl"
     sample_count = 0
@@ -41,11 +54,27 @@ def main() -> None:
                     encoding="utf-8"
                 ).splitlines()
             ]
-            first_anchor = args.history - 1
-            last_anchor = len(steps) - args.horizon
-            for anchor in range(first_anchor, last_anchor + 1, args.stride):
-                history = steps[anchor - args.history + 1 : anchor + 1]
-                future = steps[anchor : anchor + args.horizon]
+            if version == "2.0.0":
+                camera_rows = [i for i, step in enumerate(steps) if step["camera_is_new"]]
+                candidate_rows = camera_rows[args.history - 1 :: args.stride]
+            else:
+                candidate_rows = list(
+                    range(args.history - 1, len(steps) - horizon + 1, args.stride)
+                )
+            for camera_anchor_index, anchor in enumerate(candidate_rows):
+                if anchor + horizon > len(steps):
+                    continue
+                if version == "2.0.0":
+                    source_index = camera_rows.index(anchor)
+                    history = [
+                        steps[row]
+                        for row in camera_rows[
+                            source_index - args.history + 1 : source_index + 1
+                        ]
+                    ]
+                else:
+                    history = steps[anchor - args.history + 1 : anchor + 1]
+                future = steps[anchor : anchor + horizon]
                 record = {
                     "schema_version": episode_meta["schema_version"],
                     "episode_id": episode_ref["episode_id"],
@@ -53,6 +82,13 @@ def main() -> None:
                     "instruction": episode_meta["metadata"].get(
                         "language_instruction", ""
                     ),
+                    "camera_frame_ids": [
+                        step.get("camera_frame_id", step["step"]) for step in history
+                    ],
+                    "camera_timestamps_s": [
+                        step.get("camera_timestamp_s", step.get("sim_time_s"))
+                        for step in history
+                    ],
                     "rgb_history": [
                         f"{episode_ref['path']}/{step['rgb_path']}" for step in history
                     ],
@@ -68,12 +104,16 @@ def main() -> None:
                     "target_joint_position_chunk_rad": [
                         step["action_applied_joint_target_rad"] for step in future
                     ],
+                    "target_control_timestamps_s": [
+                        step.get("control_time_s", step.get("sim_time_s"))
+                        for step in future
+                    ],
                 }
                 output.write(json.dumps(record, separators=(",", ":")) + "\n")
                 sample_count += 1
     print(
         f"[FINETUNE_INDEX] samples={sample_count} history={args.history} "
-        f"horizon={args.horizon} output={output_path}"
+        f"horizon={horizon} schema={version} output={output_path}"
     )
 
 

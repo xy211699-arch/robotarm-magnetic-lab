@@ -12,11 +12,11 @@ from isaaclab.app import AppLauncher
 
 
 PROJECT_ROOT = Path("/mnt/isaac-linux/robotarm_magnetic_lab")
-DEFAULT_INTERFACE = PROJECT_ROOT / "configs/interfaces/robotarm_magnetic_v1.json"
-DEFAULT_DATASET = PROJECT_ROOT / "datasets/robotarm_magnetic_v1"
+DEFAULT_INTERFACE = PROJECT_ROOT / "configs/interfaces/robotarm_magnetic_v2.json"
+DEFAULT_DATASET = PROJECT_ROOT / "datasets/robotarm_magnetic_v2_bringup"
 
 parser = argparse.ArgumentParser(description="Collect model fine-tuning episodes.")
-parser.add_argument("--task", default="Template-Robotarm-Magnetic-Lab-v0")
+parser.add_argument("--task", default="Template-Robotarm-Magnetic-Stomach-Lab-v0")
 parser.add_argument("--num_envs", type=int, default=1)
 parser.add_argument("--episodes", type=int, default=1)
 parser.add_argument("--steps", type=int, default=120)
@@ -165,6 +165,12 @@ def main() -> None:
         camera_view = (
             attach_capsule_camera_policy_view(env) if args_cli.capsule_camera_view else None
         )
+        camera = base_env.scene["capsule_camera"]
+        control_hz = int(spec["rates_hz"]["control"])
+        camera_hz = int(spec["rates_hz"]["camera"])
+        if control_hz % camera_hz != 0:
+            raise RuntimeError("Camera rate must divide the control rate exactly")
+        expected_control_rows_per_frame = control_hz // camera_hz
 
         for episode_number in range(args_cli.episodes):
             observations, _ = env.reset(seed=args_cli.seed + episode_number)
@@ -182,12 +188,17 @@ def main() -> None:
                     "seed": args_cli.seed + episode_number,
                     "policy_source": args_cli.policy,
                     "language_instruction": args_cli.instruction,
-                    "policy_rate_hz": spec["rates_hz"]["policy"],
+                    "policy_inference_rate_hz": spec["rates_hz"]["policy"],
+                    "control_rate_hz": spec["rates_hz"]["control"],
+                    "camera_rate_hz": spec["rates_hz"]["camera"],
                 },
             )
             success = False
             termination_reason = "step_limit"
             max_capsule_speed = 0.0
+            source_camera_frame = None
+            dataset_camera_frame = -1
+            camera_timestamp_s = 0.0
             try:
                 for step in range(args_cli.steps):
                     action = _profile(step, args_cli.steps, base_env.device)
@@ -197,6 +208,12 @@ def main() -> None:
                     teacher = _teacher_state(
                         base_env, robot, capsule, joint_indices, magnet_index
                     )
+                    current_source_frame = int(camera.frame.torch[0].item())
+                    camera_is_new = current_source_frame != source_camera_frame
+                    if camera_is_new:
+                        source_camera_frame = current_source_frame
+                        dataset_camera_frame += 1
+                        camera_timestamp_s = step / float(control_hz)
                     max_capsule_speed = max(
                         max_capsule_speed,
                         float(np.linalg.norm(teacher["capsule_velocity_world"][:3])),
@@ -209,7 +226,10 @@ def main() -> None:
                     is_truncated = bool(truncated[0].item())
                     writer.append(
                         step=step,
-                        sim_time_s=step / float(spec["rates_hz"]["policy"]),
+                        control_time_s=step / float(control_hz),
+                        camera_frame_id=dataset_camera_frame,
+                        camera_timestamp_s=camera_timestamp_s,
+                        camera_is_new=camera_is_new,
                         rgb=rgb,
                         depth_m=depth,
                         policy_state=policy_state,
@@ -228,7 +248,12 @@ def main() -> None:
                 path = writer.close(
                     success=success,
                     termination_reason=termination_reason,
-                    extra_summary={"maximum_capsule_speed_mps": max_capsule_speed},
+                    extra_summary={
+                        "maximum_capsule_speed_mps": max_capsule_speed,
+                        "expected_control_rows_per_camera_frame": (
+                            expected_control_rows_per_frame
+                        ),
+                    },
                 )
                 print(f"[DATASET] committed {path}", flush=True)
             except Exception:
