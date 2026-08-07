@@ -17,4 +17,9 @@ from .legacy_bridge import (  # noqa: F401
     magnetic_wrench,
 )
 from .magnetic_action import MagneticPhysicsAction, MagneticPhysicsActionCfg  # noqa: F401
+from .atomic_action import (  # noqa: F401
+    AtomicMagnetAction,
+    AtomicMagnetActionCfg,
+    external_magnet_state,
+)
 from .vision import capsule_depth, capsule_rgb  # noqa: F401

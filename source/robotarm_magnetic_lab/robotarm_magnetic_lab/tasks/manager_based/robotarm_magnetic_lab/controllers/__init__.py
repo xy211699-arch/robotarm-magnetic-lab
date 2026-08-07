@@ -14,6 +14,7 @@ from .table_motion import (
     quintic_smoothstep,
     quaternion_from_y_rotation,
 )
+from .action_layer import AtomicAction, AtomicActionExecutor, ActionLayerConfig
 
 __all__ = [
     "ArmGradientPlan",
@@ -25,4 +26,7 @@ __all__ = [
     "quaternion_from_axis",
     "quaternion_from_y_rotation",
     "quintic_smoothstep",
+    "ActionLayerConfig",
+    "AtomicAction",
+    "AtomicActionExecutor",
 ]
