@@ -36,7 +36,7 @@ not fields in the deployable snapshot or action result.
 An action has exactly two terminal outcomes: `DONE` or `HARD_FAILURE`.
 Deviation of capsule motion from the intended effect is an offline evaluation
 signal and cannot produce `HARD_FAILURE`. Initial failure containment holds the
-last validated target and lets the environment terminate; autonomous recovery
+last validated target and explicitly terminates the environment; autonomous recovery
 motion remains intentionally unimplemented until separately validated.
 
 ## Validation

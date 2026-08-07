@@ -271,3 +271,15 @@ def external_magnet_state(env, asset_name: str = "robot", body_name: str = "magl
         ),
         dim=-1,
     )
+
+
+def atomic_hard_failure(env, term_name: str = "atomic") -> torch.Tensor:
+    """Terminate the episode after the executor enters failure containment."""
+    term = env.action_manager.get_term(term_name)
+    failed = (
+        term.executor is not None
+        and term.executor.state.value in ("HARD_FAILURE", "SAFE_RECOVER")
+    )
+    return torch.full(
+        (env.num_envs,), failed, dtype=torch.bool, device=env.device
+    )

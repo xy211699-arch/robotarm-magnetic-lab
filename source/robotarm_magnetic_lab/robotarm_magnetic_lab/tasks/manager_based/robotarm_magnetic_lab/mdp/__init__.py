@@ -20,6 +20,7 @@ from .magnetic_action import MagneticPhysicsAction, MagneticPhysicsActionCfg  # 
 from .atomic_action import (  # noqa: F401
     AtomicMagnetAction,
     AtomicMagnetActionCfg,
+    atomic_hard_failure,
     external_magnet_state,
 )
 from .vision import capsule_depth, capsule_rgb  # noqa: F401

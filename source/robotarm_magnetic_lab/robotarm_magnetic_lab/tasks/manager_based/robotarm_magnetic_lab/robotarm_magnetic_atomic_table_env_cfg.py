@@ -3,6 +3,7 @@
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
+from isaaclab.managers import TerminationTermCfg as DoneTerm
 from isaaclab.utils.configclass import configclass
 
 from . import mdp
@@ -10,6 +11,7 @@ from .robotarm_magnetic_lab_env_cfg import (
     ARM_JOINT_NAMES,
     BALL_JOINT_NAMES,
     RobotarmMagneticLabEnvCfg,
+    TerminationsCfg,
 )
 from .robotarm_magnetic_table_env_cfg import RobotarmMagneticTableLabEnvCfg
 
@@ -54,11 +56,19 @@ class AtomicObservationsCfg:
 
 
 @configclass
+class AtomicTerminationsCfg(TerminationsCfg):
+    """Legacy collision plus explicit atomic hard-failure containment."""
+
+    atomic_hard_failure = DoneTerm(func=mdp.atomic_hard_failure)
+
+
+@configclass
 class RobotarmMagneticAtomicTableLabEnvCfg(RobotarmMagneticTableLabEnvCfg):
     """Scalar atomic-control task kept separate from the legacy 9-D task."""
 
     actions: AtomicActionsCfg = AtomicActionsCfg()
     observations: AtomicObservationsCfg = AtomicObservationsCfg()
+    terminations: AtomicTerminationsCfg = AtomicTerminationsCfg()
 
     def __post_init__(self) -> None:
         # Skip RobotarmMagneticTableLabEnvCfg.__post_init__: it widens the
