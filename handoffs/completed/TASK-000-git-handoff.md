@@ -1,5 +1,7 @@
 # TASK-000: Git handoff round trip
 
+Status: `complete`. Accepted remote response commit: `24a1469d3b797d75b4d7e8e3079a69c26e85fc83`.
+
 ## Objective
 
 Prove that Linux Codex can receive an approved task contract from the Windows planning branch and return a structured evidence report through the shared GitHub Fork.

@@ -12,6 +12,8 @@ Stage 1 protocol tests passed 10/10. All 11 action IDs reached `DONE` in the Isa
 
 Atomic action layer stage 2 has not started. Its current scope is the 1 Hz SMDP boundary, Actor transition and privileged Critic/evaluation channels, short-action effect measurement, and failure-containment validation. It does not yet authorize Actor training or changes to the stage 1 safety contract.
 
-## Active coordination task
+## Coordination readiness
 
-The active coordination task is `TASK-000-git-handoff`. It validates only the Windows-to-Linux GitHub handoff loop and must not change simulation source, assets, training configuration, or runtime behavior.
+`TASK-000-git-handoff` is complete. Windows published the contract at commit `3137234ed47d7c15b3d6380b1222acd956849f36`; Linux returned the accepted report at commit `24a1469d3b797d75b4d7e8e3079a69c26e85fc83`. The round trip verified the shared Fork, isolated branches, Linux Deploy Key push access, read-only upstream configuration, and independent Windows verification.
+
+There is currently no active implementation task. Atomic action layer stage 2 remains planned but is not authorized to start until Windows publishes a new approved task contract in `handoffs/active/`.
