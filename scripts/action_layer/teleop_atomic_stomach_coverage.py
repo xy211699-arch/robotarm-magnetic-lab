@@ -157,6 +157,7 @@ def main() -> int:
         num_envs=1,
         use_fabric=not getattr(args_cli, "disable_fabric", False),
     )
+    env_cfg.seed = args_cli.seed
     session_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%fZ")
     output_directory = args_cli.output_directory / session_id
     keyboard_source = None
