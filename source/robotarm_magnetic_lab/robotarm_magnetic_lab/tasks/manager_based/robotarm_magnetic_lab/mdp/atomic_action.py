@@ -196,12 +196,55 @@ class AtomicMagnetAction(ActionTerm):
             self.cfg.xrdf_path,
             ignored_frames=tuple(self.cfg.ignored_collision_frames),
         )
+        world_collision_checker = None
+        if self.cfg.environment_collision_mesh_prim_path:
+            from .world_collision import StomachMeshCollisionChecker
+
+            base_body_index = self.robot.data.body_names.index(
+                self.cfg.robot_base_body_name
+            )
+            base_position = (
+                self.robot.data.body_pos_w.torch[0, base_body_index]
+                .detach()
+                .cpu()
+                .numpy()
+            )
+            base_rotation = _quat_xyzw_to_matrix(
+                self.robot.data.body_quat_w.torch[0, base_body_index]
+                .detach()
+                .cpu()
+                .numpy()
+            )
+            world_collision_checker = StomachMeshCollisionChecker(
+                kinematics,
+                mesh_prim_path=self.cfg.environment_collision_mesh_prim_path,
+                robot_base_position_world_m=base_position,
+                robot_base_rotation_world=base_rotation,
+                device=str(self._env.device),
+                required_clearance_m=self.cfg.environment_collision_clearance_m,
+                trajectory_samples=layer_cfg.trajectory_collision_samples,
+            )
+            initial_clearance = world_collision_checker.check_configuration(
+                q[: len(self.cfg.arm_joint_names)]
+            )
+            print(
+                "ATOMIC_WORLD_COLLISION_READY "
+                f"mesh={self.cfg.environment_collision_mesh_prim_path} "
+                f"initial_clearance_m={initial_clearance.clearance_m:.6f} "
+                f"required_clearance_m={self.cfg.environment_collision_clearance_m:.6f} "
+                f"frame={initial_clearance.frame}"
+            )
         snapshot = self._snapshot()
         command = initial_command_state(snapshot, field_for_ball(q[-3:]))
         self._executor = AtomicActionExecutor(
             layer_cfg,
             planner,
-            HardSafetyMonitor(layer_cfg, kinematics, validate_ground=False),
+            HardSafetyMonitor(
+                layer_cfg,
+                kinematics,
+                validate_ground=False,
+                world_collision_checker=world_collision_checker,
+            ),
             command,
         )
 
@@ -253,6 +296,11 @@ class AtomicMagnetActionCfg(ActionTermCfg):
         "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/planning/robot.xrdf"
     )
     ignored_collision_frames: tuple[str, ...] = ()
+    robot_base_body_name: str = "base_link"
+    environment_collision_mesh_prim_path: str | None = None
+    # A 5 mm predictive buffer covers collision-sphere approximation error and
+    # one low-speed control interval before the runtime hold takes effect.
+    environment_collision_clearance_m: float = 0.005
     registered_field_point_world_m: tuple[float, float, float] = (
         1.0608155,
         0.1145374,

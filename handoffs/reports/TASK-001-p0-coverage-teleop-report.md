@@ -69,6 +69,30 @@ actions, safety, or deployable observations. Targeted tests passed `24/24`; GPU 
 again passed all eleven actions with 12 unique coverage frames, ending at `5.569%`; and the corrected
 GUI startup/exit smoke returned zero without the previous viewport-menu cleanup exception.
 
+## Post-delivery robot/ASM-to-stomach collision correction
+
+Manual review found that the eleven actions did run the hard-safety monitor, but that monitor only
+checked joint/device limits, workspace, XRDF ASM-to-arm self-clearance, and an optional flat ground.
+The legacy `collision` termination was likewise ASM-to-arm only. The stomach triangle mesh was not
+part of either predictive or runtime safety, so a robot/ASM path could cross the stomach wall.
+
+The stomach atomic task now enables a mesh-specific checker without changing any action ID,
+increment, trajectory meaning, capsule dynamics, or deployable observation. It transforms the dense
+XRDF `world_collision` spheres (including the mounted ASM) into world coordinates and queries
+unsigned distance to the exact active stomach collision mesh. Every action receives a 21-sample
+swept-path precheck, and the current configuration is rechecked at each 20 Hz control update. A
+5 mm buffer triggers `ENVIRONMENT_COLLISION` and holds the last safe target. Unsigned distance is
+required because the current stomach is a thin open surface; it protects both sides without relying
+on an invalid inside/outside sign. The capsule is deliberately excluded, so normal capsule-wall
+contact remains valid.
+
+Validation passed `16/16` pure action-layer tests. The live initial robot/ASM-to-wall clearance was
+`53.741 mm`, and independent reset testing completed all `11/11` actions with `DONE`. The dedicated
+guard test applied repeated `APPROACH`: live clearance fell through `42.956`, `32.045`, `21.091`,
+and `10.662 mm`; request five was blocked as `ENVIRONMENT_COLLISION` at approximately `4.639 mm`.
+After the hold settled, measured clearance remained positive at `4.274 mm`, so no geometric overlap
+occurred. `scripts/action_layer/validate_stomach_collision_guard.py` reported `PASS`.
+
 ## Deviations and notes
 
 - An isolated worktree `/tmp/robotarm-task001` preserved the original checkout. The launcher

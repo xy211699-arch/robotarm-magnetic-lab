@@ -5,7 +5,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
+import sys
+
+
+ROOT = Path(__file__).resolve().parents[2]
+PACKAGE_ROOT = ROOT / "source" / "robotarm_magnetic_lab"
+sys.path.insert(0, str(PACKAGE_ROOT))
+
+HEADLESS = "--headless" in sys.argv
+if HEADLESS:
+    sys.argv.remove("--headless")
+    os.environ["HEADLESS"] = "1"
 
 from isaaclab.app import AppLauncher
 
@@ -15,7 +27,7 @@ parser.add_argument("--task", default="Template-Robotarm-Magnetic-Atomic-Table-L
 parser.add_argument("--max_steps_per_action", type=int, default=60)
 parser.add_argument("--num_envs", type=int, default=1)
 AppLauncher.add_app_launcher_args(parser)
-parser.set_defaults(visualizer=["kit"])
+parser.set_defaults(visualizer=[] if HEADLESS else ["kit"])
 args_cli = parser.parse_args()
 args_cli.enable_cameras = True
 

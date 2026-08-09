@@ -88,7 +88,7 @@ class UrdfXrdfSafetyModel:
         self.asm_frame = asm_frame
         self.ignored_frames = set(ignored_frames)
         self.joints = self._load_urdf()
-        self.spheres = self._load_xrdf()
+        self.spheres, self.environment_spheres = self._load_xrdf()
         if asm_frame not in self.spheres:
             raise ValueError(f"XRDF contains no spheres for ASM frame {asm_frame!r}")
 
@@ -127,20 +127,39 @@ class UrdfXrdfSafetyModel:
             )
         return result
 
-    def _load_xrdf(self) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    def _load_xrdf(
+        self,
+    ) -> tuple[
+        dict[str, tuple[np.ndarray, np.ndarray]],
+        dict[str, tuple[np.ndarray, np.ndarray]],
+    ]:
         import yaml
 
         with self.xrdf_path.open("r", encoding="utf-8") as stream:
             xrdf = yaml.safe_load(stream)
-        geometry_name = xrdf["self_collision"]["geometry"]
-        source = xrdf["geometry"][geometry_name]["spheres"]
-        return {
-            frame: (
-                np.asarray([item["center"] for item in items], dtype=np.float64),
-                np.asarray([item["radius"] for item in items], dtype=np.float64),
-            )
-            for frame, items in source.items()
-        }
+
+        def load_geometry(section: str) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+            geometry_name = xrdf[section]["geometry"]
+            source = xrdf["geometry"][geometry_name]["spheres"]
+            return {
+                frame: (
+                    np.asarray([item["center"] for item in items], dtype=np.float64),
+                    np.asarray([item["radius"] for item in items], dtype=np.float64),
+                )
+                for frame, items in source.items()
+            }
+
+        self_collision = load_geometry("self_collision")
+        # XRDF deliberately has a denser robot+mounted-ASM representation for
+        # world obstacles than for self-collision.  Environment checks must use
+        # this geometry; the smaller self-collision set can miss the bulk of
+        # the external-magnet assembly.
+        world_collision = (
+            load_geometry("world_collision")
+            if "world_collision" in xrdf
+            else self_collision
+        )
+        return self_collision, world_collision
 
     def link_transforms(self, arm_configuration_rad: np.ndarray) -> dict[str, np.ndarray]:
         """Return link transforms in the robot base frame."""
@@ -158,17 +177,29 @@ class UrdfXrdfSafetyModel:
         return transforms
 
     def world_spheres(
-        self, arm_configuration_rad: np.ndarray
+        self,
+        arm_configuration_rad: np.ndarray,
+        *,
+        geometry: dict[str, tuple[np.ndarray, np.ndarray]] | None = None,
     ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
         transforms = self.link_transforms(arm_configuration_rad)
         result: dict[str, tuple[np.ndarray, np.ndarray]] = {}
-        for frame, (centers, radii) in self.spheres.items():
+        for frame, (centers, radii) in (geometry or self.spheres).items():
             transform = transforms.get(frame)
             if transform is None:
                 continue
             world_centers = transform[:3, 3] + centers @ transform[:3, :3].T
             result[frame] = (world_centers, radii)
         return result
+
+    def environment_world_spheres(
+        self, arm_configuration_rad: np.ndarray
+    ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+        """Return the dense XRDF world-collision spheres in robot-base coordinates."""
+        return self.world_spheres(
+            arm_configuration_rad,
+            geometry=self.environment_spheres,
+        )
 
     def asm_clearance_by_frame(
         self, arm_configuration_rad: np.ndarray
@@ -191,7 +222,9 @@ class UrdfXrdfSafetyModel:
     def minimum_sphere_height(self, arm_configuration_rad: np.ndarray) -> float:
         """Return the lowest robot collision-sphere surface in base coordinates."""
         values = []
-        for centers, radii in self.world_spheres(arm_configuration_rad).values():
+        for centers, radii in self.environment_world_spheres(
+            arm_configuration_rad
+        ).values():
             values.extend((centers[:, 2] - radii).tolist())
         return min(values) if values else math.inf
 

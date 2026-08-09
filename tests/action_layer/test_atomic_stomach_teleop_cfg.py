@@ -31,6 +31,10 @@ def test_task_registration_and_frozen_timing_contract():
     assert cfg.decimation == 12
     assert cfg.scene.capsule_camera.update_period == 1.0
     assert set(vars(cfg.actions)) == {"atomic", "magnetic_physics"}
+    assert cfg.actions.atomic.environment_collision_mesh_prim_path.endswith(
+        "/Physics_Collision_Mesh/Stomach"
+    )
+    assert cfg.actions.atomic.environment_collision_clearance_m == 0.005
 
 
 def test_deployable_observations_exclude_privileged_fields():

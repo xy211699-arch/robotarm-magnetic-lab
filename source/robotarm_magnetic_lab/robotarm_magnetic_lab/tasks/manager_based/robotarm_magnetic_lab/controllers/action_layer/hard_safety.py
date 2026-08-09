@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Protocol
 
 import numpy as np
 
@@ -19,6 +20,14 @@ class SafetyCheck:
     minimum_asm_clearance_m: float = np.inf
 
 
+class WorldCollisionChecker(Protocol):
+    required_clearance_m: float
+
+    def check_configuration(self, arm_configuration_rad: np.ndarray): ...
+
+    def validate_path(self, arm_targets_rad: np.ndarray) -> dict[str, object]: ...
+
+
 class HardSafetyMonitor:
     """Apply only hardware/environment constraints, never effect grading."""
 
@@ -28,10 +37,12 @@ class HardSafetyMonitor:
         kinematics: UrdfXrdfSafetyModel | None = None,
         *,
         validate_ground: bool = False,
+        world_collision_checker: WorldCollisionChecker | None = None,
     ) -> None:
         self.cfg = cfg
         self.kinematics = kinematics
         self.validate_ground = validate_ground
+        self.world_collision_checker = world_collision_checker
 
     def check_snapshot(self, snapshot: DeviceSnapshot) -> SafetyCheck:
         arrays = (
@@ -73,6 +84,23 @@ class HardSafetyMonitor:
                 f"live ASM clearance {snapshot.asm_clearance_m:.6f} m",
                 snapshot.asm_clearance_m,
             )
+        if self.world_collision_checker is not None:
+            result = self.world_collision_checker.check_configuration(
+                snapshot.joint_position_rad[: self.cfg.arm_joint_count]
+            )
+            if result.clearance_m < self.world_collision_checker.required_clearance_m:
+                return SafetyCheck(
+                    False,
+                    HardFailureCode.ENVIRONMENT_COLLISION,
+                    (
+                        "live robot/ASM-to-stomach clearance "
+                        f"{result.clearance_m:.6f} m below required "
+                        f"{self.world_collision_checker.required_clearance_m:.6f} m; "
+                        f"frame={result.frame} sphere={result.sphere_index} "
+                        f"face={result.face_index}"
+                    ),
+                    snapshot.asm_clearance_m,
+                )
         return SafetyCheck(True, minimum_asm_clearance_m=snapshot.asm_clearance_m)
 
     def check_plan(self, plan: TrajectoryPlan, snapshot: DeviceSnapshot) -> SafetyCheck:
@@ -116,8 +144,21 @@ class HardSafetyMonitor:
             if not bool(result["ok"]):
                 code = HardFailureCode(str(result["kind"]))
                 return SafetyCheck(False, code, str(result), float(result.get("minimum_asm_clearance_m", np.inf)))
-            return SafetyCheck(
-                True,
-                minimum_asm_clearance_m=float(result["minimum_asm_clearance_m"]),
+            minimum_asm_clearance = float(result["minimum_asm_clearance_m"])
+        else:
+            minimum_asm_clearance = snapshot.asm_clearance_m
+        if self.world_collision_checker is not None:
+            world_result = self.world_collision_checker.validate_path(
+                targets[:, : self.cfg.arm_joint_count]
             )
-        return SafetyCheck(True, minimum_asm_clearance_m=snapshot.asm_clearance_m)
+            if not bool(world_result["ok"]):
+                return SafetyCheck(
+                    False,
+                    HardFailureCode.ENVIRONMENT_COLLISION,
+                    str(world_result),
+                    minimum_asm_clearance,
+                )
+        return SafetyCheck(
+            True,
+            minimum_asm_clearance_m=minimum_asm_clearance,
+        )

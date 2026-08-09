@@ -2,6 +2,7 @@
 
 from isaaclab.utils.configclass import configclass
 
+from . import mdp
 from .robotarm_magnetic_atomic_table_env_cfg import (
     AtomicActionsCfg,
     AtomicObservationsCfg,
@@ -10,11 +11,28 @@ from .robotarm_magnetic_atomic_table_env_cfg import (
 from .robotarm_magnetic_stomach_env_cfg import RobotarmMagneticStomachLabEnvCfg
 
 
+STOMACH_COLLISION_MESH_PRIM_PATH = (
+    "/World/envs/env_0/Stomach/ConvertedSource/Environment/Stomach/"
+    "Physics_Collision_Mesh/Stomach"
+)
+
+
+@configclass
+class AtomicStomachActionsCfg(AtomicActionsCfg):
+    """Atomic actions with robot/ASM-only stomach mesh protection enabled."""
+
+    atomic: mdp.AtomicMagnetActionCfg = mdp.AtomicMagnetActionCfg(
+        asset_name="robot",
+        environment_collision_mesh_prim_path=STOMACH_COLLISION_MESH_PRIM_PATH,
+        environment_collision_clearance_m=0.005,
+    )
+
+
 @configclass
 class RobotarmMagneticAtomicStomachTeleopLabEnvCfg(RobotarmMagneticStomachLabEnvCfg):
     """Compose the frozen scalar executor with the existing stomach scene."""
 
-    actions: AtomicActionsCfg = AtomicActionsCfg()
+    actions: AtomicStomachActionsCfg = AtomicStomachActionsCfg()
     observations: AtomicObservationsCfg = AtomicObservationsCfg()
     terminations: AtomicTerminationsCfg = AtomicTerminationsCfg()
 
