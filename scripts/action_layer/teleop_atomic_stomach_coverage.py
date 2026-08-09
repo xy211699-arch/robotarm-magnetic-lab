@@ -57,8 +57,14 @@ parser.add_argument(
 parser.add_argument(
     "--max_action_calls",
     type=int,
-    default=500,
+    default=200,
     help="Safety budget for --target_coverage_percent mode.",
+)
+parser.add_argument(
+    "--max_run_wall_time_s",
+    type=float,
+    default=600.0,
+    help="Wall-clock campaign budget for target mode; checked only at action boundaries.",
 )
 parser.add_argument(
     "--auto_action_cycle",
@@ -76,6 +82,8 @@ if not 0.0 <= args_cli.target_coverage_percent <= 100.0:
     parser.error("--target_coverage_percent must be in [0, 100]")
 if args_cli.max_action_calls <= 0:
     parser.error("--max_action_calls must be positive")
+if args_cli.max_run_wall_time_s <= 0.0:
+    parser.error("--max_run_wall_time_s must be positive")
 args_cli.enable_cameras = True
 
 launcher = AppLauncher(args_cli)
@@ -219,6 +227,7 @@ def main() -> int:
                 branch=_git("branch", "--show-current"),
                 enable_view=not HEADLESS and not bool(args_cli.scripted_actions),
             )
+            campaign_started_wall = time.monotonic()
             scripted = deque(
                 int(item.strip())
                 for item in args_cli.scripted_actions.split(",")
@@ -272,6 +281,9 @@ def main() -> int:
                         break
                     if action_calls >= args_cli.max_action_calls:
                         termination_reason = "max_action_calls_reached"
+                        break
+                    if time.monotonic() - campaign_started_wall >= args_cli.max_run_wall_time_s:
+                        termination_reason = "max_run_wall_time_reached"
                         break
                     action_mask = np.asarray(term.action_mask(), dtype=np.bool_).reshape(-1)
                     selected = None
@@ -444,6 +456,7 @@ def main() -> int:
                         "target_reached": achieved_fraction * 100.0 >= args_cli.target_coverage_percent,
                         "termination_reason": termination_reason,
                         "wall_time_s": time.monotonic() - run_started_wall,
+                        "campaign_wall_time_s": time.monotonic() - campaign_started_wall,
                         "simulation_time_s": evaluator.total_sim_time_s,
                         "action_request_attempts": action_attempts,
                         "action_calls_accepted": action_calls,
@@ -455,6 +468,7 @@ def main() -> int:
                         },
                         "failure_codes": dict(sorted(failure_codes.items())),
                         "max_action_calls": args_cli.max_action_calls,
+                        "max_run_wall_time_s": args_cli.max_run_wall_time_s,
                         "auto_action_cycle": [
                             int(item.strip())
                             for item in args_cli.auto_action_cycle.split(",")

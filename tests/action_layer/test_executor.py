@@ -11,6 +11,13 @@ CFG = action_layer.ActionLayerConfig(
 )
 
 
+def test_extended_validation_timing_and_settle_contract():
+    cfg = action_layer.ActionLayerConfig()
+    assert cfg.maximum_duration_s == 2.5
+    assert cfg.settle_position_tolerance_rad == 0.020
+    assert cfg.settle_velocity_tolerance_rad_s == 0.08
+
+
 def snapshot(q=None, t=0.0):
     if q is None:
         q = np.zeros(9)

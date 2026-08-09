@@ -24,7 +24,7 @@ class AtomicStomachActionsCfg(AtomicActionsCfg):
     atomic: mdp.AtomicMagnetActionCfg = mdp.AtomicMagnetActionCfg(
         asset_name="robot",
         environment_collision_mesh_prim_path=STOMACH_COLLISION_MESH_PRIM_PATH,
-        environment_collision_clearance_m=0.005,
+        environment_collision_clearance_m=0.004,
     )
 
 

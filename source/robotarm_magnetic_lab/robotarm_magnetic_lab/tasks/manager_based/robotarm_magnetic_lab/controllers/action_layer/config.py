@@ -20,7 +20,7 @@ class ActionLayerConfig:
     control_dt_s: float = 1.0 / 20.0
     nominal_duration_s: float = 0.90
     hold_duration_s: float = 1.00
-    maximum_duration_s: float = 1.50
+    maximum_duration_s: float = 2.50
     tilt_increment_rad: float = math.radians(9.0)
     azimuth_increment_rad: float = math.radians(12.0)
     roll_displacement_m: float = 0.0075
@@ -38,8 +38,8 @@ class ActionLayerConfig:
     velocity_tolerance_ratio: float = 1.05
     acceleration_tolerance_ratio: float = 1.10
     tracking_error_hard_rad: float = 0.35
-    settle_position_tolerance_rad: float = 0.015
-    settle_velocity_tolerance_rad_s: float = 0.05
+    settle_position_tolerance_rad: float = 0.020
+    settle_velocity_tolerance_rad_s: float = 0.08
     settle_required_steps: int = 2
     asm_min_clearance_m: float = 0.0
     ground_collision_margin_m: float = 0.0
