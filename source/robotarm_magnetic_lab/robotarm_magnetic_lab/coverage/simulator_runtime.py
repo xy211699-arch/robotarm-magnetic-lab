@@ -212,6 +212,13 @@ class P0CoverageRuntime:
         }
         self.writer.append_frame(record)
         self.latest_record = record
+        print(
+            "P0_COVERAGE "
+            f"frame={frame_id} covered={update.cumulative_count}/{len(self.reference.vertices_world)} "
+            f"percent={100.0 * update.coverage_fraction:.3f} "
+            f"new={update.newly_covered_count}",
+            flush=True,
+        )
         return update
 
     def update_view(self) -> None:

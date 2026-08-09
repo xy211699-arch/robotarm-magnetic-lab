@@ -15,6 +15,11 @@ CAPSULE_COLOR = np.asarray([40, 40, 40], dtype=np.uint8)
 TRAJECTORY_COLOR = np.asarray([0, 0, 0], dtype=np.uint8)
 AXIS_NAMES = ("X", "Y", "Z")
 
+# Kit 110.1 may run viewport-menu callbacks after a custom viewport is
+# destroyed. Retain hidden viewport resources until SimulationApp shutdown so
+# those callbacks never dereference an already-destroyed Hydra viewport.
+_DEFERRED_KIT_VIEW_RESOURCES: list[tuple[Any, Any]] = []
+
 
 def coverage_colors(mask: np.ndarray) -> np.ndarray:
     values = np.asarray(mask, dtype=np.bool_).reshape(-1)
@@ -127,9 +132,22 @@ def export_coverage_projection(
 
 
 class KitCoveragePointCloudView:
-    """Guide-purpose USD debug geometry shown in a dedicated Kit viewport."""
+    """Coverage-only USD point cloud shown in an isolated Kit viewport.
 
-    def __init__(self, vertices_world: np.ndarray, root_path: str = "/World/P0CoverageDebug") -> None:
+    The debug geometry intentionally lives in its own USD context. Putting the
+    points on the simulation stage makes them coplanar with the stomach mesh,
+    where depth testing can hide both red and green points. A separate context
+    also guarantees that this engineering view cannot affect simulation or ray
+    queries.
+    """
+
+    def __init__(
+        self,
+        vertices_world: np.ndarray,
+        root_path: str = "/World/P0CoverageDebug",
+        context_name: str = "p0_stomach_coverage",
+    ) -> None:
+        import omni.ui
         import omni.usd
         from omni.kit.viewport.utility import create_viewport_window
         from pxr import Gf, Sdf, UsdGeom, Vt
@@ -138,19 +156,26 @@ class KitCoveragePointCloudView:
         self._Vt = Vt
         self._Gf = Gf
         self._root_path = root_path
+        # Use one context per view instance. Kit tears it down with the app;
+        # explicitly destroying a viewport-bound context during shutdown can
+        # deadlock Hydra in Kit 110.1.
+        self._context_name = f"{context_name}_{id(self):x}"
         self._vertices = np.asarray(vertices_world, dtype=np.float64).reshape(-1, 3)
-        stage = omni.usd.get_context().get_stage()
+        self._context = omni.usd.create_context(self._context_name)
+        self._context.new_stage()
+        stage = self._context.get_stage()
+        if stage is None:
+            raise RuntimeError(f"failed to create isolated coverage USD context: {context_name}")
         root = UsdGeom.Xform.Define(stage, root_path)
-        root.GetPrim().SetMetadata("comment", "TASK-001 guide-only coverage debug; excluded from physics and rays")
+        root.GetPrim().SetMetadata(
+            "comment", "TASK-001 isolated coverage debug; excluded from simulation and rays"
+        )
         self._points = UsdGeom.Points.Define(stage, root_path + "/Surface")
-        self._points.GetPurposeAttr().Set(UsdGeom.Tokens.guide)
         self._points.GetPointsAttr().Set(Vt.Vec3fArray.FromNumpy(self._vertices.astype(np.float32)))
-        self._points.GetWidthsAttr().Set([0.0007] * len(self._vertices))
+        self._points.GetWidthsAttr().Set([0.0012] * len(self._vertices))
         self._marker = UsdGeom.Points.Define(stage, root_path + "/Capsule")
-        self._marker.GetPurposeAttr().Set(UsdGeom.Tokens.guide)
         self._marker.GetWidthsAttr().Set([0.006])
         self._trajectory = UsdGeom.BasisCurves.Define(stage, root_path + "/Trajectory")
-        self._trajectory.GetPurposeAttr().Set(UsdGeom.Tokens.guide)
         self._trajectory.GetTypeAttr().Set(UsdGeom.Tokens.linear)
         self._trajectory.GetBasisAttr().Set(UsdGeom.Tokens.bezier)
         self._trajectory.GetWidthsAttr().Set([0.001])
@@ -164,15 +189,43 @@ class KitCoveragePointCloudView:
         camera.AddTransformOp().Set(view.GetInverse())
         self._window = create_viewport_window(
             name="P0 Stomach Coverage",
+            usd_context_name=self._context_name,
             width=960,
             height=720,
             camera_path=Sdf.Path(camera_path),
         )
+        if self._window is None:
+            raise RuntimeError("failed to create P0 Stomach Coverage viewport")
+        self._hud_frame = self._window.get_frame("p0_coverage_hud")
+        with self._hud_frame:
+            with omni.ui.VStack():
+                self._coverage_label = omni.ui.Label(
+                    "Coverage: 0.000% (0 / 0)",
+                    width=340,
+                    height=30,
+                    alignment=omni.ui.Alignment.LEFT_CENTER,
+                    style={
+                        "background_color": 0xD0202020,
+                        "color": 0xFFFFFFFF,
+                        "font_size": 18,
+                        "margin": 6,
+                    },
+                )
+                omni.ui.Spacer()
         self.update(np.zeros(len(self._vertices), dtype=bool), center, np.empty((0, 3)))
+        print(
+            f"P0_COVERAGE_VIEW_READY name='P0 Stomach Coverage' context={self._context_name}",
+            flush=True,
+        )
 
     def update(self, mask: np.ndarray, capsule_position_world: np.ndarray, trajectory_world: np.ndarray) -> None:
-        colors = coverage_colors(mask).astype(np.float32) / 255.0
+        values = np.asarray(mask, dtype=np.bool_).reshape(-1)
+        colors = coverage_colors(values).astype(np.float32) / 255.0
         self._points.GetDisplayColorAttr().Set(self._Vt.Vec3fArray.FromNumpy(colors))
+        covered = int(values.sum())
+        total = len(values)
+        fraction = covered / total if total else 0.0
+        self._coverage_label.text = f"Coverage: {100.0 * fraction:.3f}% ({covered} / {total})"
         marker = np.asarray(capsule_position_world, dtype=np.float32).reshape(1, 3)
         self._marker.GetPointsAttr().Set(self._Vt.Vec3fArray.FromNumpy(marker))
         self._marker.GetDisplayColorAttr().Set(
@@ -187,5 +240,10 @@ class KitCoveragePointCloudView:
 
     def close(self) -> None:
         if self._window is not None:
-            self._window.destroy()
+            self._window.viewport_api.updates_enabled = False
+            self._window.visible = False
+            _DEFERRED_KIT_VIEW_RESOURCES.append((self._window, self._context))
             self._window = None
+        # Do not destroy the viewport-bound USD context here. Application
+        # shutdown owns both retained resources.
+        self._context = None
