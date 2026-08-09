@@ -1,0 +1,67 @@
+{
+  "schema": "robotarm_magnetic_extended_coverage_campaign",
+  "version": "1.0.0",
+  "date": "2026-08-09",
+  "formal_run_count": 3,
+  "requested_target_coverage_fraction": 0.8,
+  "target_reached": false,
+  "limits": {
+    "max_action_calls": 200,
+    "max_run_wall_time_s": 600.0
+  },
+  "aggregate": {
+    "campaign_wall_time_s": 1806.313618577995,
+    "wall_time_s": 1815.5783353599982,
+    "simulation_time_s": 576.35,
+    "action_request_attempts": 549,
+    "action_successes": 549,
+    "action_failures": 0,
+    "action_rejections": 0,
+    "minimum_asm_clearance_m": 0.009992641396820545
+  },
+  "runs": [
+    {
+      "seed": 42,
+      "directory": "logs/extended_coverage_three_runs/20260809_131517_306834Z",
+      "termination_reason": "max_run_wall_time_reached",
+      "campaign_wall_time_s": 603.2519653849959,
+      "simulation_time_s": 193.15,
+      "action_successes": 184,
+      "action_failures": 0,
+      "action_rejections": 0,
+      "achieved_coverage_fraction": 0.0917281585062579,
+      "capsule_net_displacement_m": 0.01005147723997934,
+      "capsule_activity_span_m": [0.007091403007507324, 0.009417049586772919, 0.0009161755442619324],
+      "minimum_asm_clearance_m": 0.009992641396820545
+    },
+    {
+      "seed": 43,
+      "directory": "logs/extended_coverage_three_runs/20260809_132547_367769Z",
+      "termination_reason": "max_run_wall_time_reached",
+      "campaign_wall_time_s": 602.396470822001,
+      "simulation_time_s": 194.35000000000002,
+      "action_successes": 185,
+      "action_failures": 0,
+      "action_rejections": 0,
+      "achieved_coverage_fraction": 0.0917281585062579,
+      "capsule_net_displacement_m": 0.010038222523815055,
+      "capsule_activity_span_m": [0.007091403007507324, 0.009417049586772919, 0.0009161755442619324],
+      "minimum_asm_clearance_m": 0.009992641396820545
+    },
+    {
+      "seed": 44,
+      "directory": "logs/extended_coverage_three_runs/20260809_133616_011982Z",
+      "termination_reason": "max_run_wall_time_reached",
+      "campaign_wall_time_s": 600.6651823709981,
+      "simulation_time_s": 188.85000000000002,
+      "action_successes": 180,
+      "action_failures": 0,
+      "action_rejections": 0,
+      "achieved_coverage_fraction": 0.0917281585062579,
+      "capsule_net_displacement_m": 0.009329504755133497,
+      "capsule_activity_span_m": [0.007091403007507324, 0.009417049586772919, 0.0009161755442619324],
+      "minimum_asm_clearance_m": 0.009992641396820545
+    }
+  ]
+}
+
