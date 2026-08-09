@@ -193,6 +193,7 @@ def main() -> int:
                     flush=True,
                 )
             current_action = None
+            coverage_dwell = False
             steps_on_action = 0
             idle_updates = 0
             exit_requested = False
@@ -213,12 +214,6 @@ def main() -> int:
                     next_action = scripted.popleft()
                     pending.append(_scripted_command(next_action))
                     submitted_scripted.append(next_action)
-                elif (
-                    current_action is None
-                    and args_cli.scripted_actions
-                    and len(evaluator.timings_s) < args_cli.minimum_coverage_samples
-                ):
-                    pending.append(_scripted_command(0))
 
                 for command in pending:
                     accepted, requested_exit = _handle_command(
@@ -263,18 +258,34 @@ def main() -> int:
                         flush=True,
                     )
                     if result.status.value == "DONE":
-                        term.acknowledge_result()
+                        scripted_complete = bool(args_cli.scripted_actions) and not scripted and len(
+                            results
+                        ) >= len(
+                            [value for value in args_cli.scripted_actions.split(",") if value]
+                        )
+                        if scripted_complete and len(evaluator.timings_s) < args_cli.minimum_coverage_samples:
+                            # Keep the final executor target latched while the
+                            # recorded-frame clock accumulates performance
+                            # samples. Do not acknowledge/re-submit HOLD: doing
+                            # so would turn small tracking sag into a new target
+                            # once per second and create artificial drift.
+                            coverage_dwell = True
+                        else:
+                            term.acknowledge_result()
                     else:
                         evaluator.snapshot("hard_failure")
                         exit_code = 2
                         break
-                    current_action = None
-                    steps_on_action = 0
-                if bool(terminated[0] or truncated[0]) and session.busy:
+                    if not coverage_dwell:
+                        current_action = None
+                        steps_on_action = 0
+                if coverage_dwell and len(evaluator.timings_s) >= args_cli.minimum_coverage_samples:
+                    break
+                if bool(terminated[0] or truncated[0]) and (session.busy or coverage_dwell):
                     print("P0_ERROR environment terminated before device acknowledgement", flush=True)
                     exit_code = 3
                     break
-                if steps_on_action >= args_cli.max_steps_per_action:
+                if not coverage_dwell and steps_on_action >= args_cli.max_steps_per_action:
                     print("P0_ERROR action exceeded max_steps_per_action", flush=True)
                     exit_code = 4
                     break
