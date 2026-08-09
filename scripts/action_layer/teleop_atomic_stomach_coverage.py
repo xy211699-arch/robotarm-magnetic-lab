@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 import sys
 import time
+from collections import Counter
 from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
@@ -46,11 +48,34 @@ parser.add_argument(
 parser.add_argument("--minimum_coverage_samples", type=int, default=0)
 parser.add_argument("--max_steps_per_action", type=int, default=240)
 parser.add_argument("--max_idle_updates", type=int, default=0)
+parser.add_argument(
+    "--target_coverage_percent",
+    type=float,
+    default=0.0,
+    help="Automatically submit boundary-safe actions until this coverage percentage is reached.",
+)
+parser.add_argument(
+    "--max_action_calls",
+    type=int,
+    default=500,
+    help="Safety budget for --target_coverage_percent mode.",
+)
+parser.add_argument(
+    "--auto_action_cycle",
+    default="3,3,1,7,4,4,2,8,5,6,9,10",
+    help="Comma-separated action priority cycle used by automatic coverage validation.",
+)
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(visualizer=[] if HEADLESS else ["kit"])
 args_cli = parser.parse_args()
 if args_cli.num_envs != 1:
     parser.error("P0 stomach teleoperation supports exactly --num_envs 1")
+if args_cli.scripted_actions and args_cli.target_coverage_percent > 0.0:
+    parser.error("--scripted_actions and --target_coverage_percent are mutually exclusive")
+if not 0.0 <= args_cli.target_coverage_percent <= 100.0:
+    parser.error("--target_coverage_percent must be in [0, 100]")
+if args_cli.max_action_calls <= 0:
+    parser.error("--max_action_calls must be positive")
 args_cli.enable_cameras = True
 
 launcher = AppLauncher(args_cli)
@@ -158,12 +183,27 @@ def main() -> int:
         use_fabric=not getattr(args_cli, "disable_fabric", False),
     )
     env_cfg.seed = args_cli.seed
+    if args_cli.target_coverage_percent > 0.0:
+        # The executor itself latches a safe target on HARD_FAILURE. Disable
+        # manager auto-reset for this validation mode only, so the outer loop
+        # can persist the exact failure code before exiting. Physical collision
+        # and timeout termination terms remain active.
+        env_cfg.terminations.atomic_hard_failure = None
     session_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%fZ")
     output_directory = args_cli.output_directory / session_id
     keyboard_source = None
     evaluator = None
     env = None
     exit_code = 1
+    run_started_wall = time.monotonic()
+    termination_reason = "initialization_failed"
+    action_attempts = 0
+    action_calls = 0
+    action_successes = 0
+    action_failures = 0
+    action_rejections = 0
+    action_histogram: Counter[int] = Counter()
+    failure_codes: Counter[str] = Counter()
     with launch_simulation(env_cfg, args_cli):
         try:
             env = gym.make(args_cli.task, cfg=env_cfg)
@@ -184,9 +224,18 @@ def main() -> int:
                 for item in args_cli.scripted_actions.split(",")
                 if item.strip()
             )
+            auto_mode = args_cli.target_coverage_percent > 0.0
+            auto_cycle = [
+                int(item.strip())
+                for item in args_cli.auto_action_cycle.split(",")
+                if item.strip()
+            ]
+            if auto_mode and (not auto_cycle or any(value < 0 or value > 10 for value in auto_cycle)):
+                raise ValueError("--auto_action_cycle must contain action IDs in [0, 10]")
+            auto_cycle_index = 0
             submitted_scripted = []
             results = []
-            if not args_cli.scripted_actions:
+            if not args_cli.scripted_actions and not auto_mode:
                 keyboard_source = KitKeyboardSource()
                 print(
                     "P0_TELEOP_READY W/S tilt, D/A azimuth, E/Q roll, C/Z turn, "
@@ -199,6 +248,7 @@ def main() -> int:
             idle_updates = 0
             exit_requested = False
             display_last_wall = 0.0
+            termination_reason = "simulation_stopped"
             while simulation_app.is_running() and not exit_requested:
                 # Engineering display is wall-clock throttled to 30 Hz and only
                 # consumes the last completed 1 Hz mask.
@@ -215,8 +265,32 @@ def main() -> int:
                     next_action = scripted.popleft()
                     pending.append(_scripted_command(next_action))
                     submitted_scripted.append(next_action)
+                if current_action is None and auto_mode:
+                    achieved_percent = 100.0 * float(evaluator.accumulator.mask.mean())
+                    if achieved_percent >= args_cli.target_coverage_percent:
+                        termination_reason = "target_coverage_reached"
+                        break
+                    if action_calls >= args_cli.max_action_calls:
+                        termination_reason = "max_action_calls_reached"
+                        break
+                    action_mask = np.asarray(term.action_mask(), dtype=np.bool_).reshape(-1)
+                    selected = None
+                    # Skip actions masked by the deployment boundary. This is
+                    # an evaluator-side validation scheduler, not a safety bypass.
+                    for _ in range(len(auto_cycle)):
+                        candidate = auto_cycle[auto_cycle_index % len(auto_cycle)]
+                        auto_cycle_index += 1
+                        if candidate < len(action_mask) and bool(action_mask[candidate]):
+                            selected = candidate
+                            break
+                    if selected is None:
+                        termination_reason = "all_cycle_actions_masked"
+                        break
+                    pending.append(_scripted_command(selected))
 
                 for command in pending:
+                    if auto_mode and command.kind is CommandKind.ACTION:
+                        action_attempts += 1
                     accepted, requested_exit = _handle_command(
                         command, session, term, evaluator, env
                     )
@@ -224,6 +298,11 @@ def main() -> int:
                     if accepted is not None:
                         current_action = accepted
                         steps_on_action = 0
+                        if auto_mode:
+                            action_calls += 1
+                            action_histogram[int(accepted)] += 1
+                    elif auto_mode and command.kind is CommandKind.ACTION:
+                        action_rejections += 1
 
                 if current_action is None:
                     if args_cli.scripted_actions:
@@ -243,8 +322,28 @@ def main() -> int:
                     dtype=torch.float32,
                 )
                 _, _, terminated, truncated, _ = env.step(command_tensor)
-                evaluator.maybe_update()
                 steps_on_action += 1
+                if bool(terminated[0] or truncated[0]):
+                    active_terminations = [
+                        name
+                        for name, values in env.unwrapped.termination_manager.get_active_iterable_terms(0)
+                        if bool(values[0])
+                    ]
+                    if auto_mode:
+                        action_failures += 1
+                        for name in active_terminations or ["unknown_environment_termination"]:
+                            failure_codes[name] += 1
+                    termination_reason = "environment_terminated:" + (
+                        ",".join(active_terminations) if active_terminations else "unknown"
+                    )
+                    print(
+                        "P0_ERROR environment terminated terms="
+                        f"{active_terminations or ['unknown']}",
+                        flush=True,
+                    )
+                    exit_code = 3
+                    break
+                evaluator.maybe_update()
                 result = term.last_result
                 if result is not None and session.busy:
                     completion = session.acknowledge(result.status.value, evaluator.sim_time_s)
@@ -259,6 +358,8 @@ def main() -> int:
                         flush=True,
                     )
                     if result.status.value == "DONE":
+                        if auto_mode:
+                            action_successes += 1
                         scripted_complete = bool(args_cli.scripted_actions) and not scripted and len(
                             results
                         ) >= len(
@@ -274,6 +375,13 @@ def main() -> int:
                         else:
                             term.acknowledge_result()
                     else:
+                        if auto_mode:
+                            action_failures += 1
+                            failure_code = getattr(
+                                result.hard_failure_code, "value", result.hard_failure_code
+                            )
+                            failure_codes[str(failure_code)] += 1
+                            termination_reason = "hard_failure"
                         evaluator.snapshot("hard_failure")
                         exit_code = 2
                         break
@@ -282,11 +390,8 @@ def main() -> int:
                         steps_on_action = 0
                 if coverage_dwell and len(evaluator.timings_s) >= args_cli.minimum_coverage_samples:
                     break
-                if bool(terminated[0] or truncated[0]) and (session.busy or coverage_dwell):
-                    print("P0_ERROR environment terminated before device acknowledgement", flush=True)
-                    exit_code = 3
-                    break
                 if not coverage_dwell and steps_on_action >= args_cli.max_steps_per_action:
+                    termination_reason = "action_step_budget_exceeded"
                     print("P0_ERROR action exceeded max_steps_per_action", flush=True)
                     exit_code = 4
                     break
@@ -294,7 +399,21 @@ def main() -> int:
                 exit_requested = True
 
             if exit_code not in (2, 3, 4):
-                if args_cli.scripted_actions:
+                if auto_mode:
+                    target_reached = (
+                        100.0 * float(evaluator.accumulator.mask.mean())
+                        >= args_cli.target_coverage_percent
+                    )
+                    exit_code = 0 if target_reached else 6
+                    print(
+                        "P0_TARGET_RUN "
+                        f"target_percent={args_cli.target_coverage_percent:.3f} "
+                        f"achieved_percent={100.0 * float(evaluator.accumulator.mask.mean()):.3f} "
+                        f"calls={action_calls} successes={action_successes} "
+                        f"failures={action_failures} status={'PASS' if target_reached else 'FAIL'}",
+                        flush=True,
+                    )
+                elif args_cli.scripted_actions:
                     expected = [int(value) for value in args_cli.scripted_actions.split(",") if value]
                     all_done = len(results) >= len(expected) and all(
                         item["status"] == "DONE" for item in results[: len(expected)]
@@ -309,11 +428,42 @@ def main() -> int:
                         flush=True,
                     )
                 else:
+                    termination_reason = "interactive_exit"
                     exit_code = 0
         finally:
             if keyboard_source is not None:
                 keyboard_source.close()
             if evaluator is not None:
+                if args_cli.target_coverage_percent > 0.0:
+                    achieved_fraction = float(evaluator.accumulator.mask.mean())
+                    report = {
+                        "schema": "robotarm_magnetic_coverage_target_run",
+                        "version": "1.0.0",
+                        "target_coverage_fraction": args_cli.target_coverage_percent / 100.0,
+                        "achieved_coverage_fraction": achieved_fraction,
+                        "target_reached": achieved_fraction * 100.0 >= args_cli.target_coverage_percent,
+                        "termination_reason": termination_reason,
+                        "wall_time_s": time.monotonic() - run_started_wall,
+                        "simulation_time_s": evaluator.total_sim_time_s,
+                        "action_request_attempts": action_attempts,
+                        "action_calls_accepted": action_calls,
+                        "action_successes": action_successes,
+                        "action_failures": action_failures,
+                        "action_rejections": action_rejections,
+                        "action_histogram": {
+                            str(key): value for key, value in sorted(action_histogram.items())
+                        },
+                        "failure_codes": dict(sorted(failure_codes.items())),
+                        "max_action_calls": args_cli.max_action_calls,
+                        "auto_action_cycle": [
+                            int(item.strip())
+                            for item in args_cli.auto_action_cycle.split(",")
+                            if item.strip()
+                        ],
+                    }
+                    (evaluator.partial_directory / "coverage_target_run.json").write_text(
+                        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+                    )
                 final_directory = evaluator.finalize("exit")
                 print(f"P0_OUTPUT {final_directory}", flush=True)
             if env is not None:

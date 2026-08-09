@@ -21,6 +21,13 @@ def test_recorded_frame_clock_emits_once_per_unique_timestamp():
     assert clock.observe(0.0) == 0
 
 
+def test_recorded_frame_clock_rejects_an_unannounced_sensor_reset():
+    clock = RecordedFrameClock(update_period_s=1.0)
+    assert clock.observe(3.0) == 3
+    with np.testing.assert_raises(ValueError):
+        clock.observe(0.0)
+
+
 def test_mask_color_record_export_consistency():
     mask = np.asarray([False, True, True, False, True])
     summary = assert_coverage_consistency(

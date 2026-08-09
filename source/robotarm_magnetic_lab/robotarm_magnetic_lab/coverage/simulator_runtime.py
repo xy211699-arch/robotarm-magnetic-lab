@@ -148,6 +148,11 @@ class P0CoverageRuntime:
     def sim_time_s(self) -> float:
         return float(self.env.episode_length_buf[0].item()) * float(self.env.step_dt)
 
+    @property
+    def total_sim_time_s(self) -> float:
+        """Monotonic simulation time across any manager-driven episode reset."""
+        return float(self.env.common_step_counter) * float(self.env.step_dt)
+
     def capsule_position(self) -> np.ndarray:
         return self.capsule.data.root_pos_w.torch[0].detach().cpu().numpy().astype(np.float64)
 

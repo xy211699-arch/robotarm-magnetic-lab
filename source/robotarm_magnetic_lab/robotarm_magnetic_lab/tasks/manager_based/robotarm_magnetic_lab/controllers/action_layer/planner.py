@@ -58,6 +58,14 @@ class AtomicCommandPlanner:
         arm_count = self.cfg.arm_joint_count
         current_q = np.asarray(snapshot.joint_position_rad, dtype=np.float64)
         target_q = current_q.copy()
+        # Preserve the last accepted command instead of converting gravity or
+        # tracking sag into a new target at every action boundary. Ball-only
+        # actions must continue holding all six arm joints; translational arm
+        # actions update this command explicitly below.
+        target_q[:arm_count] = target.arm_joint_target_rad
+        target_q[arm_count : arm_count + self.cfg.ball_joint_count] = (
+            target.ball_joint_target_rad
+        )
 
         if action in (AtomicAction.TILT_POS, AtomicAction.TILT_NEG):
             sign = 1.0 if action is AtomicAction.TILT_POS else -1.0

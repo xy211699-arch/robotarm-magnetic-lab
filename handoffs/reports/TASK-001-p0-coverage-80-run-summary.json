@@ -1,0 +1,34 @@
+{
+  "schema": "robotarm_magnetic_coverage_campaign",
+  "version": "1.0.0",
+  "date": "2026-08-09",
+  "requested_target_coverage_fraction": 0.8,
+  "target_reached": false,
+  "highest_coverage_fraction": 0.13506461739165884,
+  "validated_runs": {
+    "count": 5,
+    "wall_time_s": 387.1907126130063,
+    "simulation_time_s": 119.05000000000001,
+    "action_calls_accepted": 116,
+    "action_successes": 114,
+    "action_failures": 2,
+    "action_rejections": 0
+  },
+  "all_engineering_runs": {
+    "count": 9,
+    "wall_time_s": 484.436,
+    "action_calls_accepted": 144,
+    "action_successes": 138,
+    "action_failures_classified": 5,
+    "incomplete_calls_from_pre_fix_exception": 1
+  },
+  "blocking_conditions": [
+    "coverage plateau with millimeter-scale capsule translation",
+    "ENVIRONMENT_COLLISION at the 5 mm robot/ASM-to-stomach safety buffer during unsafe cumulative orientation",
+    "PLANNING_FAILED near the field-inverse singular region",
+    "EXECUTION_TIMEOUT near the end of a long unidirectional arm translation"
+  ],
+  "best_run_directory": "/tmp/robotarm-task001/logs/coverage_target_runs/20260809_110521_577845Z",
+  "latest_safe_run_directory": "/tmp/robotarm-task001/logs/coverage_target_runs/20260809_110740_376136Z",
+  "post_fix_regression_directory": "/tmp/robotarm-task001/logs/post_fix_all_actions/20260809_111008_392218Z"
+}

@@ -100,3 +100,17 @@ def test_tilt_command_updates_by_fixed_increment():
         plan.final_command_state.theta_rad,
         engine.command_state.theta_rad + CFG.tilt_increment_rad,
     )
+
+
+def test_ball_action_holds_last_arm_command_instead_of_latching_sag():
+    engine = executor()
+    commanded_arm = np.array([0.10, -0.20, 0.30, -0.10, 0.20, -0.30])
+    engine.command_state.arm_joint_target_rad = commanded_arm.copy()
+    sagged = np.concatenate((commanded_arm + 0.01, np.zeros(3)))
+    plan = engine.planner.plan(
+        action_layer.ActionRequest(1, action_layer.AtomicAction.AZIMUTH_POS, 0.0),
+        snapshot(sagged),
+        engine.command_state,
+    )
+    np.testing.assert_allclose(plan.joint_targets_rad[-1, :6], commanded_arm)
+    np.testing.assert_allclose(plan.final_command_state.arm_joint_target_rad, commanded_arm)
