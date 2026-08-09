@@ -8,6 +8,12 @@ from .capsule_camera_view import (
     configure_capsule_camera_view,
     configure_capsule_pose_view,
 )
+from .coverage_view import (
+    KitCoveragePointCloudView,
+    ProjectionConfig,
+    coverage_colors,
+    export_coverage_projection,
+)
 
 __all__ = [
     "CapsuleCameraViewHandle",
@@ -16,4 +22,8 @@ __all__ = [
     "attach_capsule_pose_view",
     "configure_capsule_camera_view",
     "configure_capsule_pose_view",
+    "KitCoveragePointCloudView",
+    "ProjectionConfig",
+    "coverage_colors",
+    "export_coverage_projection",
 ]
