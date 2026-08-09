@@ -18,7 +18,7 @@ authoritative delivery commit. Nothing was merged.
 - Added CUDA-batched first-hit visibility: 50 mm range, circular 120-degree full FOV,
   incident-triangle membership, 0.1 mm hit tolerance, one update per unique 1 Hz frame.
 - Added cumulative/resettable state, append-only records, deterministic 2D exports, isolated
-  guide-purpose 3D point cloud, and exact mask/record/color/export consistency checks.
+  USD-context 3D point cloud, and exact mask/record/color/export consistency checks.
 - Registered a one-environment scalar-action stomach task. Deployable observations remain joint
   position, joint velocity, and external-magnet pose; evaluator truth is isolated.
 - Added the frozen keyboard protocol and common non-queuing session controller for interactive and
@@ -37,7 +37,7 @@ authoritative delivery commit. Nothing was merged.
 | Stomach integration | `./run_isaaclab.sh -p scripts/action_layer/validate_atomic_stomach_teleop.py --num_envs 1 --coverage_samples 5` | 11/11 `DONE`; 12 unique frames; PASS |
 | Existing table acceptance | `./run_isaaclab.sh -p scripts/action_layer/validate_atomic_table.py --num_envs 1 --max_steps_per_action 60 --viz kit` | 11 terminal, 11 `DONE`, exit 0 |
 | Legacy 9D smoke | `./run_isaaclab.sh -p scripts/zero_agent.py --task Template-Robotarm-Magnetic-Table-Lab-v0 --num_envs 1 --max_steps 5 --viz kit` | shape `(1,9)`; 5 steps; exit 0 |
-| Rendered smoke | `./run_isaaclab.sh -p scripts/action_layer/teleop_atomic_stomach_coverage.py --task Template-Robotarm-Magnetic-Atomic-Stomach-Teleop-Lab-v0 --num_envs 1 --viz kit --max_idle_updates 2` | main and coverage view created; evidence finalized; exit 0 |
+| Rendered smoke | `./run_isaaclab.sh -p scripts/action_layer/teleop_atomic_stomach_coverage.py --task Template-Robotarm-Magnetic-Atomic-Stomach-Teleop-Lab-v0 --num_envs 1 --viz kit --max_idle_updates 2` | main and isolated coverage view created; evidence finalized; exit 0 |
 | Performance | `./run_isaaclab.sh -p scripts/action_layer/validate_atomic_stomach_teleop.py --num_envs 1 --coverage_samples 100` | 11/11 `DONE`; 100 unique frames; PASS |
 | Hygiene | `git diff --check` | no errors |
 
@@ -55,6 +55,20 @@ drift. The corrected validator submits no extra action: after the eleven actions
 executor target latched and advances only physics and unique recorded frames. This changes neither
 the executor nor action semantics. The diagnostic evidence is retained.
 
+## Post-delivery live-view correction
+
+Manual review found that the original coverage points shared the simulation stage with the stomach
+surface. They were coplanar with the rendered wall and could be hidden by depth testing even though
+the mask and exported images were correct. Commit `1423fcd` moves only the engineering point cloud,
+capsule marker, trajectory, and camera into a separate USD context, increases point diameter, and
+adds a live `Coverage: percent (covered / total)` HUD. Each 1 Hz update also prints
+`P0_COVERAGE frame=... covered=... percent=... new=...`.
+
+The correction does not alter the mesh denominator, visibility rays, cumulative mask, physics,
+actions, safety, or deployable observations. Targeted tests passed `24/24`; GPU stomach integration
+again passed all eleven actions with 12 unique coverage frames, ending at `5.569%`; and the corrected
+GUI startup/exit smoke returned zero without the previous viewport-menu cleanup exception.
+
 ## Deviations and notes
 
 - An isolated worktree `/tmp/robotarm-task001` preserved the original checkout. The launcher
@@ -63,9 +77,9 @@ the executor nor action semantics. The diagnostic evidence is retained.
   required public flag to `HEADLESS=1` before `AppLauncher` parsing.
 - `pytest==8.3.5` was installed in Isaac Sim's user Python environment; no repository dependency or
   simulator source was changed.
-- The rendered smoke produced a non-fatal Kit viewport-menu cleanup warning during immediate
-  teardown. Evidence finalized and exit code was zero. Existing UJITSO/cooking, Fabric VtValue,
-  CPU powersave warnings were also non-blocking.
+- The first isolated-view smoke exposed Kit 110.1's asynchronous viewport teardown ordering. The
+  corrected view retains hidden Hydra resources until `SimulationApp` shutdown; the repeated smoke
+  exited cleanly. Existing UJITSO/cooking, Fabric VtValue, CPU powersave warnings remain non-blocking.
 - Human subjective inspection of a long keyboard session remains for Windows/user review. P0 has
   no required final coverage threshold and makes no complete-coverage claim.
 
