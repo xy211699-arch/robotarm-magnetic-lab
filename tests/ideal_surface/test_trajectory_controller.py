@@ -1,0 +1,166 @@
+from __future__ import annotations
+
+import math
+from dataclasses import replace
+
+import numpy as np
+import pytest
+
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.ideal_surface import (
+    ContactAssessment,
+    ControllerSnapshot,
+    IdealActionStatus,
+    IdealSurfaceAction,
+    IdealSurfaceConfig,
+    IdealSurfaceController,
+    SurfaceFlags,
+    SurfaceNavigationMesh,
+    quintic,
+)
+
+
+class _Plane:
+    vertices_world = np.asarray([[-2, -2, 0], [2, -2, 0], [2, 2, 0], [-2, 2, 0]], float)
+    triangles = np.asarray([[0, 1, 2], [0, 2, 3]], int)
+
+
+def snapshot(theta_deg=0.0, phi_deg=0.0, side_contact=False):
+    theta, phi = math.radians(theta_deg), math.radians(phi_deg)
+    # phi=0 follows projected camera image-up (+Y); positive phi follows e2=-X.
+    direction = np.asarray([-math.sin(phi), math.cos(phi), 0.0])
+    axis = math.sin(theta) * direction + np.asarray([0.0, 0.0, math.cos(theta)])
+    image_up = math.cos(theta) * direction - np.asarray([0.0, 0.0, math.sin(theta)])
+    cfg = IdealSurfaceConfig()
+    height = cfg.capsule_radius_m + cfg.capsule_cylinder_half_length_m * abs(axis[2])
+    from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.ideal_surface import (
+        orientation_from_axis_and_image_up,
+        quaternion_wxyz_to_matrix,
+    )
+    quaternion = orientation_from_axis_and_image_up(axis, image_up)
+    realized_image_up = quaternion_wxyz_to_matrix(quaternion)[:, 1]
+    return ControllerSnapshot(
+        sim_time_s=0.0,
+        position_world=np.asarray([0.0, 0.0, height]),
+        quaternion_for_sim=quaternion,
+        axis_world=axis,
+        image_up_world=realized_image_up,
+        surface_point_world=np.zeros(3),
+        surface_normal_world=np.asarray([0, 0, 1]),
+        surface_triangle_id=0,
+        theta_rad=theta,
+        phi_rad=phi,
+        flags=SurfaceFlags(upright=theta_deg <= 5.0, side_contact=side_contact),
+    )
+
+
+def controller(initial=None, assessor=None):
+    value = IdealSurfaceController(
+        SurfaceNavigationMesh.from_reference(_Plane(), inward_sign=1),
+        cfg=IdealSurfaceConfig(),
+        pose_assessor=assessor,
+    )
+    value.reset(initial or snapshot())
+    return value
+
+
+def run_to_done(value):
+    output = None
+    for _ in range(240):
+        output = value.step(1 / 240)
+    assert output is not None and output.result is not None
+    return output.result
+
+
+@pytest.mark.parametrize("tau, expected", [(0.0, 0.0), (0.5, 0.5), (1.0, 1.0)])
+def test_quintic_endpoints(tau, expected):
+    assert quintic(tau) == pytest.approx(expected)
+
+
+def test_start_tilt_maps_each_id_to_one_unique_axis():
+    value = controller()
+    outputs = []
+    for action_id in range(1, 9):
+        value.reset(snapshot())
+        assert value.submit(action_id, value.snapshot, request_id=action_id)
+        outputs.append(run_to_done(value).final_axis_world)
+    assert len({tuple(np.round(axis, 8)) for axis in outputs}) == 8
+
+
+def test_precession_keeps_tilt_and_changes_azimuth_by_fifteen_degrees():
+    value = controller(snapshot(theta_deg=45, phi_deg=0))
+    value.submit(IdealSurfaceAction.PRECESS_POS, value.snapshot, 1)
+    result = run_to_done(value)
+    assert result.final_tilt_rad == pytest.approx(math.radians(45), abs=math.radians(0.2))
+    assert result.final_azimuth_rad == pytest.approx(math.radians(15), abs=math.radians(0.2))
+
+
+def test_contact_limited_motion_holds_until_one_second_boundary():
+    calls = 0
+
+    def block_after(pose, active_triangle, cfg):
+        nonlocal calls
+        calls += 1
+        blocked = calls >= 145
+        return ContactAssessment(
+            support_valid=True, side_contact=False, contact_limited=blocked,
+            boundary_limited=False, hard_failure=False,
+            maximum_penetration_m=0.0001 if blocked else 0.0,
+            support_point_world=np.zeros(3), support_normal_world=np.asarray([0, 0, 1]),
+            active_triangle=active_triangle, barrel_clearances_m=np.ones(2),
+            barrel_axial_parameters=np.asarray([-1.0, 1.0]),
+        )
+
+    value = controller(snapshot(theta_deg=15), assessor=block_after)
+    value.submit(IdealSurfaceAction.TILT_MORE, value.snapshot, 4)
+    outputs = [value.step(1 / 240) for _ in range(240)]
+    assert outputs[-1].result.status is IdealActionStatus.DONE
+    assert outputs[-1].result.contact_limited
+    assert outputs[-1].result.duration_s == pytest.approx(1.0)
+    np.testing.assert_allclose(outputs[150].position_world, outputs[-1].position_world)
+
+
+def test_positive_roll_obeys_right_hand_no_slip_sign():
+    before = snapshot(theta_deg=90, phi_deg=0, side_contact=True)
+    value = controller(before)
+    value.submit(IdealSurfaceAction.ROLL_POS, before, 9)
+    result = run_to_done(value)
+    expected = -0.004 * np.cross(before.surface_normal_world, before.axis_tangent_world)
+    np.testing.assert_allclose(result.final_position_world - before.position_world, expected, atol=1e-4)
+
+
+def test_invalid_masked_action_is_one_second_no_effect():
+    value = controller(snapshot())
+    assert value.submit(IdealSurfaceAction.ROLL_POS, value.snapshot, 20)
+    result = run_to_done(value)
+    assert result.no_effect
+    np.testing.assert_allclose(result.final_position_world, snapshot().position_world)
+
+
+def test_request_ids_are_deduplicated_and_result_requires_acknowledgement():
+    value = controller()
+    assert value.submit(IdealSurfaceAction.HOLD, value.snapshot, 5)
+    run_to_done(value)
+    assert not value.ready
+    assert not value.submit(IdealSurfaceAction.HOLD, value.snapshot, 6)
+    value.acknowledge_result()
+    assert value.ready
+    assert not value.submit(IdealSurfaceAction.HOLD, value.snapshot, 5)
+
+
+def test_hard_failure_enters_terminal_fault_and_reset_recovers():
+    def fail(pose, active_triangle, cfg):
+        return ContactAssessment(
+            support_valid=False, side_contact=False, contact_limited=True,
+            boundary_limited=False, hard_failure=True, maximum_penetration_m=0.01,
+            support_point_world=np.zeros(3), support_normal_world=np.asarray([0, 0, 1]),
+            active_triangle=active_triangle, barrel_clearances_m=-np.ones(2),
+            barrel_axial_parameters=np.asarray([-1.0, 1.0]),
+        )
+
+    value = controller(snapshot(theta_deg=15), assessor=fail)
+    value.submit(IdealSurfaceAction.TILT_MORE, value.snapshot, 1)
+    output = value.step(1 / 240)
+    assert output.result.status is IdealActionStatus.HARD_FAILURE
+    assert not value.ready
+    value.reset(snapshot())
+    assert value.ready

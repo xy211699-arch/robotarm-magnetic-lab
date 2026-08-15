@@ -24,6 +24,8 @@ from .geometry import (
     rotation_matrix,
 )
 from .surface_mesh import SurfaceHit, SurfaceLostError, SurfaceNavigationMesh
+from .controller import ControllerOutput, IdealSurfaceController
+from .trajectory import ActionTarget, TrajectoryEvaluation, evaluate_trajectory, target_for_action
 from .types import (
     ControllerSnapshot,
     ControllerState,
@@ -36,6 +38,7 @@ from .types import (
 
 __all__ = [
     "ControllerSnapshot",
+    "ControllerOutput",
     "ControllerState",
     "ActiveAnchor",
     "CapsulePose",
@@ -46,6 +49,7 @@ __all__ = [
     "IdealActionStatus",
     "IdealSurfaceAction",
     "IdealSurfaceConfig",
+    "IdealSurfaceController",
     "LocalFrame",
     "Spherocylinder",
     "START_TILT_ACTIONS",
@@ -53,10 +57,13 @@ __all__ = [
     "SurfaceFlags",
     "SurfaceLostError",
     "SurfaceNavigationMesh",
+    "ActionTarget",
+    "TrajectoryEvaluation",
     "SweptTargetAssessment",
     "assess_pose",
     "assess_swept_target",
     "compute_action_mask",
+    "evaluate_trajectory",
     "normalized",
     "orientation_from_axis_and_image_up",
     "quaternion_wxyz_from_matrix",
@@ -64,4 +71,5 @@ __all__ = [
     "quintic",
     "rotation_matrix",
     "select_active_anchor",
+    "target_for_action",
 ]

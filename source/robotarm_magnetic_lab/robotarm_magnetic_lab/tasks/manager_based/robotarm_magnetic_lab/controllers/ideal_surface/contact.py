@@ -192,10 +192,14 @@ class ContactClassifier:
     def __init__(self, cfg: IdealSurfaceConfig, capsule: Spherocylinder) -> None:
         self.cfg = cfg
         self.capsule = capsule
-        self._stable_time_s = 0.0
+        self._valid_time_s = 0.0
+        self._invalid_time_s = 0.0
+        self._side_contact = False
 
     def reset(self) -> None:
-        self._stable_time_s = 0.0
+        self._valid_time_s = 0.0
+        self._invalid_time_s = 0.0
+        self._side_contact = False
 
     def observe(
         self,
@@ -216,10 +220,16 @@ class ContactClassifier:
             span = float(np.max(parameters[valid]) - np.min(parameters[valid]))
             separated = span >= self.cfg.side_contact_separation_fraction
         if separated:
-            self._stable_time_s += float(dt)
+            self._valid_time_s += float(dt)
+            self._invalid_time_s = 0.0
+            if self._valid_time_s + 1.0e-12 >= self.cfg.logical_stability_s:
+                self._side_contact = True
         else:
-            self._stable_time_s = 0.0
+            self._valid_time_s = 0.0
+            self._invalid_time_s += float(dt)
+            if self._invalid_time_s + 1.0e-12 >= self.cfg.logical_stability_s:
+                self._side_contact = False
         return ContactClassifierResult(
-            side_contact=bool(self._stable_time_s + 1.0e-12 >= self.cfg.logical_stability_s),
-            stable_time_s=float(self._stable_time_s),
+            side_contact=bool(self._side_contact),
+            stable_time_s=float(self._valid_time_s if separated else self._invalid_time_s),
         )

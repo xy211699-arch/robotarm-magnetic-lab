@@ -62,15 +62,20 @@ def test_two_separated_barrel_samples_create_stable_side_contact():
     assert result is not None and result.side_contact
 
 
-def test_side_contact_stability_resets_when_separation_or_clearance_is_invalid():
+def test_side_contact_exit_requires_full_invalid_stability_window():
     detector = ContactClassifier(IdealSurfaceConfig(), capsule())
-    for _ in range(23):
+    for _ in range(24):
         detector.observe(
             pose([1, 0, 0], 0.005), np.array([0.0, 0.0]), np.array([-0.5, 0.5]), 1 / 240
         )
     result = detector.observe(
         pose([1, 0, 0], 0.005), np.array([0.0, 0.001]), np.array([-0.05, 0.05]), 1 / 240
     )
+    assert result.side_contact
+    for _ in range(23):
+        result = detector.observe(
+            pose([1, 0, 0], 0.005), np.array([0.0, 0.001]), np.array([-0.05, 0.05]), 1 / 240
+        )
     assert not result.side_contact
 
 
