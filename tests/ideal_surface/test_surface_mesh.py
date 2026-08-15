@@ -55,6 +55,13 @@ def test_local_search_never_jumps_to_disconnected_nearby_sheet():
     assert hit.point_world[2] == pytest.approx(0.0)
 
 
+def test_exact_closest_hit_uses_distance_then_triangle_id_tie_break():
+    mesh = unit_square_mesh()
+    hit = mesh.closest_hit(np.asarray([0.5, 0.5, 0.25]))
+    assert hit.triangle_id == 0
+    np.testing.assert_allclose(hit.point_world, [0.5, 0.5, 0.0])
+
+
 def test_open_edge_is_reported_as_boundary_not_surface_loss():
     mesh = unit_square_mesh()
     hit = mesh.advance(

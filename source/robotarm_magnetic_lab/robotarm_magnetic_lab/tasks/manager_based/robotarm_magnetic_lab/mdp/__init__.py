@@ -24,3 +24,8 @@ from .atomic_action import (  # noqa: F401
     external_magnet_state,
 )
 from .vision import capsule_depth, capsule_rgb  # noqa: F401
+from .ideal_surface_action import (  # noqa: F401
+    IdealSurfaceActionTerm,
+    IdealSurfaceActionTermCfg,
+    ideal_surface_hard_failure,
+)

@@ -150,6 +150,27 @@ class SurfaceNavigationMesh:
         ranked.sort(key=lambda item: item[:3])
         return ranked
 
+    def closest_hit(self, point_world: np.ndarray, component_id: int | None = None) -> SurfaceHit:
+        """Return the exact deterministic closest point, optionally on one component."""
+        if component_id is None:
+            candidates = range(len(self.triangles))
+        else:
+            candidates = np.flatnonzero(self.component_ids == int(component_id))
+        ranked = self.rank_projected_candidates(
+            np.asarray(point_world, dtype=np.float64).reshape(3), candidates
+        )
+        if not ranked:
+            raise SurfaceLostError("surface has no eligible triangle")
+        _, triangle_id, _, point, barycentric = ranked[0]
+        return SurfaceHit(
+            point_world=np.asarray(point, dtype=np.float64),
+            normal_world=normalized(self.normals[triangle_id], name="surface normal"),
+            triangle_id=int(triangle_id),
+            component_id=int(self.component_ids[triangle_id]),
+            barycentric=np.asarray(barycentric, dtype=np.float64),
+            boundary_limited=False,
+        )
+
     def advance(
         self,
         triangle_id: int,
@@ -182,4 +203,3 @@ class SurfaceNavigationMesh:
 
 def math_sqrt(value: float) -> float:
     return float(np.sqrt(max(0.0, float(value))))
-
