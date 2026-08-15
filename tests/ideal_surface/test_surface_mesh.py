@@ -6,6 +6,13 @@ from dataclasses import dataclass
 import numpy as np
 import pytest
 
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.ideal_surface.geometry import (
+    closest_point_on_triangle,
+)
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.ideal_surface.surface_mesh import (
+    _closest_points_on_triangles,
+)
+
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.ideal_surface import (
     LocalFrame,
     Spherocylinder,
@@ -88,6 +95,20 @@ def test_spatial_hash_candidates_equal_exhaustive_centroid_query():
         )
     )
     assert actual == exhaustive
+
+
+def test_vectorized_triangle_projection_matches_scalar_ericson_regions():
+    rng = np.random.default_rng(1907)
+    triangles = rng.normal(size=(128, 3, 3))
+    triangles[:, 2] += np.asarray([0.3, -0.2, 0.4])
+    point = np.asarray([0.2, -0.4, 0.7])
+    points, barycentric = _closest_points_on_triangles(point, triangles)
+    for index, triangle in enumerate(triangles):
+        expected_point, expected_barycentric = closest_point_on_triangle(point, triangle)
+        np.testing.assert_allclose(points[index], expected_point, atol=1.0e-12)
+        np.testing.assert_allclose(
+            barycentric[index], expected_barycentric, atol=1.0e-12
+        )
 
 
 def test_bent_strip_builds_adjacency_and_oriented_normals():

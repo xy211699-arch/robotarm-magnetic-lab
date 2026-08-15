@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .geometry import closest_point_on_triangle, normalized
+from .geometry import normalized
 
 
 class SurfaceLostError(RuntimeError):
@@ -69,6 +69,66 @@ def _components(adjacency: tuple[tuple[int, ...], ...]) -> np.ndarray:
                     queue.append(neighbor)
         component += 1
     return result
+
+
+def _closest_points_on_triangles(
+    point: np.ndarray, triangle_vertices: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Vectorized Ericson closest-point regions, equivalent to the scalar helper."""
+    point = np.asarray(point, dtype=np.float64).reshape(3)
+    triangles = np.asarray(triangle_vertices, dtype=np.float64).reshape(-1, 3, 3)
+    a, b, c = triangles[:, 0], triangles[:, 1], triangles[:, 2]
+    ab, ac = b - a, c - a
+    ap = point - a
+    d1 = np.einsum("ij,ij->i", ab, ap)
+    d2 = np.einsum("ij,ij->i", ac, ap)
+    bp = point - b
+    d3 = np.einsum("ij,ij->i", ab, bp)
+    d4 = np.einsum("ij,ij->i", ac, bp)
+    cp = point - c
+    d5 = np.einsum("ij,ij->i", ab, cp)
+    d6 = np.einsum("ij,ij->i", ac, cp)
+    vc = d1 * d4 - d3 * d2
+    vb = d5 * d2 - d1 * d6
+    va = d3 * d6 - d5 * d4
+    points = np.empty((len(triangles), 3), dtype=np.float64)
+    barycentric = np.empty_like(points)
+    assigned = np.zeros(len(triangles), dtype=np.bool_)
+
+    def select(mask: np.ndarray) -> np.ndarray:
+        selected = np.asarray(mask, dtype=np.bool_) & ~assigned
+        assigned[selected] = True
+        return selected
+
+    mask = select((d1 <= 0.0) & (d2 <= 0.0))
+    points[mask], barycentric[mask] = a[mask], (1.0, 0.0, 0.0)
+    mask = select((d3 >= 0.0) & (d4 <= d3))
+    points[mask], barycentric[mask] = b[mask], (0.0, 1.0, 0.0)
+    mask = select((vc <= 0.0) & (d1 >= 0.0) & (d3 <= 0.0))
+    values = d1[mask] / (d1[mask] - d3[mask])
+    points[mask] = a[mask] + values[:, None] * ab[mask]
+    barycentric[mask] = np.column_stack((1.0 - values, values, np.zeros(len(values))))
+    mask = select((d6 >= 0.0) & (d5 <= d6))
+    points[mask], barycentric[mask] = c[mask], (0.0, 0.0, 1.0)
+    mask = select((vb <= 0.0) & (d2 >= 0.0) & (d6 <= 0.0))
+    values = d2[mask] / (d2[mask] - d6[mask])
+    points[mask] = a[mask] + values[:, None] * ac[mask]
+    barycentric[mask] = np.column_stack((1.0 - values, np.zeros(len(values)), values))
+    mask = select((va <= 0.0) & ((d4 - d3) >= 0.0) & ((d5 - d6) >= 0.0))
+    values = (d4[mask] - d3[mask]) / (
+        (d4[mask] - d3[mask]) + (d5[mask] - d6[mask])
+    )
+    points[mask] = b[mask] + values[:, None] * (c[mask] - b[mask])
+    barycentric[mask] = np.column_stack((np.zeros(len(values)), 1.0 - values, values))
+    mask = ~assigned
+    denominator = 1.0 / (va[mask] + vb[mask] + vc[mask])
+    v_values = vb[mask] * denominator
+    w_values = vc[mask] * denominator
+    points[mask] = a[mask] + v_values[:, None] * ab[mask] + w_values[:, None] * ac[mask]
+    barycentric[mask] = np.column_stack(
+        (1.0 - v_values - w_values, v_values, w_values)
+    )
+    return points, barycentric
 
 
 class SurfaceNavigationMesh:
@@ -173,11 +233,16 @@ class SurfaceNavigationMesh:
         return False
 
     def rank_projected_candidates(self, target: np.ndarray, candidates) -> list[tuple]:
+        candidate_ids = np.asarray(tuple(candidates), dtype=np.int64)
+        if not len(candidate_ids):
+            return []
+        points, barycentrics = _closest_points_on_triangles(
+            target, self.vertices[self.triangles[candidate_ids]]
+        )
         ranked = []
-        for triangle_id in candidates:
-            point, barycentric = closest_point_on_triangle(
-                target, self.vertices[self.triangles[int(triangle_id)]]
-            )
+        for index, triangle_id in enumerate(candidate_ids):
+            point = points[index]
+            barycentric = barycentrics[index]
             distance_sq = float((point - target) @ (point - target))
             ranked.append(
                 (
