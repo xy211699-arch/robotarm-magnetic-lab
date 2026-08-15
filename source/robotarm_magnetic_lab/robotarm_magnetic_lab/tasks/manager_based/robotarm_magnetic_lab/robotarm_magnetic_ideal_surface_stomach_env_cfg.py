@@ -71,5 +71,8 @@ class RobotarmMagneticIdealSurfaceStomachTeleopLabEnvCfg(RobotarmMagneticStomach
         self.scene.num_envs = 1
         self.decimation = 240
         self.sim.dt = 1.0 / 240.0
+        # Exactly one render per 1 Hz Actor boundary is sufficient for the
+        # 1 Hz task camera and avoids 30 redundant 720p renders per action.
+        self.sim.render_interval = 240
         self.scene.capsule_camera.update_period = 1.0
         self.episode_length_s = 1800.0

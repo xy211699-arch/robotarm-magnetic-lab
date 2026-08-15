@@ -117,13 +117,16 @@ def assess_pose(
     active_triangle: int,
     cfg: IdealSurfaceConfig,
 ) -> ContactAssessment:
-    """Assess three longitudinal support rays against the local mesh component."""
+    """Assess deterministic longitudinal barrel samples against the local component."""
     active_triangle = int(active_triangle)
     base_normal = normalized(mesh.normals[active_triangle], name="active surface normal")
-    axial = np.asarray([-1.0, 0.0, 1.0], dtype=np.float64)
+    # Nine samples permit the required separated-barrel test on curved tissue;
+    # checking only both cylinder ends incorrectly rejects valid side contact.
+    axial_parameters = np.linspace(-0.5, 0.5, 9, dtype=np.float64)
+    axial_offsets = axial_parameters * capsule.cylinder_length_m
     samples = (
         pose.center_world[None, :]
-        + axial[:, None] * capsule.cylinder_half_length_m * pose.axis_world[None, :]
+        + axial_offsets[:, None] * pose.axis_world[None, :]
         - capsule.radius_m * base_normal[None, :]
     )
     recovery_radius = cfg.recovery_query_radius_scale * capsule.radius_m
@@ -139,11 +142,10 @@ def assess_pose(
     planned_limit = cfg.planned_penetration_radius_fraction * capsule.radius_m
     hard_limit = cfg.hard_penetration_radius_fraction * capsule.radius_m
     maximum_penetration = max(0.0, -float(np.min(clearances)))
-    barrel_contact = np.abs(clearances[[0, 2]]) <= clearance_limit
-    separation = capsule.cylinder_length_m
+    near = np.flatnonzero(np.abs(clearances) <= clearance_limit)
     side_contact = bool(
-        np.all(barrel_contact)
-        and separation >= cfg.side_contact_separation_fraction * capsule.cylinder_length_m
+        len(near) >= 2
+        and float(np.ptp(axial_parameters[near])) >= cfg.side_contact_separation_fraction
     )
     return ContactAssessment(
         support_valid=bool(float(np.min(np.abs(clearances))) <= clearance_limit),
@@ -155,8 +157,8 @@ def assess_pose(
         support_point_world=support_point.copy(),
         support_normal_world=support_normal,
         active_triangle=support_triangle,
-        barrel_clearances_m=clearances[[0, 2]].copy(),
-        barrel_axial_parameters=np.asarray([-1.0, 1.0]),
+        barrel_clearances_m=clearances.copy(),
+        barrel_axial_parameters=axial_parameters.copy(),
     )
 
 

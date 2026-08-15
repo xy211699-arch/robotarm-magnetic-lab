@@ -62,6 +62,19 @@ def test_two_separated_barrel_samples_create_stable_side_contact():
     assert result is not None and result.side_contact
 
 
+def test_curved_contact_can_use_separated_interior_barrel_samples():
+    detector = ContactClassifier(IdealSurfaceConfig(), capsule())
+    result = None
+    for _ in range(math.ceil(0.1 / (1 / 240))):
+        result = detector.observe(
+            pose([1, 0, 0], 0.005),
+            barrel_clearances=np.array([0.001, 0.0, 0.0, 0.001]),
+            barrel_axial_parameters=np.array([-0.5, -0.25, 0.25, 0.5]),
+            dt=1 / 240,
+        )
+    assert result is not None and result.side_contact
+
+
 def test_side_contact_exit_requires_full_invalid_stability_window():
     detector = ContactClassifier(IdealSurfaceConfig(), capsule())
     for _ in range(24):

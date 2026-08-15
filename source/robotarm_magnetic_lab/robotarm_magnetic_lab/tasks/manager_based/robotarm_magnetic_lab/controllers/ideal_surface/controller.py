@@ -82,9 +82,12 @@ class IdealSurfaceController:
         self._request_id = -1
         self._start: ControllerSnapshot | None = None
         self._target = None
+        self._tilt_anchor_world: np.ndarray | None = None
         self._elapsed_s = 0.0
         self._last_safe: TrajectoryEvaluation | None = None
         self._motion_limited = False
+        self._contact_limited = False
+        self._boundary_limited = False
         self._maximum_penetration_m = 0.0
         self._no_effect = False
         self._logical_upright = True
@@ -102,7 +105,10 @@ class IdealSurfaceController:
         self._seen_request_ids.clear()
         self._elapsed_s = 0.0
         self._last_safe = None
+        self._tilt_anchor_world = None
         self._motion_limited = False
+        self._contact_limited = False
+        self._boundary_limited = False
         self._maximum_penetration_m = 0.0
         self._no_effect = False
         self._logical_upright = bool(snapshot.flags.upright)
@@ -129,10 +135,29 @@ class IdealSurfaceController:
         self._seen_request_ids.add(int(request_id))
         self._elapsed_s = 0.0
         self._motion_limited = False
+        self._contact_limited = False
+        self._boundary_limited = False
         self._maximum_penetration_m = 0.0
         self._no_effect = not bool(self.action_mask()[int(action)])
         effective = IdealSurfaceAction.HOLD if self._no_effect else action
         self._target = target_for_action(effective, snapshot, self.cfg)
+        self._tilt_anchor_world = None
+        if self._target.uses_tilt_anchor:
+            initial_pose = CapsulePose(
+                snapshot.position_world, snapshot.axis_world, snapshot.image_up_world
+            )
+            initial_assessment = (
+                self._pose_assessor(initial_pose, snapshot.surface_triangle_id, self.cfg)
+                if self._pose_assessor is not None
+                else assess_pose(
+                    self.mesh,
+                    self.capsule,
+                    initial_pose,
+                    snapshot.surface_triangle_id,
+                    self.cfg,
+                )
+            )
+            self._tilt_anchor_world = initial_assessment.support_point_world.copy()
         self._last_safe = self._evaluate(0.0)
         self.state = ControllerState.EXECUTING
         return True
@@ -151,6 +176,7 @@ class IdealSurfaceController:
             mesh=self.mesh,
             capsule=self.capsule,
             recovery_radius_m=self.cfg.recovery_query_radius_scale * self.capsule.radius_m,
+            tilt_anchor_world=self._tilt_anchor_world,
         )
 
     def _assess(self, evaluation: TrajectoryEvaluation) -> ContactAssessment:
@@ -193,8 +219,12 @@ class IdealSurfaceController:
         return SurfaceFlags(
             upright=bool(upright),
             side_contact=bool(side_state.side_contact),
-            contact_limited=bool(self._motion_limited or assessment.contact_limited),
-            boundary_limited=bool(evaluation.boundary_limited or assessment.boundary_limited),
+            contact_limited=bool(self._contact_limited or assessment.contact_limited),
+            boundary_limited=bool(
+                self._boundary_limited
+                or evaluation.boundary_limited
+                or assessment.boundary_limited
+            ),
             no_effect=bool(self._no_effect),
         )
 
@@ -263,20 +293,40 @@ class IdealSurfaceController:
         proposed = self._last_safe if self._motion_limited else self._evaluate(progress)
         assert proposed is not None
         assessment = self._assess(proposed)
+        if assessment.hard_failure:
+            # A rejected future target is not actual penetration.  Stop at the
+            # last accepted sub-target.  HARD_FAILURE is reserved for a current
+            # pose that is already beyond the hard threshold.
+            safe = self._last_safe
+            assert safe is not None
+            safe_assessment = self._assess(safe)
+            if safe_assessment.hard_failure:
+                flags = replace(previous.flags, contact_limited=True)
+                self.snapshot = replace(
+                    previous,
+                    sim_time_s=(self._start.sim_time_s + self._elapsed_s),
+                    flags=flags,
+                )
+                self.state = ControllerState.TERMINAL_FAULT
+                self.last_result = self._make_result(
+                    IdealActionStatus.HARD_FAILURE,
+                    "current capsule penetration exceeded hard threshold",
+                )
+                return self._held_output(self.last_result)
+            self._motion_limited = True
+            self._contact_limited = True
+            proposed = safe
+            assessment = safe_assessment
         self._maximum_penetration_m = max(
             self._maximum_penetration_m, assessment.maximum_penetration_m
         )
-        if assessment.hard_failure:
-            flags = replace(previous.flags, contact_limited=True)
-            self.snapshot = replace(previous, sim_time_s=(self._start.sim_time_s + self._elapsed_s), flags=flags)
-            self.state = ControllerState.TERMINAL_FAULT
-            self.last_result = self._make_result(
-                IdealActionStatus.HARD_FAILURE, "capsule penetration exceeded hard threshold"
-            )
-            return self._held_output(self.last_result)
         limited = bool(assessment.contact_limited or assessment.boundary_limited or proposed.boundary_limited)
         if limited and not self._motion_limited:
             self._motion_limited = True
+            self._contact_limited = bool(assessment.contact_limited)
+            self._boundary_limited = bool(
+                assessment.boundary_limited or proposed.boundary_limited
+            )
             proposed = self._last_safe
             assert proposed is not None
             assessment = self._assess(proposed)

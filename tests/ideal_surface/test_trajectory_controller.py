@@ -86,6 +86,21 @@ def test_start_tilt_maps_each_id_to_one_unique_axis():
     assert len({tuple(np.round(axis, 8)) for axis in outputs}) == 8
 
 
+def test_start_tilt_rotates_center_about_fixed_support_anchor():
+    before = snapshot()
+    value = controller(before)
+    value.submit(IdealSurfaceAction.START_TILT_000, before, 101)
+    result = run_to_done(value)
+    anchor = np.asarray([0.0, 0.0, 0.0])
+    expected_center = (
+        anchor
+        + IdealSurfaceConfig().capsule_cylinder_half_length_m * result.final_axis_world
+        + np.asarray([0.0, 0.0, IdealSurfaceConfig().capsule_radius_m])
+    )
+    np.testing.assert_allclose(result.final_position_world, expected_center, atol=1.0e-9)
+    assert math.degrees(result.final_tilt_rad) == pytest.approx(15.0, abs=0.2)
+
+
 def test_precession_keeps_tilt_and_changes_azimuth_by_fifteen_degrees():
     value = controller(snapshot(theta_deg=45, phi_deg=0))
     value.submit(IdealSurfaceAction.PRECESS_POS, value.snapshot, 1)
@@ -128,6 +143,31 @@ def test_positive_roll_obeys_right_hand_no_slip_sign():
     np.testing.assert_allclose(result.final_position_world - before.position_world, expected, atol=1e-4)
 
 
+def test_roll_first_substep_is_continuous_from_corrected_start_pose():
+    before = snapshot(theta_deg=90, phi_deg=0, side_contact=True)
+    before = replace(before, position_world=before.position_world + np.asarray([0.0, 0.0, 0.001]))
+    value = controller(before)
+    value.submit(IdealSurfaceAction.ROLL_POS, before, 102)
+    output = value.step(1 / 240)
+    assert np.linalg.norm(output.position_world - before.position_world) < 1.0e-6
+
+
+def test_open_boundary_latches_boundary_flag_without_contact_flag():
+    before = snapshot(theta_deg=90, phi_deg=0, side_contact=True)
+    surface = np.asarray([1.999, 0.0, 0.0])
+    before = replace(
+        before,
+        position_world=surface + np.asarray([0.0, 0.0, IdealSurfaceConfig().capsule_radius_m]),
+        surface_point_world=surface,
+        surface_triangle_id=0,
+    )
+    value = controller(before)
+    value.submit(IdealSurfaceAction.ROLL_POS, before, 90)
+    result = run_to_done(value)
+    assert result.boundary_limited
+    assert not result.contact_limited
+
+
 def test_invalid_masked_action_is_one_second_no_effect():
     value = controller(snapshot())
     assert value.submit(IdealSurfaceAction.ROLL_POS, value.snapshot, 20)
@@ -164,3 +204,31 @@ def test_hard_failure_enters_terminal_fault_and_reset_recovers():
     assert not value.ready
     value.reset(snapshot())
     assert value.ready
+
+
+def test_rejected_future_hard_penetration_clips_to_last_safe_pose():
+    def reject_after_twenty_degrees(pose, active_triangle, cfg):
+        tilt = math.acos(float(np.clip(pose.axis_world[2], -1.0, 1.0)))
+        hard = tilt > math.radians(20.0)
+        return ContactAssessment(
+            support_valid=not hard,
+            side_contact=False,
+            contact_limited=hard,
+            boundary_limited=False,
+            hard_failure=hard,
+            maximum_penetration_m=0.001 if hard else 0.0,
+            support_point_world=np.zeros(3),
+            support_normal_world=np.asarray([0, 0, 1]),
+            active_triangle=active_triangle,
+            barrel_clearances_m=np.ones(2),
+            barrel_axial_parameters=np.asarray([-0.5, 0.5]),
+        )
+
+    before = snapshot(theta_deg=15)
+    value = controller(before, assessor=reject_after_twenty_degrees)
+    value.submit(IdealSurfaceAction.TILT_MORE, before, 103)
+    result = run_to_done(value)
+    assert result.status is IdealActionStatus.DONE
+    assert result.contact_limited
+    assert math.degrees(result.final_tilt_rad) <= 20.0
+    assert result.maximum_penetration_m == 0.0

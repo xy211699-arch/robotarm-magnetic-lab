@@ -209,6 +209,9 @@ class IdealSurfaceActionTerm(ActionTerm):
     def action_mask(self) -> np.ndarray:
         self._ensure_runtime()
         assert self._controller is not None
+        if self._pending_reset:
+            self._controller.reset(self._snapshot_from_live_capsule(idealize=True))
+            self._pending_reset = False
         return self._controller.action_mask().copy()
 
     def acknowledge_result(self) -> None:
