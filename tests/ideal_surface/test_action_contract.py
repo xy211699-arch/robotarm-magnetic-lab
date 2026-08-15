@@ -33,13 +33,13 @@ def test_frozen_action_ids_are_contiguous_and_unique():
     ]
 
 
-def test_default_config_matches_ideal_surface_v1():
+def test_default_config_matches_ideal_surface_v2():
     cfg = IdealSurfaceConfig()
-    assert cfg.schema_version == "ideal_surface_v1"
+    assert cfg.schema_version == "ideal_surface_v2"
     assert cfg.action_duration_s == 1.0
     assert cfg.tilt_step_rad == pytest.approx(math.radians(15.0))
     assert cfg.precession_step_rad == pytest.approx(math.radians(15.0))
-    assert cfg.roll_arc_length_m == pytest.approx(0.004)
+    assert cfg.roll_arc_length_m == pytest.approx(0.010)
     assert cfg.upright_enter_rad == pytest.approx(math.radians(5.0))
     assert cfg.upright_exit_rad == pytest.approx(math.radians(8.0))
 

@@ -4,7 +4,7 @@
 
 `Template-Robotarm-Magnetic-Ideal-Surface-Stomach-Teleop-Lab-v0` is a
 single-environment Isaac Lab task for evaluating high-level capsule exploration.
-Its `ideal_surface_v1` controller is a privileged simulation oracle: it reads the
+Its `ideal_surface_v2` controller is a privileged simulation oracle: it reads the
 approved stomach mesh and capsule truth, then writes a continuous kinematic target
 at 240 Hz. It is not a magnetic controller and does not demonstrate that the
 robot, external magnet, or a physical capsule can reproduce these motions.
@@ -18,22 +18,23 @@ controller, evaluator, diagnostics, and offline evidence.
 | ID | Name | Keyboard | Meaning |
 |---:|---|---|---|
 | 0 | `HOLD` | Space | Hold the current pose for one action boundary. |
-| 1 | `START_TILT_000` | Numpad 8 | From logical upright, tilt to 15° at local azimuth 0°. |
-| 2 | `START_TILT_045` | Numpad 9 | Tilt to 15° at 45°. |
-| 3 | `START_TILT_090` | Numpad 6 | Tilt to 15° at 90°. |
-| 4 | `START_TILT_135` | Numpad 3 | Tilt to 15° at 135°. |
-| 5 | `START_TILT_180` | Numpad 2 | Tilt to 15° at 180°. |
-| 6 | `START_TILT_225` | Numpad 1 | Tilt to 15° at 225°. |
-| 7 | `START_TILT_270` | Numpad 4 | Tilt to 15° at 270°. |
-| 8 | `START_TILT_315` | Numpad 7 | Tilt to 15° at 315°. |
+| 1 | `START_TILT_000` | T / Numpad 8 | From logical upright, tilt to 15° at local azimuth 0°. |
+| 2 | `START_TILT_045` | Y / Numpad 9 | Tilt to 15° at 45°. |
+| 3 | `START_TILT_090` | H / Numpad 6 | Tilt to 15° at 90°. |
+| 4 | `START_TILT_135` | N / Numpad 3 | Tilt to 15° at 135°. |
+| 5 | `START_TILT_180` | B / Numpad 2 | Tilt to 15° at 180°. |
+| 6 | `START_TILT_225` | V / Numpad 1 | Tilt to 15° at 225°. |
+| 7 | `START_TILT_270` | F / Numpad 4 | Tilt to 15° at 270°. |
+| 8 | `START_TILT_315` | R / Numpad 7 | Tilt to 15° at 315°. |
 | 9 | `TILT_MORE` | W | Increase tilt by 15° in the current tilt plane. |
-| 10 | `RISE` | S | Decrease tilt by 15°; settle to 0° in the upright band. |
+| 10 | `RISE` | S | Pivot 15° about the non-camera (+Z) end toward the 180° upright pole, lifting the camera end. |
 | 11 | `PRECESS_POS` | D | Increase local azimuth by 15° while holding tilt. |
 | 12 | `PRECESS_NEG` | A | Decrease local azimuth by 15° while holding tilt. |
-| 13 | `ROLL_POS` | E | Positive right-hand axial roll with 4.0 mm no-slip arc. |
-| 14 | `ROLL_NEG` | Q | Negative right-hand axial roll with 4.0 mm no-slip arc. |
+| 13 | `ROLL_POS` | E | Positive right-hand axial roll with 10.0 mm no-slip arc. |
+| 14 | `ROLL_NEG` | Q | Negative right-hand axial roll with 10.0 mm no-slip arc. |
 
-The numpad layout is a compass in the local stomach tangent plane. Azimuth zero
+The letter compass is `R T Y / F _ H / V B N`; the numpad layout remains an
+alias. Both are compasses in the local stomach tangent plane. Azimuth zero
 is the projected camera image-up direction and positive azimuth follows the
 right-hand rule about the inward surface normal.
 
@@ -76,7 +77,11 @@ For a noninteractive smoke, supply comma-separated action IDs and headless mode:
   --headless --scripted_actions 0,10,10,10
 ```
 
-Session records are written under `logs/ideal_surface_coverage_teleop/<UTC-ID>/`.
+Session records are written under the primary clone's absolute
+`logs/ideal_surface_coverage_teleop/<UTC-ID>/` path. This remains true when the
+launcher runs from a linked Git worktree. At startup the exact destination is
+printed as `IDEAL_SURFACE_OUTPUT_DIRECTORY ...`, and finalization prints
+`IDEAL_SURFACE_OUTPUT ...`.
 They include metadata, action events, coverage frames, mask, trajectory, timing,
 snapshots, summary, and an artifact inventory. `logs/` is external evidence and
 must not be committed.

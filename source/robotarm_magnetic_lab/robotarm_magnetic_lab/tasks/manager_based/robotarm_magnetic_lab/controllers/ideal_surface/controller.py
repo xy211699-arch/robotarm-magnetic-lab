@@ -164,9 +164,31 @@ class IdealSurfaceController:
             # Re-projecting the same pose at an action boundary can select the
             # neighbouring facet of a mesh edge and create a discontinuous
             # normal (and false penetration) before progress has advanced.
-            self._tilt_anchor_world = snapshot.surface_point_world.copy()
-            self._tilt_anchor_normal_world = snapshot.surface_normal_world.copy()
-            self._tilt_anchor_triangle_id = int(snapshot.surface_triangle_id)
+            if self._target.tilt_anchor_end_sign < 0:
+                self._tilt_anchor_world = snapshot.surface_point_world.copy()
+                self._tilt_anchor_normal_world = snapshot.surface_normal_world.copy()
+                self._tilt_anchor_triangle_id = int(snapshot.surface_triangle_id)
+            else:
+                # Camera optical axis is capsule local -Z.  Find the projected
+                # surface anchor under the opposite (+Z) end and keep it fixed
+                # throughout RISE.  The inherited correction below guarantees
+                # exact continuity at progress zero on curved surfaces too.
+                estimated = (
+                    snapshot.position_world
+                    + self.capsule.cylinder_half_length_m * snapshot.axis_world
+                    - self.capsule.radius_m * snapshot.surface_normal_world
+                )
+                offset = estimated - snapshot.surface_point_world
+                tangent_offset = offset - float(offset @ snapshot.surface_normal_world) * snapshot.surface_normal_world
+                anchor_hit = self.mesh.advance(
+                    snapshot.surface_triangle_id,
+                    snapshot.surface_point_world,
+                    tangent_offset,
+                    self.cfg.recovery_query_radius_scale * self.capsule.radius_m,
+                )
+                self._tilt_anchor_world = anchor_hit.point_world.copy()
+                self._tilt_anchor_normal_world = anchor_hit.normal_world.copy()
+                self._tilt_anchor_triangle_id = int(anchor_hit.triangle_id)
         self._last_safe = self._evaluate(0.0)
         self.state = ControllerState.EXECUTING
         return True
@@ -188,6 +210,7 @@ class IdealSurfaceController:
             tilt_anchor_world=self._tilt_anchor_world,
             tilt_anchor_normal_world=self._tilt_anchor_normal_world,
             tilt_anchor_triangle_id=self._tilt_anchor_triangle_id,
+            tilt_anchor_end_sign=self._target.tilt_anchor_end_sign,
         )
 
     def _assess(self, evaluation: TrajectoryEvaluation) -> ContactAssessment:
@@ -197,11 +220,41 @@ class IdealSurfaceController:
             self.mesh, self.capsule, evaluation.pose, evaluation.surface_triangle_id, self.cfg
         )
 
+    def _follow_roll_surface(
+        self,
+        evaluation: TrajectoryEvaluation,
+        assessment: ContactAssessment,
+    ) -> tuple[TrajectoryEvaluation, ContactAssessment]:
+        """Apply bounded support-normal correction while a roll follows wall curvature."""
+        if self._active_action not in (
+            IdealSurfaceAction.ROLL_POS,
+            IdealSurfaceAction.ROLL_NEG,
+        ):
+            return evaluation, assessment
+        maximum_correction = self.cfg.recovery_query_radius_scale * self.capsule.radius_m
+        corrected = evaluation
+        current = assessment
+        for _ in range(4):
+            if not current.contact_limited and not current.hard_failure:
+                break
+            correction = float(current.maximum_penetration_m) + 1.0e-9
+            if not np.isfinite(correction) or correction <= 0.0 or correction > maximum_correction:
+                break
+            corrected = replace(
+                corrected,
+                pose=corrected.pose.translated(
+                    correction * current.support_normal_world
+                ),
+            )
+            current = self._assess(corrected)
+        return corrected, current
+
     def _update_logical_upright(self, theta_rad: float, dt: float) -> bool:
+        upright_distance = min(abs(float(theta_rad)), abs(math.pi - float(theta_rad)))
         desired = self._logical_upright
-        if self._logical_upright and theta_rad > self.cfg.upright_exit_rad:
+        if self._logical_upright and upright_distance > self.cfg.upright_exit_rad:
             desired = False
-        elif not self._logical_upright and theta_rad <= self.cfg.upright_enter_rad:
+        elif not self._logical_upright and upright_distance <= self.cfg.upright_enter_rad:
             desired = True
         if desired == self._logical_upright:
             self._upright_candidate = None
@@ -308,6 +361,8 @@ class IdealSurfaceController:
             if self._held_assessment is not None
             else self._assess(proposed)
         )
+        if self._held_assessment is None:
+            proposed, assessment = self._follow_roll_surface(proposed, assessment)
         if assessment.hard_failure:
             # A rejected future target is not actual penetration.  Stop at the
             # last accepted sub-target.  HARD_FAILURE is reserved for a current

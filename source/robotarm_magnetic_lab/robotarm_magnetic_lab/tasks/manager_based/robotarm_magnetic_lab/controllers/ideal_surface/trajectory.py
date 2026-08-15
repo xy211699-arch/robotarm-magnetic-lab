@@ -22,6 +22,7 @@ class ActionTarget:
     tangent_delta_world: np.ndarray
     axial_roll_rad: float
     uses_tilt_anchor: bool
+    tilt_anchor_end_sign: int
 
 
 @dataclass(frozen=True)
@@ -44,17 +45,33 @@ def target_for_action(
     delta = np.zeros(3, dtype=np.float64)
     roll = 0.0
     uses_tilt_anchor = False
+    tilt_anchor_end_sign = -1
     if action in START_TILT_ACTIONS:
-        theta = cfg.tilt_step_rad
+        theta = (
+            cfg.tilt_step_rad
+            if snapshot.theta_rad <= math.pi / 2.0
+            else math.pi - cfg.tilt_step_rad
+        )
         phi = math.radians(45.0 * (int(action) - 1))
         uses_tilt_anchor = True
+        tilt_anchor_end_sign = 1 if snapshot.theta_rad > math.pi / 2.0 else -1
     elif action is IdealSurfaceAction.TILT_MORE:
-        theta = min(snapshot.theta_rad + cfg.tilt_step_rad, math.pi / 2.0)
+        theta = (
+            min(snapshot.theta_rad + cfg.tilt_step_rad, math.pi / 2.0)
+            if snapshot.theta_rad <= math.pi / 2.0
+            else max(snapshot.theta_rad - cfg.tilt_step_rad, math.pi / 2.0)
+        )
         uses_tilt_anchor = True
+        tilt_anchor_end_sign = 1 if snapshot.theta_rad > math.pi / 2.0 else -1
     elif action is IdealSurfaceAction.RISE:
-        theta = max(snapshot.theta_rad - cfg.tilt_step_rad, 0.0)
-        if theta <= cfg.upright_enter_rad:
-            theta = 0.0
+        # The camera looks along local -Z.  RISE must therefore keep the
+        # opposite local +Z end on the wall and lift the camera end, which is
+        # the path toward the 180-degree upright pole for every non-upright
+        # starting tilt (including values just below 90 degrees).
+        theta = min(snapshot.theta_rad + cfg.tilt_step_rad, math.pi)
+        if theta >= math.pi - cfg.upright_enter_rad:
+            theta = math.pi
+        tilt_anchor_end_sign = 1
         uses_tilt_anchor = True
     elif action in (IdealSurfaceAction.PRECESS_POS, IdealSurfaceAction.PRECESS_NEG):
         sign = 1.0 if action is IdealSurfaceAction.PRECESS_POS else -1.0
@@ -65,7 +82,14 @@ def target_for_action(
         if float(np.linalg.norm(tangent)) > 1.0e-12:
             delta = -sign * cfg.roll_arc_length_m * np.cross(snapshot.surface_normal_world, tangent)
             roll = sign * cfg.roll_arc_length_m / cfg.capsule_radius_m
-    return ActionTarget(float(theta), float(phi), delta, float(roll), uses_tilt_anchor)
+    return ActionTarget(
+        float(theta),
+        float(phi),
+        delta,
+        float(roll),
+        uses_tilt_anchor,
+        int(tilt_anchor_end_sign),
+    )
 
 
 def _rotation_between(first: np.ndarray, second: np.ndarray) -> np.ndarray:
@@ -96,6 +120,7 @@ def evaluate_trajectory(
     tilt_anchor_world: np.ndarray | None = None,
     tilt_anchor_normal_world: np.ndarray | None = None,
     tilt_anchor_triangle_id: int | None = None,
+    tilt_anchor_end_sign: int = -1,
 ) -> TrajectoryEvaluation:
     blend = quintic(progress)
     theta = start.theta_rad + blend * (target.theta_rad - start.theta_rad)
@@ -154,9 +179,12 @@ def evaluate_trajectory(
             boundary_limited=False,
         )
         hit = anchor_hit
+        end_sign = int(tilt_anchor_end_sign)
+        if end_sign not in (-1, 1):
+            raise ValueError("tilt_anchor_end_sign must be -1 or +1")
         start_anchor_center = (
             anchor
-            + capsule.cylinder_half_length_m * start.axis_world
+            - end_sign * capsule.cylinder_half_length_m * start.axis_world
             + capsule.radius_m * hit.normal_world
         )
         inherited_safe_offset = start.position_world - start_anchor_center
@@ -167,7 +195,7 @@ def evaluate_trajectory(
         # fixed would drive the neighbouring sphere surface into the wall.
         center = (
             anchor
-            + capsule.cylinder_half_length_m * axis
+            - end_sign * capsule.cylinder_half_length_m * axis
             + capsule.radius_m * hit.normal_world
             + inherited_safe_offset
         )

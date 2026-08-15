@@ -125,12 +125,12 @@ def validate_plane_controller() -> dict[str, bool]:
         "eight_unique_start_tilts": len(set(axes)) == 8,
         "start_tilt_absolute_15_deg": max(direction_errors) <= 0.2,
         "tilt_increment_deg": abs(math.degrees(tilt.final_tilt_rad) - 45.0) <= 0.2,
-        "rise_increment_deg": abs(math.degrees(rise.final_tilt_rad) - 15.0) <= 0.2,
+        "rise_increment_deg": abs(math.degrees(rise.final_tilt_rad) - 45.0) <= 0.2,
         "precession_increment_deg": (
             abs(math.degrees(precess.final_tilt_rad) - 45.0) <= 0.2
             and abs(math.degrees(precess.final_azimuth_rad) - 25.0) <= 0.2
         ),
-        "roll_arc_length_m": abs(roll_distance - 0.004) <= 0.0001,
+        "roll_arc_length_m": abs(roll_distance - 0.010) <= 0.0001,
         "upright_residual_range_deg": bool(residual_ok),
         "contact_limited_done": (
             saturated.status is IdealActionStatus.DONE and saturated.contact_limited

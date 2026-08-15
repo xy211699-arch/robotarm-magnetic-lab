@@ -7,6 +7,18 @@ from .atomic_keyboard import CommandKind, KeyCommand, SPECIAL_KEYS, normalize_ke
 
 ACTION_KEYS = {
     "SPACE": 0,
+    # Letter compass layout for keyboards whose numpad events are unavailable:
+    # R T Y
+    # F   H
+    # V B N
+    "T": 1,
+    "Y": 2,
+    "H": 3,
+    "N": 4,
+    "B": 5,
+    "V": 6,
+    "F": 7,
+    "R": 8,
     "NUMPAD8": 1,
     "NUMPAD9": 2,
     "NUMPAD6": 3,

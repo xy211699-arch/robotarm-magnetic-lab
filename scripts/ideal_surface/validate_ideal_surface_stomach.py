@@ -174,7 +174,11 @@ def main() -> int:
                 if not term.controller.snapshot.flags.upright:
                     raise AssertionError(f"failed to reach upright before action {action_id}")
                 result = execute(action_id, f"start_direction_{action_id}")
-                tilt_deg = float(np.degrees(result.final_tilt_rad))
+                absolute_theta_deg = float(np.degrees(result.final_tilt_rad))
+                tilt_deg = min(
+                    abs(absolute_theta_deg),
+                    abs(180.0 - absolute_theta_deg),
+                )
                 tilt_tolerance = 1.0 if result.contact_limited else 0.2
                 expected_phi = 45.0 * (action_id - 1)
                 actual_phi = float(np.degrees(result.final_azimuth_rad))
@@ -187,6 +191,7 @@ def main() -> int:
                 ):
                     raise AssertionError(
                         f"start direction {action_id} tilt={tilt_deg:.6f} "
+                        f"absolute_theta={absolute_theta_deg:.6f} "
                         f"phi={actual_phi:.6f} contact_limited={result.contact_limited}"
                     )
                 start_direction_tilts.append(tilt_deg)

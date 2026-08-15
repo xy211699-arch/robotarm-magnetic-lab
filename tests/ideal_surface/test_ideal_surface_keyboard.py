@@ -6,6 +6,14 @@ from robotarm_magnetic_lab.teleop import CommandKind, IdealSurfaceKeyboard
 def test_fifteen_action_key_map_and_repeat_suppression():
     expected = {
         "SPACE": 0,
+        "T": 1,
+        "Y": 2,
+        "H": 3,
+        "N": 4,
+        "B": 5,
+        "V": 6,
+        "F": 7,
+        "R": 8,
         "NUMPAD8": 1,
         "NUMPAD9": 2,
         "NUMPAD6": 3,
@@ -35,6 +43,15 @@ def test_numpad_aliases_are_identical():
         command = keyboard.key_event(alias, True)
         assert command.action_id == 1
         keyboard.key_event(alias, False)
+
+
+def test_letter_compass_layout_matches_start_directions():
+    keyboard = IdealSurfaceKeyboard()
+    expected = {"R": 8, "T": 1, "Y": 2, "F": 7, "H": 3, "V": 6, "B": 5, "N": 4}
+    for key, action_id in expected.items():
+        command = keyboard.key_event(key, True)
+        assert command.action_id == action_id
+        keyboard.key_event(key, False)
 
 
 def test_reset_snapshot_and_exit_are_preserved():

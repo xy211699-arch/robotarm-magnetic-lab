@@ -1,4 +1,4 @@
-"""Configuration frozen by the ``ideal_surface_v1`` action contract."""
+"""Configuration for the user-revised ``ideal_surface_v2`` action contract."""
 
 from __future__ import annotations
 
@@ -8,11 +8,11 @@ import math
 
 @dataclass(frozen=True)
 class IdealSurfaceConfig:
-    schema_version: str = "ideal_surface_v1"
+    schema_version: str = "ideal_surface_v2"
     action_duration_s: float = 1.0
     tilt_step_rad: float = math.radians(15.0)
     precession_step_rad: float = math.radians(15.0)
-    roll_arc_length_m: float = 0.004
+    roll_arc_length_m: float = 0.010
     upright_enter_rad: float = math.radians(5.0)
     upright_exit_rad: float = math.radians(8.0)
     logical_stability_s: float = 0.1
@@ -25,8 +25,8 @@ class IdealSurfaceConfig:
     capsule_cylinder_half_length_m: float = 0.006000000052154064
 
     def __post_init__(self) -> None:
-        if self.schema_version != "ideal_surface_v1":
-            raise ValueError("schema_version is frozen as ideal_surface_v1")
+        if self.schema_version != "ideal_surface_v2":
+            raise ValueError("schema_version is frozen as ideal_surface_v2")
         if self.action_duration_s <= 0.0:
             raise ValueError("action_duration_s must be positive")
         if not 0.0 < self.upright_enter_rad < self.upright_exit_rad < math.pi / 2:
@@ -49,4 +49,3 @@ class IdealSurfaceConfig:
                 raise ValueError(f"{name} must be positive")
         if self.planned_penetration_radius_fraction >= self.hard_penetration_radius_fraction:
             raise ValueError("planned penetration threshold must be below hard penetration")
-

@@ -16,6 +16,30 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "source" / "robotarm_magnetic_lab"))
 
+
+def _default_output_directory() -> Path:
+    """Resolve logs to the primary clone even when launched from a linked worktree."""
+    try:
+        common_git = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(ROOT),
+                "rev-parse",
+                "--path-format=absolute",
+                "--git-common-dir",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        common_git_path = Path(common_git).resolve()
+        if common_git_path.name == ".git":
+            return common_git_path.parent / "logs" / "ideal_surface_coverage_teleop"
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    return ROOT / "logs" / "ideal_surface_coverage_teleop"
+
 HEADLESS = "--headless" in sys.argv
 if HEADLESS:
     sys.argv.remove("--headless")
@@ -34,7 +58,7 @@ parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--output_directory",
     type=Path,
-    default=ROOT / "logs" / "ideal_surface_coverage_teleop",
+    default=_default_output_directory(),
 )
 parser.add_argument("--scripted_actions", default="")
 parser.add_argument("--max_idle_updates", type=int, default=0)
@@ -113,6 +137,7 @@ def main() -> int:
     output = args_cli.output_directory / datetime.now(timezone.utc).strftime(
         "%Y%m%d_%H%M%S_%fZ"
     )
+    print(f"IDEAL_SURFACE_OUTPUT_DIRECTORY {output.resolve()}", flush=True)
     env = evaluator = keyboard = None
     exit_code = 1
     with launch_simulation(env_cfg, args_cli):
@@ -138,7 +163,7 @@ def main() -> int:
             if not args_cli.scripted_actions:
                 keyboard = KitKeyboardSource()
             print(
-                "IDEAL_SURFACE_READY Numpad 8/9/6/3/2/1/4/7=start tilt; "
+                "IDEAL_SURFACE_READY R/T/Y/F/H/V/B/N or Numpad 7/8/9/4/6/1/2/3=start tilt; "
                 "W/S=tilt/rise; D/A=precess +/-; E/Q=roll +/-; Space=hold; "
                 "Backspace=reset; F12=snapshot; Esc=exit",
                 flush=True,
@@ -207,7 +232,7 @@ def main() -> int:
                         completion,
                         "result",
                         ideal_surface_result=result.to_dict(),
-                        schema_version="ideal_surface_v1",
+                        schema_version="ideal_surface_v2",
                     )
                     print(
                         f"IDEAL_RESULT request={completion.request_id} action={completion.action_id} "

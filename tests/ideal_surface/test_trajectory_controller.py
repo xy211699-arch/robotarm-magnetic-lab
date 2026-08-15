@@ -139,8 +139,87 @@ def test_positive_roll_obeys_right_hand_no_slip_sign():
     value = controller(before)
     value.submit(IdealSurfaceAction.ROLL_POS, before, 9)
     result = run_to_done(value)
-    expected = -0.004 * np.cross(before.surface_normal_world, before.axis_tangent_world)
+    expected = -0.010 * np.cross(before.surface_normal_world, before.axis_tangent_world)
     np.testing.assert_allclose(result.final_position_world - before.position_world, expected, atol=1e-4)
+
+
+def test_roll_follows_curved_surface_without_latching_at_first_normal_correction():
+    before = snapshot(theta_deg=90, phi_deg=0, side_contact=True)
+
+    def curved_clearance(pose, active_triangle, cfg):
+        required_height = cfg.capsule_radius_m + 0.2 * abs(float(pose.center_world[0]))
+        penetration = max(0.0, required_height - float(pose.center_world[2]))
+        return ContactAssessment(
+            support_valid=True,
+            side_contact=True,
+            contact_limited=penetration > cfg.planned_penetration_radius_fraction * cfg.capsule_radius_m,
+            boundary_limited=False,
+            hard_failure=penetration > cfg.hard_penetration_radius_fraction * cfg.capsule_radius_m,
+            maximum_penetration_m=penetration,
+            support_point_world=np.asarray([pose.center_world[0], pose.center_world[1], 0.0]),
+            support_normal_world=np.asarray([0.0, 0.0, 1.0]),
+            active_triangle=active_triangle,
+            barrel_clearances_m=np.zeros(5),
+            barrel_axial_parameters=np.linspace(-0.5, 0.5, 5),
+        )
+
+    value = controller(before, assessor=curved_clearance)
+    value.submit(IdealSurfaceAction.ROLL_POS, before, 91)
+    result = run_to_done(value)
+    assert result.status is IdealActionStatus.DONE
+    assert not result.contact_limited
+    assert result.final_position_world[0] - before.position_world[0] == pytest.approx(0.010, abs=1e-4)
+    assert result.final_position_world[2] > before.position_world[2]
+
+
+@pytest.mark.parametrize("theta_deg, expected_deg", [(75.0, 90.0), (90.0, 105.0)])
+def test_rise_rotates_about_opposite_non_camera_support_anchor(theta_deg, expected_deg):
+    before = snapshot(theta_deg=theta_deg, phi_deg=0, side_contact=theta_deg == 90.0)
+    value = controller(before)
+    value.submit(IdealSurfaceAction.RISE, before, 105)
+    result = run_to_done(value)
+    assert math.degrees(result.final_tilt_rad) == pytest.approx(expected_deg, abs=0.2)
+    cfg = IdealSurfaceConfig()
+    # Camera optical axis is local -Z, therefore the opposite end is +axis.
+    opposite_anchor = (
+        before.position_world
+        + cfg.capsule_cylinder_half_length_m * before.axis_world
+        - cfg.capsule_radius_m * before.surface_normal_world
+    )
+    expected_center = (
+        opposite_anchor
+        - cfg.capsule_cylinder_half_length_m * result.final_axis_world
+        + cfg.capsule_radius_m * before.surface_normal_world
+    )
+    np.testing.assert_allclose(result.final_position_world, expected_center, atol=1.0e-9)
+
+
+def test_logical_upright_accepts_both_axis_poles_after_stability_window():
+    before = snapshot(theta_deg=165, phi_deg=0, side_contact=False)
+    value = controller(before)
+    value.submit(IdealSurfaceAction.RISE, before, 106)
+    result = run_to_done(value)
+    assert math.degrees(result.final_tilt_rad) == pytest.approx(180.0, abs=0.2)
+    assert result.status is IdealActionStatus.DONE
+    assert value.snapshot.flags.upright
+
+
+def test_inverted_upright_tilts_to_side_about_non_camera_end():
+    before = snapshot(theta_deg=180, phi_deg=0, side_contact=False)
+    before = replace(before, flags=SurfaceFlags(upright=True, side_contact=False))
+    value = controller(before)
+    value.submit(IdealSurfaceAction.START_TILT_000, before, 107)
+    result = run_to_done(value)
+    assert math.degrees(result.final_tilt_rad) == pytest.approx(165.0, abs=0.2)
+    assert not result.contact_limited
+    value.acknowledge_result()
+    for request_id in range(108, 113):
+        value.submit(IdealSurfaceAction.TILT_MORE, value.snapshot, request_id)
+        result = run_to_done(value)
+        assert not result.contact_limited
+        value.acknowledge_result()
+    assert math.degrees(value.snapshot.theta_rad) == pytest.approx(90.0, abs=0.2)
+    assert value.snapshot.flags.side_contact
 
 
 def test_roll_first_substep_is_continuous_from_corrected_start_pose():
