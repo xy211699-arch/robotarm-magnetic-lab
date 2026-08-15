@@ -627,3 +627,10 @@
   `7.091 × 9.417 × 0.916 mm`。放宽参数消除了误停，但确定性局部往复仍导致覆盖平台；
   后续应新增磁体重居中与跨区域导航调度，而非继续放宽碰撞保护。完整结果见
   `handoffs/reports/TASK-001-p0-extended-three-run-report.md`。
+
+## 2026-08-15 — GitHub 双端连接复核
+
+- Linux执行端确认`origin`为`xy211699-arch/robotarm-magnetic-lab`且具备读取和推送权限；
+  `git ls-remote`成功，dry-run推送返回`Everything up-to-date`。
+- `upstream`仍指向`shuozhang1007/robotarm-magnetic-lab`，仅允许读取，push URL保持
+  `DISABLED`；工作区检查时无未提交修改。
