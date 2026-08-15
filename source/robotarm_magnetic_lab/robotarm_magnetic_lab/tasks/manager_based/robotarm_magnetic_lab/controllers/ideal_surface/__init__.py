@@ -3,6 +3,17 @@
 from .action_mask import compute_action_mask
 from .capsule_geometry import Spherocylinder
 from .config import IdealSurfaceConfig
+from .contact import (
+    ActiveAnchor,
+    CapsulePose,
+    ContactAssessment,
+    ContactClassifier,
+    ContactClassifierResult,
+    SweptTargetAssessment,
+    assess_pose,
+    assess_swept_target,
+    select_active_anchor,
+)
 from .geometry import (
     LocalFrame,
     normalized,
@@ -26,6 +37,11 @@ from .types import (
 __all__ = [
     "ControllerSnapshot",
     "ControllerState",
+    "ActiveAnchor",
+    "CapsulePose",
+    "ContactAssessment",
+    "ContactClassifier",
+    "ContactClassifierResult",
     "IdealActionResult",
     "IdealActionStatus",
     "IdealSurfaceAction",
@@ -37,6 +53,9 @@ __all__ = [
     "SurfaceFlags",
     "SurfaceLostError",
     "SurfaceNavigationMesh",
+    "SweptTargetAssessment",
+    "assess_pose",
+    "assess_swept_target",
     "compute_action_mask",
     "normalized",
     "orientation_from_axis_and_image_up",
@@ -44,4 +63,5 @@ __all__ = [
     "quaternion_wxyz_to_matrix",
     "quintic",
     "rotation_matrix",
+    "select_active_anchor",
 ]
