@@ -1,6 +1,6 @@
 # TASK-001: P0 Manual Teleoperation and Coverage Evaluation
 
-**Status:** Approved for Linux implementation by the user on 2026-08-09.
+**Status:** Completed by Linux on 2026-08-09; accepted as the delivered-code lineage for TASK-002.
 
 **Planning branch:** `workflow/TASK-001-p0-coverage-teleop`
 
@@ -11,6 +11,8 @@
 **Execution plan:** `docs/superpowers/plans/2026-08-09-p0-coverage-teleop.md`
 
 **Required report:** `handoffs/reports/TASK-001-p0-coverage-teleop-report.md`
+
+**Delivered branch:** `feature/TASK-001-p0-coverage-teleop`
 
 ## Objective
 

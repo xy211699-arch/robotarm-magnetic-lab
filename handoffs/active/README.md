@@ -1,7 +1,7 @@
 # Active task contracts
 
-The currently authorized Linux implementation task is `TASK-001-p0-coverage-teleop.md`.
+The currently authorized Linux implementation task is `TASK-002-ideal-surface-controller.md`.
 
-Linux must fetch the Windows planning branch `workflow/TASK-001-p0-coverage-teleop`, create the isolated branch `feature/TASK-001-p0-coverage-teleop` from its exact head, execute the referenced plan, and return `handoffs/reports/TASK-001-p0-coverage-teleop-report.md` with reproducible evidence.
+Linux must fetch the Windows planning branch `workflow/TASK-002-ideal-surface-controller`, record its exact head, create the isolated branch `feature/TASK-002-ideal-surface-controller` from that exact head, execute the referenced plan, and return `handoffs/reports/TASK-002-ideal-surface-controller-report.md` with reproducible evidence.
 
-No reinforcement-learning training, VLM integration, formal coverage-module optimization, or other follow-on work is authorized by this directory.
+No reinforcement-learning training, VLM integration, reward optimization, magnetic closed-loop control, camera recalibration, stomach-asset replacement, or modification of the delivered eleven-action magnetic executor is authorized by this directory.
