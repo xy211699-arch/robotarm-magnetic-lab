@@ -11,7 +11,7 @@ from .capsule_geometry import Spherocylinder
 from .config import IdealSurfaceConfig
 from .contact import CapsulePose
 from .geometry import LocalFrame, normalized, orientation_from_axis_and_image_up, quintic, rotation_matrix
-from .surface_mesh import SurfaceNavigationMesh
+from .surface_mesh import SurfaceHit, SurfaceNavigationMesh
 from .types import ControllerSnapshot, IdealSurfaceAction, START_TILT_ACTIONS
 
 
@@ -94,6 +94,8 @@ def evaluate_trajectory(
     capsule: Spherocylinder,
     recovery_radius_m: float,
     tilt_anchor_world: np.ndarray | None = None,
+    tilt_anchor_normal_world: np.ndarray | None = None,
+    tilt_anchor_triangle_id: int | None = None,
 ) -> TrajectoryEvaluation:
     blend = quintic(progress)
     theta = start.theta_rad + blend * (target.theta_rad - start.theta_rad)
@@ -135,13 +137,29 @@ def evaluate_trajectory(
     if abs(target.axial_roll_rad) > 0.0:
         image_up = rotation_matrix(axis, blend * target.axial_roll_rad) @ image_up
     if target.uses_tilt_anchor:
-        if tilt_anchor_world is None:
-            raise ValueError("tilt action requires a fixed active anchor")
+        if (
+            tilt_anchor_world is None
+            or tilt_anchor_normal_world is None
+            or tilt_anchor_triangle_id is None
+        ):
+            raise ValueError("tilt action requires a fixed active anchor frame")
         anchor = np.asarray(tilt_anchor_world, dtype=np.float64).reshape(3)
-        anchor_hit = mesh.advance(
-            start.surface_triangle_id, anchor, np.zeros(3), recovery_radius_m
+        anchor_triangle = int(tilt_anchor_triangle_id)
+        anchor_hit = SurfaceHit(
+            point_world=anchor.copy(),
+            normal_world=normalized(tilt_anchor_normal_world, name="anchor normal"),
+            triangle_id=anchor_triangle,
+            component_id=int(mesh.component_ids[anchor_triangle]),
+            barycentric=np.zeros(3),
+            boundary_limited=False,
         )
         hit = anchor_hit
+        start_anchor_center = (
+            anchor
+            + capsule.cylinder_half_length_m * start.axis_world
+            + capsule.radius_m * hit.normal_world
+        )
+        inherited_safe_offset = start.position_world - start_anchor_center
         # Keep the selected surface anchor fixed while the spherical end-cap
         # contact migrates: the end-cap centre follows ``h * axis`` and its
         # radius remains along the local wall normal.  Rotating the old
@@ -151,6 +169,7 @@ def evaluate_trajectory(
             anchor
             + capsule.cylinder_half_length_m * axis
             + capsule.radius_m * hit.normal_world
+            + inherited_safe_offset
         )
     else:
         support = capsule.support_distance(axis, hit.normal_world)

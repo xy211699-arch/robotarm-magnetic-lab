@@ -74,6 +74,22 @@ def test_open_edge_is_reported_as_boundary_not_surface_loss():
     assert hit.point_world[0] == pytest.approx(1.0)
 
 
+def test_spatial_hash_candidates_equal_exhaustive_centroid_query():
+    mesh = unit_square_mesh()
+    target = np.asarray([0.15, -0.2, 0.0])
+    radius = 3.0
+    actual = set(mesh.local_candidate_triangles(0, target, radius))
+    exhaustive = set(mesh.adjacency[0]) | {0}
+    distances = np.linalg.norm(mesh.centroids - target, axis=1)
+    exhaustive.update(
+        int(value)
+        for value in np.flatnonzero(
+            (mesh.component_ids == mesh.component_ids[0]) & (distances <= radius)
+        )
+    )
+    assert actual == exhaustive
+
+
 def test_bent_strip_builds_adjacency_and_oriented_normals():
     reference = FakeReference(
         vertices_world=np.asarray(

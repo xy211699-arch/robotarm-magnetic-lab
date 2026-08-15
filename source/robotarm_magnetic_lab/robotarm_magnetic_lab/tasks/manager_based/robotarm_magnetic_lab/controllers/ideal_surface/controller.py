@@ -83,6 +83,8 @@ class IdealSurfaceController:
         self._start: ControllerSnapshot | None = None
         self._target = None
         self._tilt_anchor_world: np.ndarray | None = None
+        self._tilt_anchor_normal_world: np.ndarray | None = None
+        self._tilt_anchor_triangle_id: int | None = None
         self._elapsed_s = 0.0
         self._last_safe: TrajectoryEvaluation | None = None
         self._motion_limited = False
@@ -90,6 +92,8 @@ class IdealSurfaceController:
         self._boundary_limited = False
         self._maximum_penetration_m = 0.0
         self._no_effect = False
+        self._static_pose_action = False
+        self._held_assessment: ContactAssessment | None = None
         self._logical_upright = True
         self._upright_candidate: bool | None = None
         self._upright_candidate_time_s = 0.0
@@ -106,11 +110,15 @@ class IdealSurfaceController:
         self._elapsed_s = 0.0
         self._last_safe = None
         self._tilt_anchor_world = None
+        self._tilt_anchor_normal_world = None
+        self._tilt_anchor_triangle_id = None
         self._motion_limited = False
         self._contact_limited = False
         self._boundary_limited = False
         self._maximum_penetration_m = 0.0
         self._no_effect = False
+        self._static_pose_action = False
+        self._held_assessment = None
         self._logical_upright = bool(snapshot.flags.upright)
         self._upright_candidate = None
         self._upright_candidate_time_s = 0.0
@@ -141,23 +149,24 @@ class IdealSurfaceController:
         self._no_effect = not bool(self.action_mask()[int(action)])
         effective = IdealSurfaceAction.HOLD if self._no_effect else action
         self._target = target_for_action(effective, snapshot, self.cfg)
+        self._static_pose_action = bool(
+            abs(self._target.theta_rad - snapshot.theta_rad) <= 1.0e-15
+            and abs(self._target.phi_rad - snapshot.phi_rad) <= 1.0e-15
+            and float(np.linalg.norm(self._target.tangent_delta_world)) <= 1.0e-15
+            and abs(self._target.axial_roll_rad) <= 1.0e-15
+        )
+        self._held_assessment = None
         self._tilt_anchor_world = None
+        self._tilt_anchor_normal_world = None
+        self._tilt_anchor_triangle_id = None
         if self._target.uses_tilt_anchor:
-            initial_pose = CapsulePose(
-                snapshot.position_world, snapshot.axis_world, snapshot.image_up_world
-            )
-            initial_assessment = (
-                self._pose_assessor(initial_pose, snapshot.surface_triangle_id, self.cfg)
-                if self._pose_assessor is not None
-                else assess_pose(
-                    self.mesh,
-                    self.capsule,
-                    initial_pose,
-                    snapshot.surface_triangle_id,
-                    self.cfg,
-                )
-            )
-            self._tilt_anchor_world = initial_assessment.support_point_world.copy()
+            # The submitted snapshot is the last accepted active contact frame.
+            # Re-projecting the same pose at an action boundary can select the
+            # neighbouring facet of a mesh edge and create a discontinuous
+            # normal (and false penetration) before progress has advanced.
+            self._tilt_anchor_world = snapshot.surface_point_world.copy()
+            self._tilt_anchor_normal_world = snapshot.surface_normal_world.copy()
+            self._tilt_anchor_triangle_id = int(snapshot.surface_triangle_id)
         self._last_safe = self._evaluate(0.0)
         self.state = ControllerState.EXECUTING
         return True
@@ -177,6 +186,8 @@ class IdealSurfaceController:
             capsule=self.capsule,
             recovery_radius_m=self.cfg.recovery_query_radius_scale * self.capsule.radius_m,
             tilt_anchor_world=self._tilt_anchor_world,
+            tilt_anchor_normal_world=self._tilt_anchor_normal_world,
+            tilt_anchor_triangle_id=self._tilt_anchor_triangle_id,
         )
 
     def _assess(self, evaluation: TrajectoryEvaluation) -> ContactAssessment:
@@ -292,7 +303,11 @@ class IdealSurfaceController:
         progress = self._elapsed_s / self.cfg.action_duration_s
         proposed = self._last_safe if self._motion_limited else self._evaluate(progress)
         assert proposed is not None
-        assessment = self._assess(proposed)
+        assessment = (
+            self._held_assessment
+            if self._held_assessment is not None
+            else self._assess(proposed)
+        )
         if assessment.hard_failure:
             # A rejected future target is not actual penetration.  Stop at the
             # last accepted sub-target.  HARD_FAILURE is reserved for a current
@@ -332,6 +347,8 @@ class IdealSurfaceController:
             assessment = self._assess(proposed)
         elif not limited:
             self._last_safe = proposed
+        if self._motion_limited or self._static_pose_action:
+            self._held_assessment = assessment
         flags = self._flags(proposed, assessment, float(dt))
         self.snapshot = self._snapshot_from(proposed, flags)
         linear = (self.snapshot.position_world - previous.position_world) / float(dt)

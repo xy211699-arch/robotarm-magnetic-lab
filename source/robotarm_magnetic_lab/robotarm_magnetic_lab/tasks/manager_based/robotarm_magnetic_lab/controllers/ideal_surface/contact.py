@@ -120,9 +120,9 @@ def assess_pose(
     """Assess deterministic longitudinal barrel samples against the local component."""
     active_triangle = int(active_triangle)
     base_normal = normalized(mesh.normals[active_triangle], name="active surface normal")
-    # Nine samples permit the required separated-barrel test on curved tissue;
+    # Five samples permit the required separated-barrel test on curved tissue;
     # checking only both cylinder ends incorrectly rejects valid side contact.
-    axial_parameters = np.linspace(-0.5, 0.5, 9, dtype=np.float64)
+    axial_parameters = np.linspace(-0.5, 0.5, 5, dtype=np.float64)
     axial_offsets = axial_parameters * capsule.cylinder_length_m
     samples = (
         pose.center_world[None, :]

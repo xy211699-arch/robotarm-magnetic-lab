@@ -152,6 +152,15 @@ def test_roll_first_substep_is_continuous_from_corrected_start_pose():
     assert np.linalg.norm(output.position_world - before.position_world) < 1.0e-6
 
 
+def test_rise_first_substep_is_continuous_after_corrected_roll_pose():
+    before = snapshot(theta_deg=90, phi_deg=0, side_contact=True)
+    before = replace(before, position_world=before.position_world + np.asarray([0.0, 0.0, 0.001]))
+    value = controller(before)
+    value.submit(IdealSurfaceAction.RISE, before, 104)
+    output = value.step(1 / 240)
+    assert np.linalg.norm(output.position_world - before.position_world) < 1.0e-6
+
+
 def test_open_boundary_latches_boundary_flag_without_contact_flag():
     before = snapshot(theta_deg=90, phi_deg=0, side_contact=True)
     surface = np.asarray([1.999, 0.0, 0.0])

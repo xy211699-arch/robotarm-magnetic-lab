@@ -89,6 +89,46 @@ class SurfaceNavigationMesh:
         self.boundary_edges = boundary_edges
         self.component_ids = np.asarray(component_ids, dtype=np.int64).copy()
         self.centroids = self.vertices[self.triangles].mean(axis=1)
+        triangle_vertices = self.vertices[self.triangles]
+        edge_lengths = np.linalg.norm(
+            triangle_vertices[:, [1, 2, 0]] - triangle_vertices[:, [0, 1, 2]],
+            axis=2,
+        ).reshape(-1)
+        positive_edges = edge_lengths[edge_lengths > 1.0e-12]
+        median_edge = float(np.median(positive_edges)) if len(positive_edges) else 1.0e-3
+        self._spatial_cell_size_m = max(4.0 * median_edge, 1.0e-4)
+        buckets: dict[tuple[int, int, int], list[int]] = defaultdict(list)
+        for triangle_id, centroid in enumerate(self.centroids):
+            buckets[self._cell_key(centroid)].append(int(triangle_id))
+        self._centroid_cells = {
+            key: tuple(values) for key, values in sorted(buckets.items())
+        }
+
+    def _cell_key(self, point_world: np.ndarray) -> tuple[int, int, int]:
+        values = np.floor(
+            np.asarray(point_world, dtype=np.float64).reshape(3)
+            / self._spatial_cell_size_m
+        ).astype(np.int64)
+        return int(values[0]), int(values[1]), int(values[2])
+
+    def _nearby_centroid_triangles(
+        self, target_world: np.ndarray, recovery_radius_m: float
+    ) -> tuple[int, ...]:
+        target = np.asarray(target_world, dtype=np.float64).reshape(3)
+        center = self._cell_key(target)
+        cells = int(np.ceil(float(recovery_radius_m) / self._spatial_cell_size_m))
+        candidates: list[int] = []
+        for x_value in range(center[0] - cells, center[0] + cells + 1):
+            for y_value in range(center[1] - cells, center[1] + cells + 1):
+                for z_value in range(center[2] - cells, center[2] + cells + 1):
+                    candidates.extend(
+                        self._centroid_cells.get((x_value, y_value, z_value), ())
+                    )
+        if not candidates:
+            return ()
+        unique = np.asarray(sorted(set(candidates)), dtype=np.int64)
+        distances = np.linalg.norm(self.centroids[unique] - target, axis=1)
+        return tuple(int(value) for value in unique[distances <= float(recovery_radius_m)])
 
     @classmethod
     def from_reference(cls, reference, inward_sign: int) -> "SurfaceNavigationMesh":
@@ -116,11 +156,12 @@ class SurfaceNavigationMesh:
             raise SurfaceLostError(f"invalid active triangle {triangle_id}")
         component = int(self.component_ids[triangle_id])
         candidates = {triangle_id, *self.adjacency[triangle_id]}
-        distance = np.linalg.norm(self.centroids - np.asarray(target_world), axis=1)
-        nearby = np.flatnonzero(
-            (self.component_ids == component) & (distance <= float(recovery_radius_m))
+        nearby = self._nearby_centroid_triangles(target_world, recovery_radius_m)
+        candidates.update(
+            int(value)
+            for value in nearby
+            if int(self.component_ids[int(value)]) == component
         )
-        candidates.update(int(value) for value in nearby)
         return tuple(sorted(candidates))
 
     def _is_boundary_projection(self, triangle_id: int, barycentric: np.ndarray) -> bool:
