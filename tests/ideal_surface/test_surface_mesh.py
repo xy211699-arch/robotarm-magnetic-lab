@@ -69,6 +69,26 @@ def test_exact_closest_hit_uses_distance_then_triangle_id_tie_break():
     np.testing.assert_allclose(hit.point_world, [0.5, 0.5, 0.0])
 
 
+def test_exact_segment_clearance_detects_face_crossing_and_parallel_distance():
+    mesh = unit_square_mesh()
+    parallel = mesh.closest_segment_hit(
+        np.asarray([0.25, 0.25, 0.2]),
+        np.asarray([0.75, 0.25, 0.2]),
+        active_triangle=0,
+        recovery_radius_m=1.0,
+    )
+    assert parallel.distance_m == pytest.approx(0.2)
+    np.testing.assert_allclose(parallel.segment_point_world[:2], parallel.surface_point_world[:2])
+    crossing = mesh.closest_segment_hit(
+        np.asarray([0.25, 0.25, -0.2]),
+        np.asarray([0.25, 0.25, 0.2]),
+        active_triangle=0,
+        recovery_radius_m=1.0,
+    )
+    assert crossing.distance_m == pytest.approx(0.0)
+    np.testing.assert_allclose(crossing.segment_point_world, crossing.surface_point_world)
+
+
 def test_open_edge_is_reported_as_boundary_not_surface_loss():
     mesh = unit_square_mesh()
     hit = mesh.advance(

@@ -46,6 +46,13 @@ right-hand rule about the inward surface normal.
 - Side contact requires at least two near-contact barrel samples separated by at
   least 25% of cylinder length for 0.1 s. Normal end support alone is not side
   contact, and roll actions remain masked until stable side contact.
+- Penetration safety uses the exact minimum distance between the complete
+  spherocylinder centre segment and nearby stomach triangles. The longitudinal
+  samples remain only for side-contact classification; they are not relied on
+  to exclude end-cap or folded-wall collisions.
+- Reset keeps the authored attitude, translates the capsule by the minimum
+  local separation needed to remove pre-existing penetration, and writes that
+  corrected pose to the kinematic rigid body before accepting an action.
 - A predicted contact or open boundary stops at the last safe sub-target and
   returns normal `DONE` with `contact_limited` or `boundary_limited`.
 - A manually requested masked action completes as `DONE/no_effect`; it is not a

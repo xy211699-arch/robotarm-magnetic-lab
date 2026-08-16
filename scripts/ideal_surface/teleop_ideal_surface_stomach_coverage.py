@@ -211,6 +211,9 @@ def main() -> int:
                         if record.outcome is RequestOutcome.RESET_ACCEPTED:
                             evaluator.reset()
                             env.reset()
+                            # Force the exactly separated reset snapshot into
+                            # the kinematic capsule before the next command.
+                            term.action_mask()
                         continue
                     record = session.request_action(command.action_id, term.action_mask(), now)
                     evaluator.append_action_event(record, "request")

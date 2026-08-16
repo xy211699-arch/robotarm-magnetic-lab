@@ -23,6 +23,7 @@ from ..controllers.ideal_surface import (
     assess_pose,
     orientation_from_axis_and_image_up,
     quaternion_wxyz_to_matrix,
+    separate_initial_capsule_from_surface,
 )
 
 
@@ -96,8 +97,21 @@ class IdealSurfaceActionTerm(ActionTerm):
         config = IdealSurfaceConfig()
         capsule = Spherocylinder(config.capsule_radius_m, config.capsule_cylinder_half_length_m)
         self._controller = IdealSurfaceController(mesh, cfg=config, capsule=capsule)
-        self._controller.reset(self._snapshot_from_live_capsule(idealize=True))
+        initial_snapshot = self._snapshot_from_live_capsule(idealize=True)
+        self._controller.reset(initial_snapshot)
+        self._write_snapshot_to_sim(initial_snapshot)
         self._pending_reset = False
+
+    def _write_snapshot_to_sim(self, snapshot: ControllerSnapshot) -> None:
+        """Immediately synchronize a reset snapshot with the kinematic capsule."""
+        pose = torch.as_tensor(
+            np.concatenate((snapshot.position_world, snapshot.quaternion_for_sim)),
+            device=self._env.device,
+            dtype=torch.float32,
+        ).reshape(1, 7)
+        velocity = torch.zeros((1, 6), device=self._env.device, dtype=torch.float32)
+        self.capsule.write_root_pose_to_sim(pose)
+        self.capsule.write_root_velocity_to_sim(velocity)
 
     def _snapshot_from_live_capsule(self, *, idealize: bool) -> ControllerSnapshot:
         assert self._controller is not None
@@ -144,6 +158,14 @@ class IdealSurfaceActionTerm(ActionTerm):
             quaternion = orientation_from_axis_and_image_up(ideal_axis, live_image_up)
             rotation = quaternion_wxyz_to_matrix(quaternion)
             live_image_up = rotation @ np.asarray([0.0, 1.0, 0.0])
+            ideal_pose = separate_initial_capsule_from_surface(
+                self._controller.mesh,
+                self._controller.capsule,
+                CapsulePose(position, ideal_axis, live_image_up),
+                hit.triangle_id,
+                self._controller.cfg,
+            )
+            position = ideal_pose.center_world
         pose_assessment = assess_pose(
             self._controller.mesh,
             self._controller.capsule,
@@ -177,7 +199,9 @@ class IdealSurfaceActionTerm(ActionTerm):
         self._ensure_runtime()
         assert self._controller is not None
         if self._pending_reset:
-            self._controller.reset(self._snapshot_from_live_capsule(idealize=True))
+            initial_snapshot = self._snapshot_from_live_capsule(idealize=True)
+            self._controller.reset(initial_snapshot)
+            self._write_snapshot_to_sim(initial_snapshot)
             self._pending_reset = False
         if self._controller.ready:
             self._request_id += 1
@@ -210,7 +234,9 @@ class IdealSurfaceActionTerm(ActionTerm):
         self._ensure_runtime()
         assert self._controller is not None
         if self._pending_reset:
-            self._controller.reset(self._snapshot_from_live_capsule(idealize=True))
+            initial_snapshot = self._snapshot_from_live_capsule(idealize=True)
+            self._controller.reset(initial_snapshot)
+            self._write_snapshot_to_sim(initial_snapshot)
             self._pending_reset = False
         return self._controller.action_mask().copy()
 

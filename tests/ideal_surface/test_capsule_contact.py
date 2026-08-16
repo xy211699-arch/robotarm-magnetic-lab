@@ -13,6 +13,7 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers
     SurfaceNavigationMesh,
     assess_pose,
     assess_swept_target,
+    separate_initial_capsule_from_surface,
     select_active_anchor,
 )
 
@@ -114,6 +115,64 @@ def test_penetration_over_hard_threshold_is_terminal():
     )
     assert result.hard_failure
     assert result.maximum_penetration_m > cfg.hard_penetration_radius_fraction * capsule().radius_m
+
+
+def test_exact_capsule_clearance_catches_fold_missed_by_longitudinal_samples():
+    class _FoldReference:
+        # A floor joined to a nearby vertical fold.  Bottom-generator samples
+        # remain exactly on z=0, while the capsule barrel intersects y=4 mm.
+        vertices_world = np.asarray(
+            [
+                [-0.02, -0.02, 0.0],
+                [0.02, -0.02, 0.0],
+                [0.02, 0.004, 0.0],
+                [-0.02, 0.004, 0.0],
+                [0.02, 0.004, 0.02],
+                [-0.02, 0.004, 0.02],
+            ]
+        )
+        triangles = np.asarray([[0, 1, 2], [0, 2, 3], [3, 2, 4], [3, 4, 5]])
+
+    mesh = SurfaceNavigationMesh.from_reference(_FoldReference(), inward_sign=1)
+    result = assess_pose(
+        mesh,
+        capsule(),
+        pose([1, 0, 0], 0.005),
+        active_triangle=0,
+        cfg=IdealSurfaceConfig(),
+    )
+    assert result.hard_failure
+    assert result.maximum_penetration_m == pytest.approx(0.001, abs=1.0e-9)
+    assert result.active_triangle in {2, 3}
+
+
+def test_initial_separation_removes_fold_penetration_without_changing_attitude():
+    class _FoldReference:
+        vertices_world = np.asarray(
+            [
+                [-0.02, -0.02, 0.0],
+                [0.02, -0.02, 0.0],
+                [0.02, 0.004, 0.0],
+                [-0.02, 0.004, 0.0],
+                [0.02, 0.004, 0.02],
+                [-0.02, 0.004, 0.02],
+            ]
+        )
+        triangles = np.asarray([[0, 1, 2], [0, 2, 3], [3, 2, 4], [3, 4, 5]])
+
+    mesh = SurfaceNavigationMesh.from_reference(_FoldReference(), inward_sign=1)
+    initial = pose([1, 0, 0], 0.005)
+    corrected = separate_initial_capsule_from_surface(
+        mesh, capsule(), initial, active_triangle=0, cfg=IdealSurfaceConfig()
+    )
+    np.testing.assert_allclose(corrected.axis_world, initial.axis_world)
+    np.testing.assert_allclose(corrected.image_up_world, initial.image_up_world)
+    assert corrected.center_world[1] < initial.center_world[1]
+    assessment = assess_pose(
+        mesh, capsule(), corrected, active_triangle=0, cfg=IdealSurfaceConfig()
+    )
+    assert not assessment.contact_limited
+    assert not assessment.hard_failure
 
 
 def test_side_contact_anchor_is_extreme_opposite_tilt_ray():

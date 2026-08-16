@@ -24,6 +24,19 @@ class SurfaceHit:
     boundary_limited: bool = False
 
 
+@dataclass(frozen=True)
+class SegmentSurfaceHit:
+    """Exact closest pair between one line segment and the local mesh."""
+
+    segment_point_world: np.ndarray
+    surface_point_world: np.ndarray
+    normal_world: np.ndarray
+    triangle_id: int
+    component_id: int
+    barycentric: np.ndarray
+    distance_m: float
+
+
 def _oriented_triangle_normals(vertices: np.ndarray, triangles: np.ndarray, sign: int) -> np.ndarray:
     values = np.cross(
         vertices[triangles[:, 1]] - vertices[triangles[:, 0]],
@@ -129,6 +142,156 @@ def _closest_points_on_triangles(
         (1.0 - v_values - w_values, v_values, w_values)
     )
     return points, barycentric
+
+
+def _barycentric_on_triangle(point: np.ndarray, triangle: np.ndarray) -> np.ndarray:
+    """Return barycentric coordinates for a point in a nondegenerate triangle plane."""
+    a, b, c = np.asarray(triangle, dtype=np.float64).reshape(3, 3)
+    first = b - a
+    second = c - a
+    relative = np.asarray(point, dtype=np.float64).reshape(3) - a
+    d00 = float(first @ first)
+    d01 = float(first @ second)
+    d11 = float(second @ second)
+    d20 = float(relative @ first)
+    d21 = float(relative @ second)
+    denominator = d00 * d11 - d01 * d01
+    if abs(denominator) <= 1.0e-24:
+        raise ValueError("triangle is degenerate")
+    second_weight = (d11 * d20 - d01 * d21) / denominator
+    third_weight = (d00 * d21 - d01 * d20) / denominator
+    return np.asarray(
+        [1.0 - second_weight - third_weight, second_weight, third_weight],
+        dtype=np.float64,
+    )
+
+
+def _closest_points_on_segments(
+    first_start: np.ndarray,
+    first_end: np.ndarray,
+    second_start: np.ndarray,
+    second_end: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return the exact closest pair on two finite 3-D segments."""
+    p1 = np.asarray(first_start, dtype=np.float64).reshape(3)
+    q1 = np.asarray(first_end, dtype=np.float64).reshape(3)
+    p2 = np.asarray(second_start, dtype=np.float64).reshape(3)
+    q2 = np.asarray(second_end, dtype=np.float64).reshape(3)
+    d1 = q1 - p1
+    d2 = q2 - p2
+    relative = p1 - p2
+    first_length_sq = float(d1 @ d1)
+    second_length_sq = float(d2 @ d2)
+    epsilon = 1.0e-24
+    if first_length_sq <= epsilon and second_length_sq <= epsilon:
+        return p1.copy(), p2.copy()
+    if first_length_sq <= epsilon:
+        first_parameter = 0.0
+        second_parameter = float(np.clip(float(d2 @ relative) / second_length_sq, 0.0, 1.0))
+    else:
+        first_projection = float(d1 @ relative)
+        if second_length_sq <= epsilon:
+            second_parameter = 0.0
+            first_parameter = float(np.clip(-first_projection / first_length_sq, 0.0, 1.0))
+        else:
+            second_projection = float(d2 @ relative)
+            coupling = float(d1 @ d2)
+            denominator = first_length_sq * second_length_sq - coupling * coupling
+            if abs(denominator) > epsilon:
+                first_parameter = float(
+                    np.clip(
+                        (coupling * second_projection - first_projection * second_length_sq)
+                        / denominator,
+                        0.0,
+                        1.0,
+                    )
+                )
+            else:
+                first_parameter = 0.0
+            second_parameter = (coupling * first_parameter + second_projection) / second_length_sq
+            if second_parameter < 0.0:
+                second_parameter = 0.0
+                first_parameter = float(np.clip(-first_projection / first_length_sq, 0.0, 1.0))
+            elif second_parameter > 1.0:
+                second_parameter = 1.0
+                first_parameter = float(
+                    np.clip((coupling - first_projection) / first_length_sq, 0.0, 1.0)
+                )
+    return (
+        p1 + first_parameter * d1,
+        p2 + second_parameter * d2,
+    )
+
+
+def _closest_segment_triangle(
+    segment_start: np.ndarray,
+    segment_end: np.ndarray,
+    triangle: np.ndarray,
+) -> tuple[float, np.ndarray, np.ndarray, np.ndarray]:
+    """Return squared distance, closest pair and triangle barycentrics."""
+    start = np.asarray(segment_start, dtype=np.float64).reshape(3)
+    end = np.asarray(segment_end, dtype=np.float64).reshape(3)
+    vertices = np.asarray(triangle, dtype=np.float64).reshape(3, 3)
+    direction = end - start
+    normal = np.cross(vertices[1] - vertices[0], vertices[2] - vertices[0])
+    denominator = float(normal @ direction)
+    if abs(denominator) > 1.0e-18:
+        parameter = float(normal @ (vertices[0] - start)) / denominator
+        if 0.0 <= parameter <= 1.0:
+            intersection = start + parameter * direction
+            barycentric = _barycentric_on_triangle(intersection, vertices)
+            if bool(np.all(barycentric >= -1.0e-12)):
+                return 0.0, intersection, intersection.copy(), barycentric
+
+    candidates: list[tuple[float, int, np.ndarray, np.ndarray, np.ndarray]] = []
+    endpoint_points, endpoint_barycentrics = _closest_points_on_triangles(
+        start, vertices[None, :, :]
+    )
+    surface = endpoint_points[0]
+    candidates.append(
+        (
+            float((start - surface) @ (start - surface)),
+            0,
+            start,
+            surface,
+            endpoint_barycentrics[0],
+        )
+    )
+    endpoint_points, endpoint_barycentrics = _closest_points_on_triangles(
+        end, vertices[None, :, :]
+    )
+    surface = endpoint_points[0]
+    candidates.append(
+        (
+            float((end - surface) @ (end - surface)),
+            1,
+            end,
+            surface,
+            endpoint_barycentrics[0],
+        )
+    )
+    for edge_index, (first, second) in enumerate(((0, 1), (1, 2), (2, 0)), start=2):
+        segment_point, surface_point = _closest_points_on_segments(
+            start, end, vertices[first], vertices[second]
+        )
+        candidates.append(
+            (
+                float((segment_point - surface_point) @ (segment_point - surface_point)),
+                edge_index,
+                segment_point,
+                surface_point,
+                _barycentric_on_triangle(surface_point, vertices),
+            )
+        )
+    selected = min(
+        candidates,
+        key=lambda item: (
+            item[0],
+            item[1],
+            tuple(float(value) for value in item[4]),
+        ),
+    )
+    return selected[0], selected[2].copy(), selected[3].copy(), selected[4].copy()
 
 
 class SurfaceNavigationMesh:
@@ -275,6 +438,55 @@ class SurfaceNavigationMesh:
             component_id=int(self.component_ids[triangle_id]),
             barycentric=np.asarray(barycentric, dtype=np.float64),
             boundary_limited=False,
+        )
+
+    def closest_segment_hit(
+        self,
+        segment_start_world: np.ndarray,
+        segment_end_world: np.ndarray,
+        active_triangle: int,
+        recovery_radius_m: float,
+    ) -> SegmentSurfaceHit:
+        """Find the exact local mesh clearance of a capsule centre segment."""
+        start = np.asarray(segment_start_world, dtype=np.float64).reshape(3)
+        end = np.asarray(segment_end_world, dtype=np.float64).reshape(3)
+        midpoint = 0.5 * (start + end)
+        candidates: set[int] = set()
+        for point in (start, midpoint, end):
+            candidates.update(
+                self.local_candidate_triangles(
+                    int(active_triangle), point, float(recovery_radius_m)
+                )
+            )
+        if not candidates:
+            raise SurfaceLostError("no same-component segment clearance candidate")
+        ranked = []
+        for triangle_id in sorted(candidates):
+            distance_sq, segment_point, surface_point, barycentric = _closest_segment_triangle(
+                start,
+                end,
+                self.vertices[self.triangles[int(triangle_id)]],
+            )
+            ranked.append(
+                (
+                    float(distance_sq),
+                    int(triangle_id),
+                    tuple(float(value) for value in barycentric),
+                    segment_point,
+                    surface_point,
+                    barycentric,
+                )
+            )
+        selected = min(ranked, key=lambda item: item[:3])
+        distance_sq, triangle_id, _, segment_point, surface_point, barycentric = selected
+        return SegmentSurfaceHit(
+            segment_point_world=np.asarray(segment_point, dtype=np.float64),
+            surface_point_world=np.asarray(surface_point, dtype=np.float64),
+            normal_world=normalized(self.normals[triangle_id], name="surface normal"),
+            triangle_id=int(triangle_id),
+            component_id=int(self.component_ids[triangle_id]),
+            barycentric=np.asarray(barycentric, dtype=np.float64),
+            distance_m=math_sqrt(distance_sq),
         )
 
     def advance(

@@ -68,6 +68,52 @@ class ContactClassifierResult:
     stable_time_s: float
 
 
+def separate_initial_capsule_from_surface(
+    mesh: SurfaceNavigationMesh,
+    capsule: Spherocylinder,
+    pose: CapsulePose,
+    active_triangle: int,
+    cfg: IdealSurfaceConfig,
+    *,
+    maximum_iterations: int = 16,
+) -> CapsulePose:
+    """Remove pre-existing reset penetration without changing capsule attitude."""
+    if maximum_iterations <= 0:
+        raise ValueError("maximum_iterations must be positive")
+    corrected = pose
+    recovery_radius = cfg.recovery_query_radius_scale * capsule.radius_m
+    for _ in range(maximum_iterations):
+        end_centers = capsule.axial_end_centers(
+            corrected.center_world, corrected.axis_world
+        )
+        hit = mesh.closest_segment_hit(
+            end_centers[0], end_centers[1], active_triangle, recovery_radius
+        )
+        penetration = float(capsule.radius_m - hit.distance_m)
+        if penetration <= 1.0e-9:
+            return corrected
+        separation = hit.segment_point_world - hit.surface_point_world
+        separation_norm = float(np.linalg.norm(separation))
+        if separation_norm > 1.0e-12:
+            direction = separation / separation_norm
+            # The selected mesh is the lumen surface, so recovery must remain
+            # on its inward side even for edge/vertex closest features.
+            if float(direction @ hit.normal_world) < 0.0:
+                direction = hit.normal_world
+        else:
+            direction = hit.normal_world
+        corrected = corrected.translated((penetration + 2.0e-9) * direction)
+    end_centers = capsule.axial_end_centers(corrected.center_world, corrected.axis_world)
+    remaining = mesh.closest_segment_hit(
+        end_centers[0], end_centers[1], active_triangle, recovery_radius
+    )
+    if remaining.distance_m + 1.0e-9 < capsule.radius_m:
+        raise RuntimeError(
+            "initial capsule penetration could not be resolved within the local lumen"
+        )
+    return corrected
+
+
 def select_active_anchor(
     contacts_world: np.ndarray,
     center_world: np.ndarray,
@@ -142,13 +188,34 @@ def assess_pose(
     planned_limit = cfg.planned_penetration_radius_fraction * capsule.radius_m
     hard_limit = cfg.hard_penetration_radius_fraction * capsule.radius_m
     maximum_penetration = max(0.0, -float(np.min(clearances)))
+    # The longitudinal samples above classify separated barrel contact, but a
+    # folded wall can hit an end cap or another azimuth of the barrel between
+    # those samples.  A spherocylinder is exactly the Minkowski sum of its
+    # centre segment and a radius-r sphere, so segment-to-triangle distance is
+    # a conservative complete collision test for the authored collider.
+    end_centers = capsule.axial_end_centers(pose.center_world, pose.axis_world)
+    exact_hit = mesh.closest_segment_hit(
+        end_centers[0],
+        end_centers[1],
+        active_triangle,
+        recovery_radius,
+    )
+    exact_clearance = float(exact_hit.distance_m - capsule.radius_m)
+    exact_penetration = max(0.0, -exact_clearance)
+    if exact_penetration > maximum_penetration:
+        maximum_penetration = exact_penetration
+        support_point = exact_hit.surface_point_world
+        support_normal = exact_hit.normal_world
+        support_triangle = exact_hit.triangle_id
     near = np.flatnonzero(np.abs(clearances) <= clearance_limit)
     side_contact = bool(
         len(near) >= 2
         and float(np.ptp(axial_parameters[near])) >= cfg.side_contact_separation_fraction
     )
     return ContactAssessment(
-        support_valid=bool(float(np.min(np.abs(clearances))) <= clearance_limit),
+        support_valid=bool(
+            min(float(np.min(np.abs(clearances))), abs(exact_clearance)) <= clearance_limit
+        ),
         side_contact=side_contact,
         contact_limited=bool(maximum_penetration > planned_limit),
         boundary_limited=any(item[4] for item in projected),

@@ -12,6 +12,7 @@ from .contact import (
     SweptTargetAssessment,
     assess_pose,
     assess_swept_target,
+    separate_initial_capsule_from_surface,
     select_active_anchor,
 )
 from .geometry import (
@@ -62,6 +63,7 @@ __all__ = [
     "SweptTargetAssessment",
     "assess_pose",
     "assess_swept_target",
+    "separate_initial_capsule_from_surface",
     "compute_action_mask",
     "evaluate_trajectory",
     "normalized",
