@@ -31,6 +31,9 @@ STOMACH_COLLISION_PRIM_PATH = (
     "Physics_Collision_Mesh/Stomach"
 )
 SCHEMA_VERSION = "dynamic_force_preflight_v1"
+DEFAULT_OUTPUT = Path(
+    "/mnt/isaac-linux/robotarm_magnetic_lab/logs/dynamic_force_preflight"
+)
 
 
 TASK_ID = "Template-Robotarm-Magnetic-Dynamic-Force-Stomach-Teleop-Lab-v0"
@@ -445,7 +448,7 @@ def _parse_and_launch() -> tuple[argparse.Namespace, Any]:
     parser.add_argument("--task", default=TASK_ID)
     parser.add_argument("--num_envs", type=int, default=1)
     parser.add_argument(
-        "--output", type=Path, default=Path("logs/dynamic_force_preflight")
+        "--output", type=Path, default=DEFAULT_OUTPUT
     )
     parser.add_argument("--disable_fabric", action="store_true")
     AppLauncher.add_app_launcher_args(parser)
