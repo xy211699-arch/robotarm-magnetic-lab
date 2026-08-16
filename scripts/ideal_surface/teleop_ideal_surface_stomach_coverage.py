@@ -134,6 +134,12 @@ def main() -> int:
     np.random.seed(args_cli.seed)
     env_cfg = parse_env_cfg(args_cli.task, device=args_cli.device, num_envs=1)
     env_cfg.seed = args_cli.seed
+    # The controller already latches its last safe pose on HARD_FAILURE.  Keep
+    # the environment alive for one diagnostic read so the terminal action
+    # result and final monotonic camera frame can be recorded before exit.
+    # Manager-driven auto-reset would reset the camera frame counter inside
+    # env.step(), before the coverage evaluator can observe termination.
+    env_cfg.terminations.ideal_surface_hard_failure = None
     output = args_cli.output_directory / datetime.now(timezone.utc).strftime(
         "%Y%m%d_%H%M%S_%fZ"
     )
@@ -222,6 +228,26 @@ def main() -> int:
                         dtype=torch.float32,
                     )
                     _, _, terminated, truncated, _ = env.step(action)
+                    if bool(terminated[0] or truncated[0]):
+                        active_terminations = [
+                            name
+                            for name, values in env.unwrapped.termination_manager.get_active_iterable_terms(0)
+                            if bool(values[0])
+                        ]
+                        evaluator.append_action_event(
+                            record,
+                            "environment_termination",
+                            termination_terms=active_terminations or ["unknown"],
+                        )
+                        print(
+                            "IDEAL_SURFACE_ERROR environment terminated terms="
+                            f"{active_terminations or ['unknown']}",
+                            flush=True,
+                        )
+                        evaluator.snapshot("environment_termination")
+                        exit_code = 2
+                        exit_requested = True
+                        break
                     evaluator.maybe_update()
                     result = term.last_result
                     if result is None:
@@ -239,7 +265,7 @@ def main() -> int:
                         f"status={completion.device_result}",
                         flush=True,
                     )
-                    if bool(terminated[0] or truncated[0]) or result.status.value == "HARD_FAILURE":
+                    if result.status.value == "HARD_FAILURE":
                         evaluator.snapshot("hard_failure")
                         exit_code = 2
                         exit_requested = True
