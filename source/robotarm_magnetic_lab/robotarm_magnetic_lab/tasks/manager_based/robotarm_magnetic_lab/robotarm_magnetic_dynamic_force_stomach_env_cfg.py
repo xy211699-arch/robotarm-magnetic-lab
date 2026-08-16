@@ -16,7 +16,8 @@ from .robotarm_magnetic_stomach_env_cfg import RobotarmMagneticStomachLabEnvCfg
 @configclass
 class DynamicForceActionsCfg:
     dynamic_force: mdp.DynamicForceActionTermCfg = mdp.DynamicForceActionTermCfg(
-        force_weight_ratio=0.5
+        force_weight_ratio=0.9,
+        vertical_force_weight_ratio=1.1,
     )
 
 

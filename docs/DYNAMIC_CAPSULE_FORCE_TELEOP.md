@@ -25,10 +25,10 @@ which is the only permitted state reinitialization.
 | `F12` | save diagnostic snapshot |
 | `Escape` | exit cleanly |
 
-Opposite keys cancel. Simultaneous orthogonal keys are norm-limited. The default
-single-axis magnitude is `0.5 * live_capsule_mass * 9.81 N`; the accepted CLI
-ratio range is `(0, 2]`. With the delivered live mass of approximately
-`0.005735 kg`, the default force is approximately `0.02813017 N`.
+相反方向按键会互相抵消，同时按下正交方向按键时会先进行方向向量归一化。默认水平
+单轴力为 `0.9 * live_capsule_mass * 9.81 N`，默认竖直单轴力为
+`1.1 * live_capsule_mass * 9.81 N`。因此纯 `+Z` 指令大于胶囊自重，忽略接触时净向上
+驱动力约为 `0.1mg`。两个比例参数的允许范围均为 `(0, 2]`。
 
 ## Timing and physics
 
@@ -58,7 +58,7 @@ Deterministic no-input and six-direction validation:
 ```bash
 ./run_isaaclab.sh -p scripts/dynamic_force/validate_dynamic_force_stomach.py \
   --task Template-Robotarm-Magnetic-Dynamic-Force-Stomach-Teleop-Lab-v0 \
-  --seed 42 --force_weight_ratio 0.5 --headless
+  --seed 42 --force_weight_ratio 0.9 --vertical_force_weight_ratio 1.1 --headless
 ```
 
 Interactive teleoperation:
@@ -66,7 +66,7 @@ Interactive teleoperation:
 ```bash
 ./run_isaaclab.sh -p scripts/dynamic_force/teleop_dynamic_force_stomach.py \
   --task Template-Robotarm-Magnetic-Dynamic-Force-Stomach-Teleop-Lab-v0 \
-  --force_weight_ratio 0.5 --viz kit
+  --force_weight_ratio 0.9 --vertical_force_weight_ratio 1.1 --viz kit
 ```
 
 Scripted rendered smoke:
@@ -74,7 +74,7 @@ Scripted rendered smoke:
 ```bash
 ./run_isaaclab.sh -p scripts/dynamic_force/teleop_dynamic_force_stomach.py \
   --task Template-Robotarm-Magnetic-Dynamic-Force-Stomach-Teleop-Lab-v0 \
-  --force_weight_ratio 0.5 \
+  --force_weight_ratio 0.9 --vertical_force_weight_ratio 1.1 \
   --scripted_sequence "+x:0.5,zero:0.25,-x:0.5,zero:0.25" \
   --max_steps 120 --viz kit
 ```

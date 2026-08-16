@@ -25,6 +25,9 @@ class DynamicForceAction(ActionTerm):
             raise ValueError("DynamicForceAction requires exactly one environment")
         self.capsule = env.scene[cfg.asset_name]
         self._force_weight_ratio = validate_force_weight_ratio(cfg.force_weight_ratio)
+        self._vertical_force_weight_ratio = validate_force_weight_ratio(
+            cfg.vertical_force_weight_ratio
+        )
         self._raw_actions = torch.zeros((env.num_envs, 3), device=env.device)
         self._processed_actions = torch.zeros_like(self._raw_actions)
         self._applied_force_world = torch.zeros_like(self._raw_actions)
@@ -37,6 +40,15 @@ class DynamicForceAction(ActionTerm):
         self._mass_kg = float(masses[0, 0].item())
         if not np.isfinite(self._mass_kg) or self._mass_kg <= 0.0:
             raise RuntimeError("live capsule mass must be finite and positive")
+        self._force_scale_world = torch.tensor(
+            [
+                self._force_weight_ratio,
+                self._force_weight_ratio,
+                self._vertical_force_weight_ratio,
+            ],
+            device=self._processed_actions.device,
+            dtype=self._processed_actions.dtype,
+        ) * (self._mass_kg * GRAVITY_M_S2)
         self._verify_dynamic_body_and_enable_ccd()
 
     @property
@@ -68,6 +80,10 @@ class DynamicForceAction(ActionTerm):
         return self._force_weight_ratio
 
     @property
+    def vertical_force_weight_ratio(self) -> float:
+        return self._vertical_force_weight_ratio
+
+    @property
     def substep_positions_world(self) -> tuple[np.ndarray, ...]:
         return tuple(value.copy() for value in self._substep_positions_world)
 
@@ -78,8 +94,7 @@ class DynamicForceAction(ActionTerm):
         self._processed_actions[:] = clipped / torch.clamp(norm, min=1.0)
 
     def apply_actions(self) -> None:
-        scale = self._force_weight_ratio * self._mass_kg * GRAVITY_M_S2
-        self._applied_force_world[:] = self._processed_actions * scale
+        self._applied_force_world[:] = self._processed_actions * self._force_scale_world
         self._applied_torque_world.zero_()
         self.capsule.permanent_wrench_composer.set_forces_and_torques_index(
             forces=self._applied_force_world[:, None, :],
@@ -137,7 +152,9 @@ class DynamicForceActionTermCfg(ActionTermCfg):
 
     class_type: type[ActionTerm] = DynamicForceAction
     asset_name: str = "capsule"
-    force_weight_ratio: float = 0.5
+    force_weight_ratio: float = 0.9
+    vertical_force_weight_ratio: float = 1.1
 
     def __post_init__(self) -> None:
         validate_force_weight_ratio(self.force_weight_ratio)
+        validate_force_weight_ratio(self.vertical_force_weight_ratio)

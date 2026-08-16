@@ -35,7 +35,8 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--task", default=TASK_ID)
 parser.add_argument("--num_envs", type=int, default=1)
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument("--force_weight_ratio", type=float, default=0.5)
+parser.add_argument("--force_weight_ratio", type=float, default=0.9)
+parser.add_argument("--vertical_force_weight_ratio", type=float, default=1.1)
 parser.add_argument("--max_steps", type=int, default=0)
 parser.add_argument(
     "--scripted_sequence",
@@ -54,6 +55,8 @@ if args_cli.max_steps < 0:
     parser.error("--max_steps must be non-negative")
 if not 0.0 < args_cli.force_weight_ratio <= 2.0:
     parser.error("--force_weight_ratio must be in (0, 2]")
+if not 0.0 < args_cli.vertical_force_weight_ratio <= 2.0:
+    parser.error("--vertical_force_weight_ratio must be in (0, 2]")
 args_cli.enable_cameras = True
 
 launcher = AppLauncher(args_cli)
@@ -207,6 +210,7 @@ class SessionRecorder:
             "render_rate_sim_hz": 60.0,
             "capsule_camera_rate_sim_hz": 30.0,
             "force_weight_ratio": float(args_cli.force_weight_ratio),
+            "vertical_force_weight_ratio": float(args_cli.vertical_force_weight_ratio),
         }
         (self.output / "session.json").write_text(
             json.dumps(session, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -249,6 +253,9 @@ def main() -> int:
     env_cfg = parse_env_cfg(args_cli.task, device="cpu", num_envs=1)
     env_cfg.seed = args_cli.seed
     env_cfg.actions.dynamic_force.force_weight_ratio = args_cli.force_weight_ratio
+    env_cfg.actions.dynamic_force.vertical_force_weight_ratio = (
+        args_cli.vertical_force_weight_ratio
+    )
     env_cfg.sim.device = "cpu"
     if not HEADLESS:
         configure_capsule_camera_view(env_cfg)

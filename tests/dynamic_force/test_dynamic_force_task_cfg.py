@@ -43,7 +43,8 @@ def test_dynamic_force_task_has_frozen_rates_and_action():
     assert isinstance(cfg.sim.physics, PhysxCfg)
     assert cfg.sim.physics.enable_ccd is True
     assert _term_names(cfg.actions) == ["dynamic_force"]
-    assert cfg.actions.dynamic_force.force_weight_ratio == 0.5
+    assert cfg.actions.dynamic_force.force_weight_ratio == 0.9
+    assert cfg.actions.dynamic_force.vertical_force_weight_ratio == 1.1
 
 
 def test_task_contains_no_forbidden_actuator_or_event():

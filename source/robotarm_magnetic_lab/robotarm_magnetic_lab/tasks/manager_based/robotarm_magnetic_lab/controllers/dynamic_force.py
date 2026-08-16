@@ -8,7 +8,8 @@ import numpy as np
 
 
 GRAVITY_M_S2 = 9.81
-DEFAULT_FORCE_WEIGHT_RATIO = 0.5
+DEFAULT_FORCE_WEIGHT_RATIO = 0.9
+DEFAULT_VERTICAL_FORCE_WEIGHT_RATIO = 1.1
 MAXIMUM_FORCE_WEIGHT_RATIO = 2.0
 
 
@@ -34,10 +35,13 @@ def force_world_from_action(
     action: np.ndarray,
     mass_kg: float,
     force_weight_ratio: float = DEFAULT_FORCE_WEIGHT_RATIO,
+    vertical_force_weight_ratio: float = DEFAULT_VERTICAL_FORCE_WEIGHT_RATIO,
 ) -> np.ndarray:
-    """Scale a normalized direction by a fixed fraction of live body weight."""
+    """Scale normalized world XY/Z components by fractions of live body weight."""
     ratio = validate_force_weight_ratio(force_weight_ratio)
+    vertical_ratio = validate_force_weight_ratio(vertical_force_weight_ratio)
     mass = float(mass_kg)
     if not math.isfinite(mass) or mass <= 0.0:
         raise ValueError("capsule mass must be finite and positive")
-    return normalize_force_direction(action) * ratio * mass * GRAVITY_M_S2
+    component_ratios = np.array([ratio, ratio, vertical_ratio], dtype=np.float64)
+    return normalize_force_direction(action) * component_ratios * mass * GRAVITY_M_S2

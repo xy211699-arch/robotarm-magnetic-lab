@@ -13,8 +13,23 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers
 
 
 def test_half_weight_force_uses_live_mass():
-    force = force_world_from_action(np.array([1.0, 0.0, 0.0]), 0.0057, 0.5)
+    force = force_world_from_action(
+        np.array([1.0, 0.0, 0.0]), 0.0057, 0.5, 1.1
+    )
     np.testing.assert_allclose(force, [0.5 * 0.0057 * 9.81, 0.0, 0.0])
+
+
+def test_default_horizontal_force_is_nine_tenths_weight():
+    mass = 0.0057
+    force = force_world_from_action(np.array([0.0, 1.0, 0.0]), mass)
+    np.testing.assert_allclose(force, [0.0, 0.9 * mass * 9.81, 0.0])
+
+
+def test_default_positive_vertical_force_exceeds_weight():
+    mass = 0.0057
+    force = force_world_from_action(np.array([0.0, 0.0, 1.0]), mass)
+    assert force[2] > mass * 9.81
+    np.testing.assert_allclose(force, [0.0, 0.0, 1.1 * mass * 9.81])
 
 
 def test_diagonal_is_norm_limited():
@@ -42,11 +57,11 @@ def test_ratio_inside_contract_is_accepted(ratio):
 @pytest.mark.parametrize("mass", [0.0, -1.0, np.nan, np.inf])
 def test_invalid_live_mass_is_rejected(mass):
     with pytest.raises(ValueError, match="mass"):
-        force_world_from_action([1.0, 0.0, 0.0], mass, 0.5)
+        force_world_from_action([1.0, 0.0, 0.0], mass, 0.5, 1.1)
 
 
 def test_force_function_does_not_modify_input():
     action = np.array([1.0, 1.0, 0.0])
     before = action.copy()
-    force_world_from_action(action, 0.0057, 0.5)
+    force_world_from_action(action, 0.0057, 0.5, 1.1)
     np.testing.assert_array_equal(action, before)

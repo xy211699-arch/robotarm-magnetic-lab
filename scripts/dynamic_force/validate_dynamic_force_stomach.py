@@ -237,6 +237,7 @@ def _run_validation(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
     cfg = parse_env_cfg(args.task, device="cpu", num_envs=1)
     cfg.seed = args.seed
     cfg.actions.dynamic_force.force_weight_ratio = args.force_weight_ratio
+    cfg.actions.dynamic_force.vertical_force_weight_ratio = args.vertical_force_weight_ratio
     cfg.sim.device = "cpu"
     with launch_simulation(cfg, args):
         env = gym.make(args.task, cfg=cfg)
@@ -328,7 +329,20 @@ def _run_validation(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
                     step_cursor += 30
                     rows = before + active + release
                     all_rows.extend(rows)
-                    expected = np.asarray(direction, dtype=np.float64) * term.mass_kg * 9.81 * args.force_weight_ratio
+                    component_ratios = np.asarray(
+                        [
+                            args.force_weight_ratio,
+                            args.force_weight_ratio,
+                            args.vertical_force_weight_ratio,
+                        ],
+                        dtype=np.float64,
+                    )
+                    expected = (
+                        np.asarray(direction, dtype=np.float64)
+                        * term.mass_kg
+                        * 9.81
+                        * component_ratios
+                    )
                     active_forces = np.asarray([row["force_world_n"] for row in active])
                     torques = np.asarray([row["torque_world_nm"] for row in rows])
                     max_substep, substeps = _max_substep_displacement(term)
@@ -386,6 +400,7 @@ def _run_validation(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
                 "task": args.task,
                 "seed": int(args.seed),
                 "force_weight_ratio": float(args.force_weight_ratio),
+                "vertical_force_weight_ratio": float(args.vertical_force_weight_ratio),
                 "preflight": preflight,
                 "settling": settling,
                 "directions": directions,
@@ -409,7 +424,8 @@ def main() -> int:
     parser.add_argument("--task", default=TASK_ID)
     parser.add_argument("--num_envs", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--force_weight_ratio", type=float, default=0.5)
+    parser.add_argument("--force_weight_ratio", type=float, default=0.9)
+    parser.add_argument("--vertical_force_weight_ratio", type=float, default=1.1)
     parser.add_argument("--output_directory", type=Path, default=DEFAULT_OUTPUT)
     AppLauncher.add_app_launcher_args(parser)
     parser.set_defaults(visualizer=[])
@@ -418,6 +434,8 @@ def main() -> int:
         parser.error(f"validator requires one environment of {TASK_ID}")
     if not 0.0 < args.force_weight_ratio <= 2.0:
         parser.error("--force_weight_ratio must be in (0, 2]")
+    if not 0.0 < args.vertical_force_weight_ratio <= 2.0:
+        parser.error("--vertical_force_weight_ratio must be in (0, 2]")
     args.device = "cpu"
     args.enable_cameras = True
     launcher = AppLauncher(args)
