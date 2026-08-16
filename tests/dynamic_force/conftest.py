@@ -76,3 +76,31 @@ def valid_report():
         return deepcopy(template)
 
     return factory
+
+
+@pytest.fixture
+def valid_summary(valid_report):
+    template = {
+        "preflight": valid_report(),
+        "settling": {"contact_observed": True},
+        "directions": {
+            name: {
+                "max_force_error_n": 0.0,
+                "max_commanded_torque_nm": 0.0,
+                "physics_substep_samples": 480,
+            }
+            for name in ("+x", "-x", "+y", "-y", "+z", "-z")
+        },
+        "continuity": {
+            "nonfinite_samples": 0,
+            "max_physics_step_displacement_m": 1.0e-4,
+            "allowed_physics_step_displacement_m": 1.05e-3,
+            "sustained_clearance_decrease_events": 0,
+        },
+        "contact": {"observed": True},
+    }
+
+    def factory():
+        return deepcopy(template)
+
+    return factory

@@ -9,6 +9,7 @@ from scripts.dynamic_force.inspect_dynamic_force_prerequisites import (
     build_gate,
     validate_preflight_report,
 )
+from scripts.dynamic_force.validate_dynamic_force_stomach import evaluate_summary
 
 
 def test_gate_requires_true_dynamic_capsule_and_ccd(valid_report):
@@ -62,3 +63,19 @@ def test_gate_rejects_wrong_capsule_geometry(valid_report):
     report["gate"] = build_gate(report)
     with pytest.raises(ValueError, match="capsule radius is not 6.5 mm"):
         validate_preflight_report(report)
+
+
+def test_summary_requires_all_six_signed_directions(valid_summary):
+    summary = valid_summary()
+    assert set(summary["directions"]) == {"+x", "-x", "+y", "-y", "+z", "-z"}
+    summary["directions"].pop("-z")
+    assert evaluate_summary(summary)["status"] == "fail"
+
+
+def test_nonfinite_or_forbidden_writer_fails(valid_summary):
+    summary = valid_summary()
+    summary["continuity"]["nonfinite_samples"] = 1
+    assert evaluate_summary(summary)["status"] == "fail"
+    summary = valid_summary()
+    summary["preflight"]["runtime_contract"]["forbidden_calls"] = ["set_transforms"]
+    assert evaluate_summary(summary)["status"] == "needs_decision"
