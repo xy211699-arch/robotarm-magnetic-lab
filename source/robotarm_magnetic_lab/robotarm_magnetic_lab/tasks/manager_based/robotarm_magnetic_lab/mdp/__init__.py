@@ -29,3 +29,4 @@ from .ideal_surface_action import (  # noqa: F401
     IdealSurfaceActionTermCfg,
     ideal_surface_hard_failure,
 )
+from .dynamic_force_action import DynamicForceAction, DynamicForceActionTermCfg  # noqa: F401

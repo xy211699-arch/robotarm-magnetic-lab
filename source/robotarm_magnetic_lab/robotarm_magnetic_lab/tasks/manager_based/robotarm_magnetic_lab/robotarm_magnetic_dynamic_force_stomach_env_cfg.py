@@ -1,0 +1,83 @@
+"""Isolated real-dynamics capsule force task in the delivered stomach."""
+
+from isaaclab.managers import EventTermCfg as EventTerm
+from isaaclab.managers import ObservationGroupCfg as ObsGroup
+from isaaclab.managers import ObservationTermCfg as ObsTerm
+from isaaclab.managers import SceneEntityCfg
+from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.utils.configclass import configclass
+from isaaclab_physx.physics import PhysxCfg
+
+from . import mdp
+from .robotarm_magnetic_lab_env_cfg import CAPSULE_CAMERA_CIRCULAR_FOV_DEG
+from .robotarm_magnetic_stomach_env_cfg import RobotarmMagneticStomachLabEnvCfg
+
+
+@configclass
+class DynamicForceActionsCfg:
+    dynamic_force: mdp.DynamicForceActionTermCfg = mdp.DynamicForceActionTermCfg(
+        force_weight_ratio=0.5
+    )
+
+
+@configclass
+class DynamicForceObservationsCfg:
+    @configclass
+    class PolicyCfg(ObsGroup):
+        rgb = ObsTerm(
+            func=mdp.capsule_rgb,
+            params={
+                "sensor_cfg": SceneEntityCfg("capsule_camera"),
+                "field_of_view_deg": CAPSULE_CAMERA_CIRCULAR_FOV_DEG,
+            },
+        )
+
+        def __post_init__(self) -> None:
+            self.enable_corruption = False
+            self.concatenate_terms = False
+
+    policy: PolicyCfg = PolicyCfg()
+
+
+@configclass
+class DynamicForceEventsCfg:
+    reset_scene = EventTerm(
+        func=mdp.reset_scene_to_default,
+        mode="reset",
+        params={"reset_joint_targets": True},
+    )
+
+
+@configclass
+class DynamicForceRewardsCfg:
+    pass
+
+
+@configclass
+class DynamicForceTerminationsCfg:
+    time_out = DoneTerm(func=mdp.time_out, time_out=True)
+
+
+@configclass
+class RobotarmMagneticDynamicForceStomachTeleopLabEnvCfg(RobotarmMagneticStomachLabEnvCfg):
+    """One CPU-PhysX environment with true dynamic capsule force input."""
+
+    actions: DynamicForceActionsCfg = DynamicForceActionsCfg()
+    observations: DynamicForceObservationsCfg = DynamicForceObservationsCfg()
+    events: DynamicForceEventsCfg = DynamicForceEventsCfg()
+    rewards: DynamicForceRewardsCfg = DynamicForceRewardsCfg()
+    terminations: DynamicForceTerminationsCfg = DynamicForceTerminationsCfg()
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.scene.num_envs = 1
+        self.decimation = 4
+        self.sim.dt = 1.0 / 240.0
+        self.sim.render_interval = 4
+        self.scene.capsule_camera.update_period = 1.0 / 30.0
+        self.episode_length_s = 1800.0
+        # This Isaac Lab version explicitly disables scene CCD under GPU
+        # dynamics. TASK-003 therefore uses single-environment CPU PhysX while
+        # RTX rendering remains on the GPU, preserving the mandatory CCD gate.
+        self.sim.device = "cpu"
+        self.sim.physics = PhysxCfg(enable_ccd=True)
