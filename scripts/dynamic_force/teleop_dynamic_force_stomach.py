@@ -298,8 +298,14 @@ def main() -> int:
                 if scripted:
                     direction = scripted.popleft()
                 elif args_cli.scripted_sequence:
-                    reason = "script_complete"
-                    break
+                    # A finite --max_steps is an acceptance horizon.  Hold a
+                    # released (zero) command after the scripted segments so
+                    # the requested rendered sample count is still produced.
+                    if args_cli.max_steps and step < args_cli.max_steps:
+                        direction = np.zeros(3)
+                    else:
+                        reason = "script_complete"
+                        break
                 elif keyboard is not None:
                     direction = keyboard.keyboard.direction
                 else:
