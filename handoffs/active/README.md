@@ -1,7 +1,7 @@
 # Active task contracts
 
-The currently authorized Linux implementation task is `TASK-002-ideal-surface-controller.md`.
+The currently authorized Linux implementation task is `TASK-003-dynamic-capsule-force-teleop.md`.
 
-Linux must fetch the Windows planning branch `workflow/TASK-002-ideal-surface-controller`, record its exact head, create the isolated branch `feature/TASK-002-ideal-surface-controller` from that exact head, execute the referenced plan, and return `handoffs/reports/TASK-002-ideal-surface-controller-report.md` with reproducible evidence.
+Linux must fetch the Windows planning branch `workflow/TASK-003-dynamic-capsule-force-teleop`, record its exact head, create the isolated branch `feature/TASK-003-dynamic-capsule-force-teleop` from that exact head, execute the referenced plan, and return `handoffs/reports/TASK-003-dynamic-capsule-force-teleop-report.md` with reproducible evidence.
 
-No reinforcement-learning training, VLM integration, reward optimization, magnetic closed-loop control, camera recalibration, stomach-asset replacement, or modification of the delivered eleven-action magnetic executor is authorized by this directory.
+TASK-003 is limited to a real non-kinematic capsule rigid body, six-direction world-frame keyboard force, continuous rendering, collision/contact diagnostics, validation, documentation, and evidence. No VLM, reinforcement learning, magnetic actuation, torque control, pose tracking, surface projection, physics-parameter tuning, camera recalibration, asset replacement, or modification of existing tasks is authorized.
