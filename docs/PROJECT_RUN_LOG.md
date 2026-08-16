@@ -703,3 +703,12 @@
   `logs/ideal_surface_coverage_teleop/20260816_020354_978633Z/`。加载最终即时同步代码后的
   单个`RISE`动态冒烟亦为`DONE`，证据目录：
   `logs/ideal_surface_coverage_teleop/20260816_021204_242824Z/`。
+
+## 2026-08-16 — 理想表面任务接触反馈边界说明
+
+- 确认仅`Template-Robotarm-Magnetic-Ideal-Surface-Stomach-Teleop-Lab-v0`在ActionTerm初始化时
+  将胶囊设为kinematic；它按240 Hz直接写位姿，以三角网格几何距离实施接触/穿透安全层，
+  控制器不读取PhysX接触力，因而不存在可用于动力学标定的双向接触力反馈。
+- 普通胃部磁控与原子动作任务沿用动态`RigidObject`胶囊及`ContactSensorCfg`，胶囊由磁力、
+  重力和接触共同响应；接触力/碰撞物理验证应在这些动态任务中进行，不能使用理想表面任务
+  的接触数据替代。
