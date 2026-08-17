@@ -13,6 +13,33 @@ from .robotarm_magnetic_lab_env_cfg import CAPSULE_CAMERA_CIRCULAR_FOV_DEG
 from .robotarm_magnetic_stomach_env_cfg import RobotarmMagneticStomachLabEnvCfg
 
 
+# TASK-003-only scene placement.  The shared stomach asset remains untouched so
+# the other stomach tasks keep their validated geometry.  AssetBaseCfg poses in
+# this Isaac Lab build use XYZW quaternions.  Rotating 180 degrees about world Y
+# reverses world Z while preserving the stomach's longitudinal Y alignment.  The
+# translation makes the rotation occur about the existing world AABB center, so
+# its horizontal footprint and center do not move.
+TASK003_STOMACH_FLIP_POS = (2.091607300678508, 0.0, 0.06585919085865222)
+TASK003_STOMACH_FLIP_ROT_XYZW = (0.0, 1.0, 0.0, 0.0)
+
+# The delivered stomach spans world Y=[-0.0107347368, 0.2403739599] m.  This
+# reset lies one quarter of the way from the Y-min (left) end on the flatter
+# post-flip lower wall.  Position and orientation follow the local surface
+# normal/tangent and retain 0.2 mm minimum sampled clearance for the 13 x 25 mm
+# capsule.  Its local Z/long axis is nearly horizontal (|axis dot world Z|=.080).
+TASK003_CAPSULE_LEFT_QUARTER_POS = (
+    1.04643745,
+    0.05368121,
+    0.00190115,
+)
+TASK003_CAPSULE_SIDE_ROT_XYZW = (
+    0.73137642,
+    0.07274179,
+    0.67346616,
+    0.07899674,
+)
+
+
 @configclass
 class DynamicForceActionsCfg:
     dynamic_force: mdp.DynamicForceActionTermCfg = mdp.DynamicForceActionTermCfg(
@@ -71,6 +98,10 @@ class RobotarmMagneticDynamicForceStomachTeleopLabEnvCfg(RobotarmMagneticStomach
 
     def __post_init__(self) -> None:
         super().__post_init__()
+        self.scene.stomach.init_state.pos = TASK003_STOMACH_FLIP_POS
+        self.scene.stomach.init_state.rot = TASK003_STOMACH_FLIP_ROT_XYZW
+        self.scene.capsule.init_state.pos = TASK003_CAPSULE_LEFT_QUARTER_POS
+        self.scene.capsule.init_state.rot = TASK003_CAPSULE_SIDE_ROT_XYZW
         self.scene.num_envs = 1
         self.decimation = 4
         self.sim.dt = 1.0 / 240.0

@@ -38,6 +38,14 @@ which is the only permitted state reinitialization.
 - capsule camera: 30 simulated Hz
 - one environment, CPU PhysX, GPU RTX rendering
 
+## TASK-003胃部与胶囊初始状态
+
+- 只在TASK-003中将胃部绕其现有世界包围盒中心、世界Y轴旋转180°，从而交换世界Z方向
+  的上下表面；胃部世界XY包围范围、中心和1.7倍尺寸不变，共享胃部USD不修改。
+- 胶囊初始化在胃部长轴世界Y最小端起四分之一处的较平整下壁区域。
+- 胶囊长轴沿局部胃壁切平面，处于侧躺状态；初始线速度与角速度仍为零。
+- 动态刚体、重力、CCD、接触材质、相机、受力接口和仿真频率均保持不变。
+
 CPU PhysX is required in this installed Isaac Lab version because its physics
 manager disables scene CCD when GPU Dynamics is active. Both scene CCD and capsule
 body CCD are verified by the preflight. Contact-constrained directions need not
