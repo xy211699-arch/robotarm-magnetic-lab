@@ -15,6 +15,7 @@ from .table_motion import (
     quaternion_from_y_rotation,
 )
 from .action_layer import AtomicAction, AtomicActionExecutor, ActionLayerConfig
+from . import local_primitives
 
 __all__ = [
     "ArmGradientPlan",
@@ -29,4 +30,5 @@ __all__ = [
     "ActionLayerConfig",
     "AtomicAction",
     "AtomicActionExecutor",
+    "local_primitives",
 ]
