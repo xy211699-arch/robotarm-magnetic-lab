@@ -1,17 +1,22 @@
 # TASK-004 局部动力学动作原语
 
-## 当前交付状态
+## 交付状态
 
-TASK-004 当前为 **partial**。平面任务、纯控制器、COM 世界系力/力矩动作和定量验证器已经实现；
-但平面验收门禁未通过，因此按照任务合同，胃部任务包装器和共用可视化启动器没有创建。
-这不是可直接用于胃部实验的已验收控制器。
+四项动作已在隔离平面任务中通过定量门禁，并以完全相同的冻结 profile 迁移到 TASK-003
+胃部场景。胃部渲染中，起身、30°倾斜和30°圆锥一周成功；直立到侧躺受局部胃壁接触
+阻塞并在7 s超时。因此本任务按合同标记为 **partial**，不对胃部主观可用性作保证。
 
-## 已实现接口
+本控制器是仿真专用控制器，不代表真实磁体、磁矩、执行器或硬件可实现同等扳手。
+胶囊始终是非运动学动态刚体，运行期只施加世界系质心力/力矩并由 PhysX 积分；没有
+位姿/速度写入、传送、表面投影、净空查询、避碰或胃部专用恢复。
 
-平面任务 ID：
+## 任务与接口
+
+任务 ID：
 
 ```text
 Template-Robotarm-Magnetic-Local-Primitives-Flat-Lab-v0
+Template-Robotarm-Magnetic-Local-Primitives-Stomach-Lab-v0
 ```
 
 动作是四个浮点数：
@@ -20,73 +25,140 @@ Template-Robotarm-Magnetic-Local-Primitives-Flat-Lab-v0
 [start_pulse, primitive_code, direction_x, direction_y]
 ```
 
-- `start_pulse` 仅在从低到高的边沿提交一次请求；后续持续发送 `0`。
-- `(direction_x, direction_y)` 只表示世界 XY 方位，零向量默认世界 `+X`。
-- 控制器运行期间再次提交会返回 `busy`，成功后进入闭环保持，可接受下一条合法动作。
+- `start_pulse` 只在低到高边沿提交一次；原语运行期间持续发送0。
+- `(direction_x, direction_y)` 表示世界 XY 方位，零向量默认世界 `+X`。
+- 胶囊相机位于局部 `-Z` 端，定向轴 `u = R(q)[0,0,-1]` 从非相机端指向相机端。
+- 控制器读取质心位置/速度和刚体 link 姿态，输出一个等效世界系质心 wrench。
 
-动作编号：
-
-| 编号 | 名称 | 起始姿态门限 | 目标 |
+| 编号/按键 | 原语 | 起始条件 | 目标 |
 |---:|---|---|---|
-| 0 | `SIDE_TO_UPRIGHT` | 倾角 75°–105° | 世界 `+Z` 直立 |
-| 1 | `UPRIGHT_TO_SIDE` | 倾角不大于 5° | 指定方位侧躺 |
-| 2 | `UPRIGHT_TO_30_DEG` | 倾角不大于 5° | 指定方位、相对 `+Z` 倾斜 30° |
-| 3 | `CONE_30_DEG_ONE_REVOLUTION` | 30°±3° | 保持 30°并完成一周锥面旋转 |
+| 0 / `1` | `SIDE_TO_UPRIGHT` | 倾角75°–105° | 世界 `+Z` 直立 |
+| 1 / `2` | `UPRIGHT_TO_SIDE` | 倾角≤5° | 指定方位侧躺 |
+| 2 / `3` | `UPRIGHT_TO_30_DEG` | 倾角≤5° | 指定方位倾斜30° |
+| 3 / `4` | `CONE_30_DEG_ONE_REVOLUTION` | 30°±3° | 保持30°完成一周圆锥运动 |
 
-胶囊相机位于局部 `-Z` 端，定向轴从非相机端指向相机端：
+## 控制机制
 
-```text
-u = R(q) [0, 0, -1]
-```
-
-位置和速度读取质心状态；姿态轴使用刚体 link 坐标系，避免 PhysX 主惯性 COM 坐标系旋转
-污染胶囊几何轴。运行期只通过 `permanent_wrench_composer` 在质心施加世界系力与力矩，
-没有根位姿/速度写入、磁体控制、表面法向估计、净空查询、避碰、投影或穿透修复。
-
-## 当前共享参数
-
-当前保留的是已验证尝试中姿态变化最大的合法参数组，但它仍未通过门禁：
+控制器在原语开始时记录非相机虚拟端点的世界 XY 锚点。对胶囊半长 `h=0.0125 m`、
+定向轴 `u`：
 
 ```text
-axis_kp_nm_per_rad                 = 3.0e-5
-axis_kd_nms_per_rad                = 8.0e-6
-roll_damping_nms_per_rad           = 1.0e-6
-torque_limit_nm                    = 3.0e-5
-anchor_kp_n_per_m                  = 3.0
-anchor_kd_ns_per_m                 = 0.15
-horizontal_force_limit_weight_ratio = 1.0
-downward_preload_weight_ratio      = 0.15
-motion_duration_s                  = (5.5, 4.5, 3.5, 8.0)
-hard_timeout_s                     = (8.0, 7.0, 6.0, 9.5)
+r_nc = -h u
+p_nc = p_com + r_nc
+v_nc = v_com + omega × r_nc
+F_nc_xy = Kp(anchor_xy - p_nc_xy) - Kd v_nc_xy
+F_nc_z = -F_pin
+tau_total = tau_pose + r_nc × F_nc
 ```
 
-## 验证命令
+端点力和姿态力矩组合后被总力/总力矩限幅及向量 slew 限制，再通过
+`permanent_wrench_composer` 以 `positions=None, is_global=True` 施加。端点向下力只用于偏置
+非相机端支撑，不是运动学约束。
+
+## 冻结仿真 profile
+
+文件：`configs/local_primitives/simulation_profile.json`
+
+规范化JSON profile digest（SHA-256；不含文件缩进差异）：
+
+```text
+d82bf6d381e99d7be07cdf614223139fd8353c56011b8dc0a2d9779555bdcc72
+```
+
+关键值：
+
+```text
+axis_kp_nm_per_rad          = 0.02
+axis_kd_nms_per_rad         = 0.0016
+roll_damping_nms_per_rad    = 0.0016
+pose_torque_limit_nm        = 0.02
+anchor_kp_n_per_m           = 10.0
+anchor_kd_ns_per_m          = 0.4
+endpoint_pin_force_n        = 0.1
+total_force_limit_n         = 1.25
+total_torque_limit_nm       = 0.02
+force_slew_limit_n_per_s    = 50.0
+torque_slew_limit_nm_per_s  = 0.2
+motion_duration_s           = (5.5, 4.5, 3.5, 8.0)
+hard_timeout_s              = (8.0, 7.0, 6.0, 9.5)
+```
+
+平面和胃部任务都通过 `make_local_primitive_action_cfg()` 嵌入同一内容和 digest；胃部 wrapper
+只继承 TASK-003 的场景、重置、CCD、接触、相机和时序，不含任何胃部控制适配。
+
+## 定量结果
+
+平面 gate：
+
+| 原语 | 状态 | 完成时间 | 最大总力 | 最大总力矩 | 最大240 Hz单步位移 |
+|---|---|---:|---:|---:|---:|
+| 侧躺→直立 | 成功保持 | 5.900 s | 0.10552 N | 0.0017149 N·m | 0.2448 mm |
+| 直立→侧躺 | 成功保持 | 5.121 s | 0.12626 N | 0.0012136 N·m | 0.1226 mm |
+| 直立→30° | 成功保持 | 3.900 s | 0.10407 N | 0.0006743 N·m | 0.0191 mm |
+| 30°圆锥一周 | 成功保持 | 8.404 s | 0.11020 N | 0.0009932 N·m | 0.0808 mm |
+
+圆锥实际展开角为 `6.2940 rad`，倾角 RMSE 为 `0.00614 rad`。起身相机半球承载样本为0，
+末期非相机端支撑成立。全部动作小于10 s、状态有限且连续性小于5 mm门限。
+
+胃部连续渲染使用同一脚本序列：
+
+```text
+0,1;reset;0,2;reset;0,2,3
+```
+
+其中所有三次起身、两次30°和一次圆锥运动成功；直立到侧躺在胃壁接触下超时。合同禁止
+针对该超时修改 profile、查询胃壁几何或加入恢复。
+
+## 运行方法
+
+平面定量验证：
 
 ```bash
 cd /mnt/isaac-linux/robotarm_magnetic_lab
-
-./run_isaaclab.sh -p -m pytest tests/local_primitives -q --disable-warnings
-
-./run_isaaclab.sh -p \
-  scripts/local_primitives/inspect_local_primitives_prerequisites.py \
-  --task Template-Robotarm-Magnetic-Local-Primitives-Flat-Lab-v0 \
-  --headless
 
 ./run_isaaclab.sh -p \
   scripts/local_primitives/validate_local_primitives_flat.py \
   --task Template-Robotarm-Magnetic-Local-Primitives-Flat-Lab-v0 \
   --seed 42 \
   --direction_azimuth_deg 0 \
-  --headless \
-  --output_directory /mnt/isaac-linux/robotarm_magnetic_lab/logs/local_primitives_flat
+  --headless
 ```
 
-验证器依次执行 `0`、`0→1`、`0→2`、`0→2→3` 四组序列，并将逐帧 JSONL 与
-汇总 JSON 写到 Git 仓库外。当前预期结果是明确的 `LOCAL_PRIMITIVES_FLAT_VALIDATION_FAIL`，
-不是 PASS。
+平面可视化：
 
-## 下一步决策
+```bash
+./run_isaaclab.sh -p \
+  scripts/local_primitives/teleop_local_primitives.py \
+  --task Template-Robotarm-Magnetic-Local-Primitives-Flat-Lab-v0 \
+  --direction_azimuth_deg 0 \
+  --capsule_camera_view \
+  --viz kit
+```
 
-现有合同给定的轴向增益上限和力矩上限不足以在重力与平面接触下把胶囊从侧躺抬起。
-Windows 方案端需要先批准新的动力学权限边界，例如提高允许力矩/重新定义力矩前馈；批准前
-不得迁移胃部任务，也不得通过改质量、摩擦、重置姿态或运行期传送伪造通过。
+胃部可视化：
+
+```bash
+./run_isaaclab.sh -p \
+  scripts/local_primitives/teleop_local_primitives.py \
+  --task Template-Robotarm-Magnetic-Local-Primitives-Stomach-Lab-v0 \
+  --direction_azimuth_deg 0 \
+  --capsule_camera_view \
+  --viz kit
+```
+
+操作键：`1`–`4`执行对应原语，`Backspace`复位，`F12`保存 JSON 与 PNG 快照，`Esc`退出。
+启动器持续显示 Kit 外部视图；加 `--capsule_camera_view` 后显示1280×720、30 Hz胶囊相机
+调试窗口。每帧遥测、分解 wrench、profile digest、终态与快照写入
+`logs/local_primitives_teleop/<UTC时间>/`。
+
+自动序列示例：
+
+```bash
+./run_isaaclab.sh -p \
+  scripts/local_primitives/teleop_local_primitives.py \
+  --task Template-Robotarm-Magnetic-Local-Primitives-Stomach-Lab-v0 \
+  --scripted_sequence "0,1;reset;0,2;reset;0,2,3" \
+  --direction_azimuth_deg 0 \
+  --capsule_camera_view \
+  --viz kit
+```
