@@ -22,7 +22,13 @@ from .geometry import (
     view_target_axis,
 )
 from .surface_query import TriangleMeshSurfaceQuery
-from .trajectory import move_direction, quintic_progress, swing_axis
+from .trajectory import (
+    move_direction,
+    quintic_progress,
+    quintic_progress_rate,
+    swing_angular_velocity,
+    swing_axis,
+)
 from .types import (
     ActionResult,
     ActionTelemetry,
@@ -184,6 +190,8 @@ class ElevenActionController:
         support: FrozenSupportPoint,
         normal_world: np.ndarray,
         desired_axis: np.ndarray,
+        desired_swing_rate_world: np.ndarray | None = None,
+        cancel_support_torque: bool = False,
     ) -> tuple[np.ndarray, np.ndarray, float]:
         support_world, support_velocity = reconstruct_material_point(state, support.local_offset_m)
         tangent_error = support_tangent_error(
@@ -207,10 +215,36 @@ class ElevenActionController:
         swing_rate = state.angular_velocity_world_rad_s - float(
             state.angular_velocity_world_rad_s @ actual_axis
         ) * actual_axis
+        desired_swing_rate = (
+            np.zeros(3, dtype=np.float64)
+            if desired_swing_rate_world is None
+            else np.asarray(desired_swing_rate_world, dtype=np.float64).reshape(3)
+        )
         axis_torque = (
             self.profile.axis_kp_nm_per_rad * rotation_error
-            - self.profile.axis_kd_nms_per_rad * swing_rate
+            + self.profile.axis_kd_nms_per_rad * (desired_swing_rate - swing_rate)
         )
+        # The ideal task controller is explicitly allowed to read real contact
+        # points and forces.  Cancel only the measured contact moment component
+        # that can swing the directed optical axis; never command axial twist.
+        recent = self.contact_history.recent_contacts(
+            current_substep=self._latest_physics_substep + 1,
+            last_n_substeps=self.profile.contact_history_substeps,
+        )
+        if recent:
+            latest_substep = max(sample.physics_substep for sample in recent)
+            contact_torque = np.zeros(3, dtype=np.float64)
+            for sample in recent:
+                if sample.physics_substep != latest_substep or sample.force_world_n is None:
+                    continue
+                contact_torque += np.cross(
+                    sample.point_world - state.position_world_m,
+                    sample.force_world_n,
+                )
+            contact_swing_torque = contact_torque - float(contact_torque @ actual_axis) * actual_axis
+            axis_torque = axis_torque - contact_swing_torque
+        if cancel_support_torque:
+            axis_torque = axis_torque - support_torque
         torque = support_torque + axis_torque
         return force, torque, float(np.linalg.norm(tangent_error))
 
@@ -287,7 +321,11 @@ class ElevenActionController:
         if self._hold_support is None or self._hold_axis is None:
             self._freeze_hold(state)
         force, torque, drift = self._support_wrench(
-            state, self._hold_support, self._hold_normal, self._hold_axis
+            state,
+            self._hold_support,
+            self._hold_normal,
+            self._hold_axis,
+            cancel_support_torque=True,
         )
         wrench, force_slew, torque_slew = self._limited_wrench(force, torque)
         telemetry = self._telemetry(
@@ -315,6 +353,7 @@ class ElevenActionController:
 
         index = self._action_substep
         desired_axis = self._start_axis.copy()
+        desired_swing_rate = np.zeros(3, dtype=np.float64)
         support_drift = 0.0
         force_slew = torque_slew = False
 
@@ -354,10 +393,25 @@ class ElevenActionController:
             if self._action.is_view and not self._constrained:
                 progress = quintic_progress(index, self.profile.view_motion_substeps)
                 desired_axis = swing_axis(self._start_axis, self._target_axis, progress)
+                progress_rate = quintic_progress_rate(
+                    index,
+                    self.profile.view_motion_substeps,
+                    self.profile.physics_hz,
+                )
+                desired_swing_rate = swing_angular_velocity(
+                    self._start_axis,
+                    self._target_axis,
+                    progress_rate,
+                )
             else:
                 desired_axis = self._target_axis.copy()
             force, torque, support_drift = self._support_wrench(
-                state, self._support, self._surface_normal, desired_axis
+                state,
+                self._support,
+                self._surface_normal,
+                desired_axis,
+                desired_swing_rate,
+                cancel_support_torque=True,
             )
             wrench, force_slew, torque_slew = self._limited_wrench(force, torque)
 

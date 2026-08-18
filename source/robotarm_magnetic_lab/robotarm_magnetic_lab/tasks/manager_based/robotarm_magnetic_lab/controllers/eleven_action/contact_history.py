@@ -25,6 +25,7 @@ class ContactSample:
     normal_world: np.ndarray
     axial_coordinate_m: float
     impulse_n_s: float | None = None
+    force_world_n: np.ndarray | None = None
     cylinder_half_length_m: float = 0.006
 
     def __post_init__(self) -> None:
@@ -36,6 +37,8 @@ class ContactSample:
             raise ValueError("axial coordinate must be finite")
         if self.impulse_n_s is not None and not math.isfinite(float(self.impulse_n_s)):
             raise ValueError("contact impulse must be finite when present")
+        if self.force_world_n is not None:
+            object.__setattr__(self, "force_world_n", immutable_vector(self.force_world_n, 3))
         if self.cylinder_half_length_m <= 0.0:
             raise ValueError("cylinder half length must be positive")
 

@@ -177,3 +177,33 @@ def test_only_nonfinite_state_faults_and_executing_submit_is_discarded():
     result = controller.step(bad, physics_substep=0)
     assert result.telemetry.result is ActionResult.FAULT
     assert controller.lifecycle is Lifecycle.FAULTED
+
+
+def test_fixed_view_hold_cancels_known_support_moment_but_keeps_support_force():
+    controller = _controller()
+    state = _state([1.0, 0.0, 0.0])
+    assert controller.submit(ElevenActionId.HOLD_VIEW, state, physics_substep=0)
+    step = controller.step(state, physics_substep=0)
+    np.testing.assert_allclose(step.wrench.torque_world_nm, 0.0, atol=1.0e-12)
+    assert np.linalg.norm(step.wrench.force_world_n) > 0.0
+
+
+def test_hold_cancels_latest_measured_contact_swing_moment_without_axial_twist():
+    controller = _controller()
+    state = _state([1.0, 0.0, 0.0])
+    point = state.position_world_m + np.asarray([0.01, 0.0, 0.0])
+    force = np.asarray([0.0, 0.0, 0.01])
+    controller.observe_contact(
+        ContactSample(
+            0,
+            point,
+            [0.0, 0.0, 1.0],
+            0.0,
+            force_world_n=force,
+        )
+    )
+    assert controller.submit(ElevenActionId.HOLD_VIEW, state, physics_substep=0)
+    step = controller.step(state, physics_substep=0)
+    expected = -np.cross(point - state.position_world_m, force)
+    np.testing.assert_allclose(step.wrench.torque_world_nm, expected, atol=1.0e-12)
+    assert float(step.wrench.torque_world_nm @ capsule_axis_world(state)) == pytest.approx(0.0)

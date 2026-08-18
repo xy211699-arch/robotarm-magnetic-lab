@@ -121,6 +121,7 @@ class ElevenActionTerm(ActionTerm):
         if not math.isfinite(mass) or abs(mass - self.profile.capsule_mass_kg) > 1.0e-6:
             raise RuntimeError("live capsule mass does not match the TASK-005 profile")
         self.controller = ElevenActionController(self.profile, self._make_surface_query(cfg))
+        self.contact_sensor = env.scene[cfg.contact_sensor_name]
         self.decoder = ElevenActionRequestDecoder()
         self.request_gate = RequestGate()
         self._raw_actions = torch.full((1, 1), -1.0, device=env.device)
@@ -129,10 +130,8 @@ class ElevenActionTerm(ActionTerm):
         self._torque_world = torch.zeros((1, 3), device=env.device)
         self._telemetry: ActionTelemetry | None = None
         self._substep_telemetry: deque[ActionTelemetry] = deque(maxlen=32768)
-        self._pending_contact_records: deque[RawContactRecord] = deque()
+        self._sensor_contact_sample_count = 0
         self._physics_substep = 0
-        self._capsule_prim_path = str(self.capsule.root_view.prim_paths[0])
-        self._contact_subscription = self._subscribe_contact_reports()
 
     @property
     def action_dim(self) -> int:
@@ -170,6 +169,13 @@ class ElevenActionTerm(ActionTerm):
     def discarded_request_count(self) -> int:
         return self.request_gate.discarded_request_count + self.controller.discarded_request_count
 
+    @property
+    def contact_diagnostics(self) -> dict[str, object]:
+        """Return copied counters without exposing mutable callback state."""
+        return {
+            "sensor_sample_count": int(self._sensor_contact_sample_count),
+        }
+
     def process_actions(self, actions: torch.Tensor) -> None:
         self._raw_actions[:] = actions
         action = self.decoder.decode(actions[0].detach().cpu().numpy())
@@ -179,7 +185,7 @@ class ElevenActionTerm(ActionTerm):
 
     def apply_actions(self) -> None:
         state = self._read_state()
-        self._drain_contacts(state)
+        self._observe_contact_sensor(state)
         pending = self.request_gate.take()
         if pending is not None:
             self.controller.submit(pending, state, physics_substep=self._physics_substep)
@@ -208,7 +214,7 @@ class ElevenActionTerm(ActionTerm):
         self._torque_world.zero_()
         self._telemetry = None
         self._substep_telemetry.clear()
-        self._pending_contact_records.clear()
+        self._sensor_contact_sample_count = 0
         self._physics_substep = 0
         self.request_gate.reset()
         self.controller.reset()
@@ -221,40 +227,33 @@ class ElevenActionTerm(ActionTerm):
         quaternion_xyzw = link_pose[3:7]
         return CapsuleState(com_pose[:3], quaternion_xyzw[[3, 0, 1, 2]], velocity[:3], velocity[3:6])
 
-    def _drain_contacts(self, state: CapsuleState) -> None:
+    def _observe_contact_sensor(self, state: CapsuleState) -> None:
+        """Copy native PhysX contact-point buffers into the 12-substep history."""
+        positions_proxy = self.contact_sensor.data.contact_pos_w
+        forces_proxy = self.contact_sensor.data.force_matrix_w
+        if positions_proxy is None or forces_proxy is None:
+            raise RuntimeError("TASK-005 contact sensor must expose point and filtered force buffers")
+        positions = positions_proxy.torch[0].detach().cpu().numpy().reshape(-1, 3)
+        forces = forces_proxy.torch[0].detach().cpu().numpy().reshape(-1, 3)
         axis = capsule_axis_world(state)
-        while self._pending_contact_records:
-            record = self._pending_contact_records.popleft()
-            hit = self.controller.surface_query.query(record.position_world)
-            sigma = float((record.position_world - state.position_world_m) @ axis)
+        for point, force in zip(positions, forces, strict=True):
+            force_norm = float(np.linalg.norm(force))
+            if not np.isfinite(point).all() or not math.isfinite(force_norm) or force_norm <= 1.0e-6:
+                continue
+            hit = self.controller.surface_query.query(point)
+            sigma = float((point - state.position_world_m) @ axis)
             self.controller.observe_contact(
                 ContactSample(
                     physics_substep=self._physics_substep,
-                    point_world=record.position_world,
+                    point_world=point,
                     normal_world=hit.normal_world,
                     axial_coordinate_m=sigma,
-                    impulse_n_s=record.impulse_n_s,
+                    impulse_n_s=force_norm * self._physics_dt_s,
+                    force_world_n=force,
                     cylinder_half_length_m=self.profile.capsule_cylinder_half_length_m,
                 )
             )
-
-    def _subscribe_contact_reports(self):
-        from omni.physics.core import get_physics_simulation_interface
-        from pxr import PhysicsSchemaTools
-
-        def resolve(path_id: int) -> str:
-            return str(PhysicsSchemaTools.intToSdfPath(path_id))
-
-        def callback(headers, contact_data, _friction_anchors) -> None:
-            records = contact_records_for_capsule(
-                headers,
-                contact_data,
-                capsule_prim_path=self._capsule_prim_path,
-                path_resolver=resolve,
-            )
-            self._pending_contact_records.extend(records)
-
-        return get_physics_simulation_interface().subscribe_physics_contact_report_events(callback)
+            self._sensor_contact_sample_count += 1
 
     def _make_surface_query(self, cfg):
         if cfg.surface_kind == "flat":
@@ -301,6 +300,7 @@ class ElevenActionTerm(ActionTerm):
 class ElevenActionTermCfg(ActionTermCfg):
     class_type: type[ActionTerm] = ElevenActionTerm
     asset_name: str = "capsule"
+    contact_sensor_name: str = "capsule_contact"
     surface_kind: str = "flat"
     flat_half_extent_m: float = 1.0
     flat_cells_per_side: int = 8

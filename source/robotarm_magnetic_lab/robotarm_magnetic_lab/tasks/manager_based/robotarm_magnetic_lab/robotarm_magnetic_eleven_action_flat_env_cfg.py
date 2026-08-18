@@ -5,6 +5,7 @@ from isaaclab.managers import ObservationGroupCfg as ObsGroup
 from isaaclab.managers import ObservationTermCfg as ObsTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.sensors import ContactSensorCfg
 from isaaclab.utils.configclass import configclass
 from isaaclab_physx.physics import PhysxCfg
 
@@ -78,6 +79,22 @@ class RobotarmMagneticElevenActionFlatLabEnvCfg(RobotarmMagneticTableLabEnvCfg):
         self.sim.render_interval = 2
         self.episode_length_s = 180.0
         self.sim.physics = PhysxCfg(enable_ccd=True)
+        # Isaac Lab 3.0's GPU PhysX backend does not forward contact reports
+        # through omni.physics.core.  Request contact positions from the native
+        # ContactSensor buffer for the one capsule/ground pair instead.
+        self.scene.capsule_contact = ContactSensorCfg(
+            prim_path="{ENV_REGEX_NS}/Scene/MagneticDemo/target_magnet",
+            update_period=0.0,
+            history_length=16,
+            track_pose=True,
+            track_air_time=True,
+            track_contact_points=True,
+            max_contact_data_count_per_prim=8,
+            filter_prim_paths_expr=[
+                "{ENV_REGEX_NS}/Scene/MagneticDemo/ground/collisionPlane",
+            ],
+            force_threshold=1.0e-4,
+            debug_vis=False,
+        )
         self.viewer.eye = (1.32, 0.53, 0.30)
         self.viewer.lookat = (1.0608, 0.1145, 0.035)
-

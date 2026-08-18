@@ -6,6 +6,8 @@ import pytest
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.eleven_action.trajectory import (
     move_direction,
     quintic_progress,
+    quintic_progress_rate,
+    swing_angular_velocity,
     swing_axis,
 )
 
@@ -27,6 +29,17 @@ def test_swing_axis_is_minimal_and_hits_fifteen_degree_target():
     assert math.degrees(math.acos(float(start @ midpoint))) == pytest.approx(7.5, abs=1.0e-10)
 
 
+def test_quintic_swing_rate_is_zero_at_boundaries_and_tangent_to_axis():
+    start = np.asarray([0.0, 0.0, 1.0])
+    target = np.asarray([math.sin(math.radians(15.0)), 0.0, math.cos(math.radians(15.0))])
+    assert quintic_progress_rate(0, 192, 240) == pytest.approx(0.0)
+    assert quintic_progress_rate(192, 192, 240) == pytest.approx(0.0)
+    rate = quintic_progress_rate(96, 192, 240)
+    omega = swing_angular_velocity(start, target, rate)
+    assert np.linalg.norm(omega) > 0.0
+    assert float(omega @ start) == pytest.approx(0.0, abs=1.0e-12)
+
+
 def test_move_directions_are_opposite_and_tangent_to_normal_and_axis_projection():
     axis = np.asarray([0.8, 0.1, 0.3])
     normal = np.asarray([0.0, 0.0, 1.0])
@@ -43,4 +56,3 @@ def test_move_direction_reports_degenerate_for_axis_normal_to_surface():
     direction, degenerate = move_direction([0.0, 0.0, 1.0], [0.0, 0.0, 1.0], positive=True)
     assert degenerate
     np.testing.assert_allclose(direction, np.zeros(3))
-
