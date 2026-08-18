@@ -9,6 +9,7 @@ from .dynamic_force_keyboard import (
     DynamicForceKeyboard,
 )
 from .local_primitive_keyboard import LocalPrimitiveKeyboard, parse_local_primitive_sequence
+from .eleven_action_keyboard import ElevenActionKeyboard
 
 __all__ = [
     "AtomicKeyboard",
@@ -19,6 +20,7 @@ __all__ = [
     "DynamicForceCommandKind",
     "DynamicForceKeyboard",
     "LocalPrimitiveKeyboard",
+    "ElevenActionKeyboard",
     "parse_local_primitive_sequence",
     "RequestOutcome",
     "SessionController",

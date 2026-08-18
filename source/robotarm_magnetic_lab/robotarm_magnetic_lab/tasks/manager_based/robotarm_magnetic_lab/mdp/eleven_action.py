@@ -284,8 +284,15 @@ class ElevenActionTerm(ActionTerm):
             raise RuntimeError("TASK-005 capsule must remain non-kinematic")
         if physx.GetDisableGravityAttr() and bool(physx.GetDisableGravityAttr().Get()):
             raise RuntimeError("TASK-005 capsule gravity must remain enabled")
-        if not physx.GetEnableCCDAttr() or not bool(physx.GetEnableCCDAttr().Get()):
-            raise RuntimeError("TASK-005 capsule body CCD must already be enabled")
+        # The source USD intentionally remains unchanged.  Reuse TASK-003/004's
+        # accepted task-local session authoring so this isolated dynamic task
+        # has body CCD whenever the selected PhysX backend supports it.
+        ccd = physx.GetEnableCCDAttr()
+        if not ccd:
+            ccd = physx.CreateEnableCCDAttr()
+        ccd.Set(True)
+        if not bool(ccd.Get()):
+            raise RuntimeError("TASK-005 capsule body CCD could not be enabled")
         if not bool(getattr(env.cfg.sim.physics, "enable_ccd", False)):
             raise RuntimeError("TASK-005 scene CCD must already be enabled")
 
@@ -310,4 +317,3 @@ def eleven_action_fault(env, term_name: str = "eleven_action") -> torch.Tensor:
     term = env.action_manager.get_term(term_name)
     failed = term.controller.lifecycle is Lifecycle.FAULTED
     return torch.full((env.num_envs,), failed, dtype=torch.bool, device=env.device)
-
