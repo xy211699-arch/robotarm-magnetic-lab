@@ -11,7 +11,7 @@ def test_shared_config_has_frozen_design_values():
     assert cfg.capsule_mass_kg == pytest.approx(0.0057349997)
     assert cfg.motion_duration_s == (5.5, 4.5, 3.5, 8.0)
     assert cfg.hard_timeout_s == (8.0, 7.0, 6.0, 9.5)
-    assert cfg.xy_force_limit_n == pytest.approx(0.5 * cfg.weight_n)
+    assert cfg.xy_force_limit_n == pytest.approx(1.0 * cfg.weight_n)
     assert cfg.downward_preload_n == pytest.approx(0.15 * cfg.weight_n)
 
 
