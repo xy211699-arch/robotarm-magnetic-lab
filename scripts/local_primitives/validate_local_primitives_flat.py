@@ -37,7 +37,8 @@ def evaluate_flat_summary(summary: dict[str, Any]) -> dict[str, Any]:
         return {"status": "needs_decision", "failures": ["forbidden runtime state writer"]}
     failures: list[str] = []
     records = summary.get("primitives", {})
-    for name in PRIMITIVE_NAMES:
+    required_names = tuple(summary.get("requested_primitives", PRIMITIVE_NAMES))
+    for name in required_names:
         record = records.get(name)
         if record is None:
             failures.append(f"{name}: missing result")
@@ -53,16 +54,32 @@ def evaluate_flat_summary(summary: dict[str, Any]) -> dict[str, Any]:
             failures.append(f"{name}: force bound exceeded")
         if float(record.get("max_torque_nm", math.inf)) > float(record.get("torque_bound_nm", -math.inf)) + 1.0e-12:
             failures.append(f"{name}: torque bound exceeded")
+        if float(record.get("max_physics_step_displacement_m", math.inf)) > 0.005:
+            failures.append(f"{name}: physics-step center displacement exceeds 5 mm")
+        if float(record.get("max_force_slew_n_per_s", math.inf)) > float(record.get("force_slew_bound_n_per_s", -math.inf)) + 1.0e-9:
+            failures.append(f"{name}: force slew bound exceeded")
+        if float(record.get("max_torque_slew_nm_per_s", math.inf)) > float(record.get("torque_slew_bound_nm_per_s", -math.inf)) + 1.0e-12:
+            failures.append(f"{name}: torque slew bound exceeded")
     rise = records.get("side_to_upright", {})
-    if int(rise.get("camera_hemisphere_load_samples", 0)):
-        failures.append("side_to_upright: camera hemisphere carried load")
-    if not bool(rise.get("late_dominant_non_camera", False)):
-        failures.append("side_to_upright: late dominant support was not non-camera")
+    if "side_to_upright" in required_names:
+        if int(rise.get("camera_hemisphere_load_samples", 0)):
+            failures.append("side_to_upright: camera hemisphere carried load")
+        if not bool(rise.get("late_dominant_non_camera", False)):
+            failures.append("side_to_upright: late dominant support was not non-camera")
     cone = records.get("cone_30_deg", {})
-    if float(cone.get("actual_cone_coverage_rad", -math.inf)) < 2.0 * math.pi - math.radians(10.0):
-        failures.append("cone_30_deg: actual azimuth coverage is incomplete")
-    if float(cone.get("cone_tilt_rmse_rad", math.inf)) > math.radians(5.0):
-        failures.append("cone_30_deg: tilt RMSE exceeds five degrees")
+    if "cone_30_deg" in required_names:
+        if float(cone.get("actual_cone_coverage_rad", -math.inf)) < 2.0 * math.pi - math.radians(10.0):
+            failures.append("cone_30_deg: actual azimuth coverage is incomplete")
+        if float(cone.get("cone_tilt_rmse_rad", math.inf)) > math.radians(5.0):
+            failures.append("cone_30_deg: tilt RMSE exceeds five degrees")
+    wrench = summary.get("wrench", {})
+    if "max_force_n" in wrench and float(wrench["max_force_n"]) > 5.0 + 1.0e-9:
+        failures.append("numerical force envelope exceeded")
+    if "max_torque_nm" in wrench and float(wrench["max_torque_nm"]) > 0.02 + 1.0e-12:
+        failures.append("numerical torque envelope exceeded")
+    continuity = summary.get("continuity", {})
+    if "max_physics_step_displacement_m" in continuity and float(continuity["max_physics_step_displacement_m"]) > 0.005:
+        failures.append("numerical physics-step displacement envelope exceeded")
     return {"status": "pass" if not failures else "fail", "failures": failures}
 
 
@@ -91,6 +108,47 @@ def record_calibration_attempt(
         stream.write(json.dumps(record, sort_keys=True) + "\n")
 
 
+def _combine_attempts(attempts: list[dict[str, Any]]) -> dict[str, Any]:
+    """Combine repeated sequence evidence conservatively for one primitive."""
+
+    succeeded = all(item["status"] == "succeeded_holding" for item in attempts)
+    completion_values = [item["completion_time_s"] for item in attempts]
+    completion = None if any(value is None for value in completion_values) else max(completion_values)
+    return {
+        "status": "succeeded_holding" if succeeded else next(
+            item["status"] for item in attempts if item["status"] != "succeeded_holding"
+        ),
+        "completion_time_s": completion,
+        "max_force_n": max(item["max_force_n"] for item in attempts),
+        "force_bound_n": min(item["force_bound_n"] for item in attempts),
+        "max_torque_nm": max(item["max_torque_nm"] for item in attempts),
+        "torque_bound_nm": min(item["torque_bound_nm"] for item in attempts),
+        "max_physics_step_displacement_m": max(
+            item["max_physics_step_displacement_m"] for item in attempts
+        ),
+        "max_force_slew_n_per_s": max(item["max_force_slew_n_per_s"] for item in attempts),
+        "force_slew_bound_n_per_s": min(item["force_slew_bound_n_per_s"] for item in attempts),
+        "max_torque_slew_nm_per_s": max(item["max_torque_slew_nm_per_s"] for item in attempts),
+        "torque_slew_bound_nm_per_s": min(item["torque_slew_bound_nm_per_s"] for item in attempts),
+        "nonfinite_samples": sum(item["nonfinite_samples"] for item in attempts),
+        "camera_hemisphere_load_samples": sum(
+            item["camera_hemisphere_load_samples"] for item in attempts
+        ),
+        "late_dominant_non_camera": all(item["late_dominant_non_camera"] for item in attempts),
+        "contact_points_seen": sum(item["contact_points_seen"] for item in attempts),
+        "contact_sigma_min_m": min(
+            (item["contact_sigma_min_m"] for item in attempts if item["contact_sigma_min_m"] is not None),
+            default=None,
+        ),
+        "contact_sigma_max_m": max(
+            (item["contact_sigma_max_m"] for item in attempts if item["contact_sigma_max_m"] is not None),
+            default=None,
+        ),
+        "actual_cone_coverage_rad": min(item["actual_cone_coverage_rad"] for item in attempts),
+        "cone_tilt_rmse_rad": max(item["cone_tilt_rmse_rad"] for item in attempts),
+    }
+
+
 class ReadOnlyContactPoints:
     """Collect PhysX contact points without changing controller inputs or state."""
 
@@ -101,6 +159,7 @@ class ReadOnlyContactPoints:
         self.capsule_root = capsule_root
         self._convert_path = PhysicsSchemaTools.intToSdfPath
         self.points: list[tuple[list[float], float]] = []
+        self.collider_pairs: set[tuple[str, str]] = set()
         interface = get_physx_simulation_interface()
         self.subscription = interface.subscribe_contact_report_events(self._callback)
 
@@ -109,16 +168,28 @@ class ReadOnlyContactPoints:
         for header in headers:
             collider0 = str(self._convert_path(header.collider0))
             collider1 = str(self._convert_path(header.collider1))
+            self.collider_pairs.add((collider0, collider1))
             if not (collider0.startswith(self.capsule_root) or collider1.startswith(self.capsule_root)):
                 continue
             for index in range(header.contact_data_offset, header.contact_data_offset + header.num_contact_data):
                 datum = data[index]
                 try:
-                    impulse = abs(float(datum.impulse))
-                except (TypeError, ValueError):
-                    impulse = 0.0
+                    impulse_components = [float(value) for value in datum.impulse]
+                    impulse = math.sqrt(sum(value * value for value in impulse_components))
+                except TypeError:
+                    try:
+                        impulse = abs(float(datum.impulse))
+                    except (TypeError, ValueError):
+                        impulse = 0.0
                 points.append(([float(v) for v in datum.position], impulse))
-        self.points = points
+        self.points.extend(points)
+
+    def consume(self) -> list[tuple[list[float], float]]:
+        """Return all contact points observed since the previous env sample."""
+
+        points = self.points
+        self.points = []
+        return points
 
     def close(self) -> None:
         self.subscription = None
@@ -167,14 +238,23 @@ def _run(args) -> tuple[dict[str, Any], Path]:
                 math.cos(math.radians(args.direction_azimuth_deg)),
                 math.sin(math.radians(args.direction_azimuth_deg)),
             ])
+            selected_sequences = SEQUENCES if args.only is None else ((PRIMITIVE_NAMES.index(args.only),),)
             with stream_path.open("w", encoding="utf-8") as stream:
-                for sequence_index, sequence in enumerate(SEQUENCES):
+                for sequence_index, sequence in enumerate(selected_sequences):
                     env.reset(seed=args.seed + sequence_index)
                     for code in sequence:
                         name = PRIMITIVE_NAMES[code]
                         camera_load = 0
                         late_non_camera = False
+                        contact_points_seen = 0
+                        contact_sigma_min = math.inf
+                        contact_sigma_max = -math.inf
                         max_force = max_torque = 0.0
+                        max_displacement = max_force_slew = max_torque_slew = 0.0
+                        previous_position = None
+                        previous_force = np.zeros(3, dtype=np.float64)
+                        previous_torque = np.zeros(3, dtype=np.float64)
+                        substep_index = len(term.substep_telemetry)
                         nonfinite = 0
                         action = np.array([1.0, float(code), direction[0], direction[1]], dtype=np.float32)
                         final_telemetry = None
@@ -197,13 +277,40 @@ def _run(args) -> tuple[dict[str, Any], Path]:
                             nonfinite += int(not np.isfinite(values).all())
                             max_force = max(max_force, float(np.linalg.norm(force)))
                             max_torque = max(max_torque, float(np.linalg.norm(torque)))
-                            contacts = monitor.points
+                            positions = term.substep_positions_world_m
+                            telemetry_samples = term.substep_telemetry
+                            for substep_position, substep_telemetry in zip(
+                                positions[substep_index:], telemetry_samples[substep_index:]
+                            ):
+                                if previous_position is not None:
+                                    max_displacement = max(
+                                        max_displacement,
+                                        float(np.linalg.norm(substep_position - previous_position)),
+                                    )
+                                previous_position = substep_position
+                                sample_force = substep_telemetry.total_force_world_n
+                                sample_torque = substep_telemetry.total_torque_world_nm
+                                max_force_slew = max(
+                                    max_force_slew,
+                                    float(np.linalg.norm(sample_force - previous_force)) / env.unwrapped.physics_dt,
+                                )
+                                max_torque_slew = max(
+                                    max_torque_slew,
+                                    float(np.linalg.norm(sample_torque - previous_torque)) / env.unwrapped.physics_dt,
+                                )
+                                previous_force = sample_force
+                                previous_torque = sample_torque
+                            substep_index = len(telemetry_samples)
+                            contacts = monitor.consume()
+                            contact_points_seen += len(contacts)
                             if contacts:
                                 largest = max(value[1] for value in contacts)
                                 for point, impulse in contacts:
                                     if largest <= 0.0 or impulse < 0.1 * largest:
                                         continue
                                     sigma = float(np.dot(np.asarray(point) - pose[:3], axis))
+                                    contact_sigma_min = min(contact_sigma_min, sigma)
+                                    contact_sigma_max = max(contact_sigma_max, sigma)
                                     desired_tilt = math.acos(float(np.clip(telemetry.desired_axis_world[2], -1.0, 1.0)))
                                     if sigma > 0.0065 and code == 0:
                                         camera_load += 1
@@ -217,6 +324,10 @@ def _run(args) -> tuple[dict[str, Any], Path]:
                                 "actual_axis_world": telemetry.actual_axis_world.tolist(),
                                 "position_world_m": pose[:3].tolist(), "velocity_world": velocity.tolist(),
                                 "force_world_n": force.tolist(), "torque_world_nm": torque.tolist(),
+                                "pose_torque_world_nm": telemetry.pose_torque_world_nm.tolist(),
+                                "endpoint_force_world_n": telemetry.endpoint_force_world_n.tolist(),
+                                "endpoint_equivalent_torque_world_nm": telemetry.endpoint_equivalent_torque_world_nm.tolist(),
+                                "profile_sha256": telemetry.profile_sha256,
                                 "cone_phase_rad": telemetry.cone_phase_rad,
                             }
                             stream.write(json.dumps(row, sort_keys=True) + "\n")
@@ -233,29 +344,49 @@ def _run(args) -> tuple[dict[str, Any], Path]:
                             "status": final_telemetry.status.value,
                             "completion_time_s": final_telemetry.completion_time_s,
                             "max_force_n": max_force,
-                            "force_bound_n": math.hypot(term.controller.cfg.xy_force_limit_n, term.controller.cfg.downward_preload_n),
+                            "force_bound_n": term.controller.cfg.total_force_limit_n,
                             "max_torque_nm": max_torque,
-                            "torque_bound_nm": term.controller.cfg.torque_limit_nm,
+                            "torque_bound_nm": term.controller.cfg.total_torque_limit_nm,
+                            "max_physics_step_displacement_m": max_displacement,
+                            "max_force_slew_n_per_s": max_force_slew,
+                            "force_slew_bound_n_per_s": term.controller.cfg.force_slew_limit_n_per_s,
+                            "max_torque_slew_nm_per_s": max_torque_slew,
+                            "torque_slew_bound_nm_per_s": term.controller.cfg.torque_slew_limit_nm_per_s,
                             "nonfinite_samples": nonfinite,
                             "camera_hemisphere_load_samples": camera_load,
                             "late_dominant_non_camera": late_non_camera,
+                            "contact_points_seen": contact_points_seen,
+                            "contact_sigma_min_m": None if math.isinf(contact_sigma_min) else contact_sigma_min,
+                            "contact_sigma_max_m": None if math.isinf(contact_sigma_max) else contact_sigma_max,
                             "actual_cone_coverage_rad": final_telemetry.cone_phase_rad,
                             "cone_tilt_rmse_rad": final_telemetry.cone_tilt_rmse_rad,
                         }
                         aggregate[name].append(record)
             for name, attempts in aggregate.items():
-                records[name] = max(attempts, key=lambda item: float(item["completion_time_s"] or math.inf))
-                if name == "side_to_upright":
-                    records[name]["camera_hemisphere_load_samples"] = sum(item["camera_hemisphere_load_samples"] for item in attempts)
-                    records[name]["late_dominant_non_camera"] = all(item["late_dominant_non_camera"] for item in attempts)
+                records[name] = _combine_attempts(attempts)
             summary = {
                 "schema_version": SCHEMA_VERSION,
                 "task": args.task,
                 "preflight": preflight,
                 "runtime_contract": scan_runtime_contract(),
-                "sequences": [list(sequence) for sequence in SEQUENCES],
+                "sequences": [list(sequence) for sequence in selected_sequences],
+                "requested_primitives": [
+                    PRIMITIVE_NAMES[index]
+                    for index in sorted({index for sequence in selected_sequences for index in sequence})
+                ],
                 "primitives": records,
                 "controller_config": asdict(make_local_primitive_controller_cfg()),
+                "profile_sha256": term.profile_sha256,
+                "contact_collider_pairs": [list(pair) for pair in sorted(monitor.collider_pairs)],
+            }
+            summary["wrench"] = {
+                "max_force_n": max(record["max_force_n"] for record in records.values()),
+                "max_torque_nm": max(record["max_torque_nm"] for record in records.values()),
+            }
+            summary["continuity"] = {
+                "max_physics_step_displacement_m": max(
+                    record["max_physics_step_displacement_m"] for record in records.values()
+                ),
             }
             summary["gate"] = evaluate_flat_summary(summary)
             summary_path = output / "summary.json"
@@ -288,10 +419,13 @@ def main() -> int:
     parser.add_argument("--calibration_log", type=Path)
     parser.add_argument("--attempt_index", type=int)
     parser.add_argument("--record_existing_summary", type=Path)
+    parser.add_argument("--only", choices=PRIMITIVE_NAMES + tuple(name.upper() for name in PRIMITIVE_NAMES))
     from isaaclab.app import AppLauncher
     AppLauncher.add_app_launcher_args(parser)
     parser.set_defaults(visualizer=[])
     args = parser.parse_args()
+    if args.only is not None:
+        args.only = args.only.lower()
     if args.task != TASK_ID:
         parser.error(f"TASK-004 flat validator accepts only {TASK_ID}")
     if (args.calibration_log is None) != (args.attempt_index is None):

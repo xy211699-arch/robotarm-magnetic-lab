@@ -58,6 +58,18 @@ def test_endpoint_force_converts_to_equivalent_com_wrench():
     np.testing.assert_allclose(torque, np.cross(offset, endpoint_force))
 
 
+def test_vertical_com_damping_has_no_height_target():
+    controller = LocalPrimitiveController()
+    stationary = state_for_axis([1, 0, 0], position=[0, 0, 10])
+    moving = state_for_axis([1, 0, 0], position=[0, 0, 10], linear=[0, 0, 0.1])
+    assert controller.start(PrimitiveId.SIDE_TO_UPRIGHT, 0.0, stationary)
+    stationary_command, _ = controller.update(stationary, 0.1)
+    controller.reset()
+    assert controller.start(PrimitiveId.SIDE_TO_UPRIGHT, 0.0, moving)
+    moving_command, _ = controller.update(moving, 0.1)
+    assert moving_command.force_world_n[2] < stationary_command.force_world_n[2]
+
+
 def test_wrench_is_bounded_and_uses_non_camera_endpoint_force():
     controller = LocalPrimitiveController()
     state = state_for_axis([1, 0, 0], position=(1, 1, 1), linear=(10, 10, 0), angular=(10, 10, 10))
@@ -86,10 +98,10 @@ def test_total_wrench_obeys_slew_limits():
     assert controller.start(PrimitiveId.SIDE_TO_UPRIGHT, 0.0, state)
     first, _ = controller.update(state, 1 / 240)
     second, _ = controller.update(state, 1 / 240)
-    assert np.linalg.norm(first.force_world_n) <= 20 / 240 + 1e-12
-    assert np.linalg.norm(first.torque_world_nm) <= 0.05 / 240 + 1e-12
-    assert np.linalg.norm(second.force_world_n - first.force_world_n) <= 20 / 240 + 1e-12
-    assert np.linalg.norm(second.torque_world_nm - first.torque_world_nm) <= 0.05 / 240 + 1e-12
+    assert np.linalg.norm(first.force_world_n) <= controller.cfg.force_slew_limit_n_per_s / 240 + 1e-12
+    assert np.linalg.norm(first.torque_world_nm) <= controller.cfg.torque_slew_limit_nm_per_s / 240 + 1e-12
+    assert np.linalg.norm(second.force_world_n - first.force_world_n) <= controller.cfg.force_slew_limit_n_per_s / 240 + 1e-12
+    assert np.linalg.norm(second.torque_world_nm - first.torque_world_nm) <= controller.cfg.torque_slew_limit_nm_per_s / 240 + 1e-12
 
 
 def test_transition_completes_after_stable_hold():
@@ -104,6 +116,21 @@ def test_transition_completes_after_stable_hold():
             break
     assert telemetry.status == PrimitiveStatus.SUCCEEDED_HOLDING
     assert controller.start(PrimitiveId.UPRIGHT_TO_30_DEG, 0.0, upright)
+
+
+def test_simulation_first_stability_is_a_continuous_posture_window():
+    controller = LocalPrimitiveController()
+    side = state_for_axis([1, 0, 0])
+    moving_upright = state_for_axis(
+        [0, 0, 1], linear=[0.5, 0, 0], angular=[0, 1.0, 0],
+    )
+    assert controller.start(PrimitiveId.SIDE_TO_UPRIGHT, 0.0, side)
+    telemetry = None
+    for _ in range(80):
+        _, telemetry = controller.update(moving_upright, 0.1)
+        if telemetry.status == PrimitiveStatus.SUCCEEDED_HOLDING:
+            break
+    assert telemetry.status == PrimitiveStatus.SUCCEEDED_HOLDING
 
 
 def test_timeout_clears_wrench_and_accepts_new_valid_request():

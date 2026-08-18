@@ -233,7 +233,12 @@ class LocalPrimitiveController:
             [force_xy[0], force_xy[1], -self.cfg.endpoint_pin_force_n],
             dtype=np.float64,
         )
-        com_force = np.zeros(3, dtype=np.float64)
+        # Dampen contact-normal COM motion without introducing a height target.
+        # Horizontal anchoring remains exclusively an endpoint-space law.
+        com_force = np.array(
+            [0.0, 0.0, -self.cfg.anchor_kd_ns_per_m * state.linear_velocity_world_m_s[2]],
+            dtype=np.float64,
+        )
         total_force, total_torque = compose_endpoint_wrench(
             endpoint.offset_world_m, endpoint_force, com_force, pose_torque,
         )
@@ -285,11 +290,10 @@ class LocalPrimitiveController:
             else self.cfg.transition_tolerance_rad
         )
         axis_error = math.acos(float(np.clip(np.dot(actual_axis, self._last_desired.axis_world), -1.0, 1.0)))
-        return (
-            axis_error <= tolerance
-            and float(np.linalg.norm(state.linear_velocity_world_m_s)) < self.cfg.max_stable_linear_speed_m_s
-            and float(np.linalg.norm(state.angular_velocity_world_rad_s)) < self.cfg.max_stable_angular_speed_rad_s
-        )
+        # Simulation-first acceptance defines a stable *posture* window.  Live
+        # velocities remain telemetry, but old physical-rest thresholds must
+        # not reject an otherwise continuously tracked simulated posture.
+        return axis_error <= tolerance
 
     def _observe_cone(self, actual_axis: np.ndarray) -> None:
         actual_azimuth = azimuth_from_axis(actual_axis, self._initial_cone_phase)

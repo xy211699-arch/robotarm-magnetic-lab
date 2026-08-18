@@ -9,6 +9,9 @@ def valid_flat_summary():
         "status": "succeeded_holding", "completion_time_s": 5.0,
         "nonfinite_samples": 0, "max_force_n": 0.01, "force_bound_n": 0.02,
         "max_torque_nm": 1e-5, "torque_bound_nm": 2e-5,
+        "max_physics_step_displacement_m": 1e-5,
+        "max_force_slew_n_per_s": 1.0, "force_slew_bound_n_per_s": 20.0,
+        "max_torque_slew_nm_per_s": 0.001, "torque_slew_bound_nm_per_s": 0.05,
         "camera_hemisphere_load_samples": 0, "late_dominant_non_camera": True,
         "actual_cone_coverage_rad": 2 * math.pi, "cone_tilt_rmse_rad": 0.01,
     }
@@ -48,3 +51,15 @@ def test_contact_does_not_fail_without_tracking_failure():
     summary = valid_flat_summary()
     summary["contact"]["max_force_n"] = 100.0
     assert evaluate_flat_summary(summary)["status"] == "pass"
+
+
+def test_unrealistic_but_allowed_wrench_does_not_fail():
+    summary = valid_flat_summary()
+    summary["wrench"] = {"max_force_n": 4.9, "max_torque_nm": 0.019}
+    assert evaluate_flat_summary(summary)["status"] == "pass"
+
+
+def test_numerical_discontinuity_still_fails():
+    summary = valid_flat_summary()
+    summary["continuity"] = {"max_physics_step_displacement_m": 0.0051}
+    assert evaluate_flat_summary(summary)["status"] == "fail"
