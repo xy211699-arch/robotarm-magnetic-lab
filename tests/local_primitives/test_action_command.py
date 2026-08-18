@@ -2,9 +2,11 @@ import numpy as np
 import pytest
 
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.mdp.local_primitive_action import (
-    PrimitiveCommandDecoder,
+    PrimitiveCommandDecoder, make_local_primitive_action_cfg,
 )
-from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.local_primitives import PrimitiveId
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.local_primitives import (
+    PrimitiveId, simulation_profile_sha256,
+)
 
 
 def test_start_is_rising_edge_and_zero_direction_defaults_to_world_x():
@@ -28,3 +30,9 @@ def test_invalid_primitive_code_is_rejected(code):
 def test_nonfinite_action_is_rejected(value):
     with pytest.raises(ValueError):
         PrimitiveCommandDecoder().decode([1.0, value, 1.0, 0.0])
+
+
+def test_action_exposes_exact_tracked_profile_digest():
+    cfg = make_local_primitive_action_cfg()
+    assert cfg.profile_sha256 == simulation_profile_sha256()
+    assert cfg.controller_cfg.profile_sha256 == cfg.profile_sha256

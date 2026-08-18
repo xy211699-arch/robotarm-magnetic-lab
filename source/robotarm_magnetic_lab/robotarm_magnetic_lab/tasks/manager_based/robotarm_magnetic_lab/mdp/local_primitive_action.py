@@ -21,6 +21,7 @@ from ..controllers.local_primitives import (
     PrimitiveRequest,
     PrimitiveTelemetry,
     make_local_primitive_controller_cfg,
+    simulation_profile_sha256,
 )
 
 
@@ -73,6 +74,8 @@ class LocalPrimitiveAction(ActionTerm):
                 f"design mass {cfg.controller_cfg.capsule_mass_kg:.10g} kg"
             )
         runtime_cfg = replace(cfg.controller_cfg, capsule_mass_kg=mass)
+        if cfg.profile_sha256 != runtime_cfg.profile_sha256:
+            raise RuntimeError("action profile digest does not match controller profile digest")
         self.controller = LocalPrimitiveController(runtime_cfg)
         self.decoder = PrimitiveCommandDecoder()
         self._raw_actions = torch.zeros((1, 4), device=env.device)
@@ -82,6 +85,7 @@ class LocalPrimitiveAction(ActionTerm):
         self._pending_request: PrimitiveRequest | None = None
         self._telemetry: PrimitiveTelemetry | None = None
         self._substep_telemetry: deque[PrimitiveTelemetry] = deque(maxlen=16384)
+        self._substep_positions_world_m: deque[np.ndarray] = deque(maxlen=16384)
         self._sim_time_s = 0.0
         self._last_request_result = "none"
         self._verify_dynamic_invariants(env)
@@ -118,6 +122,16 @@ class LocalPrimitiveAction(ActionTerm):
     def substep_telemetry(self) -> tuple[PrimitiveTelemetry, ...]:
         return tuple(self._substep_telemetry)
 
+    @property
+    def substep_positions_world_m(self) -> tuple[np.ndarray, ...]:
+        """Immutable copies of COM positions sampled at the 240 Hz action cadence."""
+
+        return tuple(position.copy() for position in self._substep_positions_world_m)
+
+    @property
+    def profile_sha256(self) -> str:
+        return self.cfg.profile_sha256
+
     def process_actions(self, actions: torch.Tensor) -> None:
         self._raw_actions[:] = actions
         if not bool(torch.isfinite(actions).all()):
@@ -140,6 +154,7 @@ class LocalPrimitiveAction(ActionTerm):
         wrench, telemetry = self.controller.update(state, self._physics_dt_s)
         self._telemetry = telemetry
         self._substep_telemetry.append(telemetry)
+        self._substep_positions_world_m.append(state.position_world_m.copy())
         self._applied_force_world[0] = torch.tensor(
             wrench.force_world_n, device=self._applied_force_world.device,
             dtype=self._applied_force_world.dtype,
@@ -166,6 +181,7 @@ class LocalPrimitiveAction(ActionTerm):
         self._pending_request = None
         self._telemetry = None
         self._substep_telemetry.clear()
+        self._substep_positions_world_m.clear()
         self._sim_time_s = 0.0
         self._last_request_result = "none"
         self.decoder.reset()
@@ -224,6 +240,7 @@ class LocalPrimitiveActionTermCfg(ActionTermCfg):
     class_type: type[ActionTerm] = LocalPrimitiveAction
     asset_name: str = "capsule"
     controller_cfg_values: dict = asdict(make_local_primitive_controller_cfg())
+    profile_sha256: str = simulation_profile_sha256()
 
     @property
     def controller_cfg(self) -> LocalPrimitiveControllerCfg:
@@ -236,5 +253,6 @@ def make_local_primitive_action_cfg() -> LocalPrimitiveActionTermCfg:
     """Build the one action term used unchanged by flat and stomach tasks."""
 
     return LocalPrimitiveActionTermCfg(
-        controller_cfg_values=asdict(make_local_primitive_controller_cfg())
+        controller_cfg_values=asdict(make_local_primitive_controller_cfg()),
+        profile_sha256=simulation_profile_sha256(),
     )

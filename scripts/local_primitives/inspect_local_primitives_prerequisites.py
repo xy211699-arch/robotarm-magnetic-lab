@@ -25,7 +25,8 @@ FORBIDDEN_CALLS = (
 )
 REQUIRED_SECTIONS = (
     "schema_version", "tasks", "timing", "capsule", "endpoint_convention",
-    "wrench_api", "contact_points", "isolation", "runtime_contract", "gate",
+    "wrench_api", "simulation_profile", "contact_points", "isolation",
+    "runtime_contract", "gate",
 )
 
 
@@ -61,6 +62,19 @@ def build_gate(report: dict) -> dict:
     wrench = report["wrench_api"]
     if not bool(wrench.get("direct_force_and_torque")) or not bool(wrench.get("center_of_mass_semantics")):
         failures.append("direct center-of-mass torque support is unconfirmed")
+    profile = report["simulation_profile"]
+    if len(str(profile.get("sha256", ""))) != 64:
+        failures.append("simulation profile digest is unavailable")
+    if profile.get("action_term_sha256", profile.get("sha256")) != profile.get("sha256"):
+        failures.append("action term does not use the tracked simulation profile digest")
+    if float(profile.get("total_force_limit_n", math.inf)) > 5.0:
+        failures.append("simulation profile exceeds the 5 N numerical envelope")
+    if float(profile.get("total_torque_limit_nm", math.inf)) > 0.02:
+        failures.append("simulation profile exceeds the 0.02 N m numerical envelope")
+    if float(profile.get("force_slew_limit_n_per_s", math.inf)) > 50.0:
+        failures.append("simulation profile exceeds the 50 N/s numerical envelope")
+    if float(profile.get("torque_slew_limit_nm_per_s", math.inf)) > 0.2:
+        failures.append("simulation profile exceeds the 0.2 N m/s numerical envelope")
     if not bool(report["contact_points"].get("read_only_access")):
         failures.append("read-only flat contact-point access is unavailable")
     if report["isolation"].get("flat_action_terms") != ["local_primitive"]:
@@ -88,6 +102,11 @@ def source_report() -> dict:
 
     action_path = PACKAGE_ROOT / "robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/local_primitive_action.py"
     source = action_path.read_text(encoding="utf-8")
+    from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.local_primitives import (
+        load_simulation_profile, simulation_profile_sha256,
+    )
+
+    profile = load_simulation_profile()
     report = {
         "schema_version": SCHEMA_VERSION,
         "tasks": {"requested": FLAT_TASK_ID, "registered": []},
@@ -104,6 +123,15 @@ def source_report() -> dict:
         "wrench_api": {
             "direct_force_and_torque": "torques=self._applied_torque_world" in source,
             "center_of_mass_semantics": "positions=None" in source,
+        },
+        "simulation_profile": {
+            "sha256": simulation_profile_sha256(),
+            "pose_torque_limit_nm": profile.pose_torque_limit_nm,
+            "endpoint_pin_force_n": profile.endpoint_pin_force_n,
+            "total_force_limit_n": profile.total_force_limit_n,
+            "total_torque_limit_nm": profile.total_torque_limit_nm,
+            "force_slew_limit_n_per_s": profile.force_slew_limit_n_per_s,
+            "torque_slew_limit_nm_per_s": profile.torque_slew_limit_nm_per_s,
         },
         "contact_points": {"read_only_access": False},
         "isolation": {"flat_action_terms": []},
@@ -171,6 +199,7 @@ def live_report(args) -> dict:
                 "positions_argument": None,
                 "is_global": True,
             }
+            report["simulation_profile"]["action_term_sha256"] = term.profile_sha256
             report["contact_points"] = {
                 "read_only_access": callable(getattr(interface, "subscribe_contact_report_events", None)),
                 "fields": ["position", "normal", "impulse", "separation"],

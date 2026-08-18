@@ -5,7 +5,7 @@ import pytest
 
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.local_primitives import (
     CapsuleState, LocalPrimitiveController, PrimitiveId, PrimitiveStatus,
-    axis_at_tilt,
+    axis_at_tilt, compose_endpoint_wrench, non_camera_endpoint_state,
 )
 
 
@@ -34,15 +34,62 @@ def test_start_gates_and_busy_rejection():
     assert controller.start(PrimitiveId.UPRIGHT_TO_30_DEG, 0.0, upright)
 
 
-def test_wrench_is_bounded_and_uses_downward_preload():
+def test_non_camera_endpoint_uses_rigid_body_kinematics():
+    state = state_for_axis(
+        [1, 0, 0], position=[0.1, 0.2, 0.03], angular=[0, 2, 0],
+    )
+    endpoint = non_camera_endpoint_state(state, 0.0125)
+    np.testing.assert_allclose(endpoint.offset_world_m, [-0.0125, 0, 0], atol=1e-12)
+    np.testing.assert_allclose(endpoint.position_world_m, [0.0875, 0.2, 0.03], atol=1e-12)
+    np.testing.assert_allclose(
+        endpoint.velocity_world_m_s,
+        state.linear_velocity_world_m_s
+        + np.cross(state.angular_velocity_world_rad_s, endpoint.offset_world_m),
+    )
+
+
+def test_endpoint_force_converts_to_equivalent_com_wrench():
+    offset = np.array([-0.0125, 0, 0])
+    endpoint_force = np.array([0, 0, -0.1])
+    force, torque = compose_endpoint_wrench(
+        offset, endpoint_force, np.zeros(3), np.zeros(3),
+    )
+    np.testing.assert_allclose(force, endpoint_force)
+    np.testing.assert_allclose(torque, np.cross(offset, endpoint_force))
+
+
+def test_wrench_is_bounded_and_uses_non_camera_endpoint_force():
     controller = LocalPrimitiveController()
     state = state_for_axis([1, 0, 0], position=(1, 1, 1), linear=(10, 10, 0), angular=(10, 10, 10))
     assert controller.start(PrimitiveId.SIDE_TO_UPRIGHT, 0.0, state)
     command, telemetry = controller.update(state, 1 / 240)
-    assert np.linalg.norm(command.force_world_n[:2]) <= controller.cfg.xy_force_limit_n + 1e-12
-    assert command.force_world_n[2] == pytest.approx(-controller.cfg.downward_preload_n)
-    assert np.linalg.norm(command.torque_world_nm) <= controller.cfg.torque_limit_nm + 1e-12
+    assert np.linalg.norm(command.force_world_n) <= controller.cfg.total_force_limit_n + 1e-12
+    assert telemetry.endpoint_force_world_n[2] == pytest.approx(-controller.cfg.endpoint_pin_force_n)
+    assert np.linalg.norm(command.torque_world_nm) <= controller.cfg.total_torque_limit_nm + 1e-12
+    np.testing.assert_allclose(telemetry.total_force_world_n, command.force_world_n)
+    np.testing.assert_allclose(telemetry.total_torque_world_nm, command.torque_world_nm)
     assert telemetry.status == PrimitiveStatus.RUNNING
+
+
+def test_controller_can_exceed_old_physical_torque_limit():
+    controller = LocalPrimitiveController()
+    state = state_for_axis([1, 0, 0])
+    assert controller.start(PrimitiveId.SIDE_TO_UPRIGHT, 0.0, state)
+    _, telemetry = controller.update(state, 1 / 240)
+    assert np.linalg.norm(telemetry.total_torque_world_nm) > 3.0e-5
+    assert np.linalg.norm(telemetry.total_torque_world_nm) <= 0.005
+
+
+def test_total_wrench_obeys_slew_limits():
+    controller = LocalPrimitiveController()
+    state = state_for_axis([1, 0, 0])
+    assert controller.start(PrimitiveId.SIDE_TO_UPRIGHT, 0.0, state)
+    first, _ = controller.update(state, 1 / 240)
+    second, _ = controller.update(state, 1 / 240)
+    assert np.linalg.norm(first.force_world_n) <= 20 / 240 + 1e-12
+    assert np.linalg.norm(first.torque_world_nm) <= 0.05 / 240 + 1e-12
+    assert np.linalg.norm(second.force_world_n - first.force_world_n) <= 20 / 240 + 1e-12
+    assert np.linalg.norm(second.torque_world_nm - first.torque_world_nm) <= 0.05 / 240 + 1e-12
 
 
 def test_transition_completes_after_stable_hold():
@@ -69,6 +116,8 @@ def test_timeout_clears_wrench_and_accepts_new_valid_request():
     assert telemetry.status == PrimitiveStatus.TIMED_OUT
     np.testing.assert_allclose(command.force_world_n, 0.0)
     np.testing.assert_allclose(command.torque_world_nm, 0.0)
+    np.testing.assert_allclose(telemetry.total_force_world_n, 0.0)
+    np.testing.assert_allclose(telemetry.total_torque_world_nm, 0.0)
     assert controller.start(PrimitiveId.SIDE_TO_UPRIGHT, 0.0, side)
 
 

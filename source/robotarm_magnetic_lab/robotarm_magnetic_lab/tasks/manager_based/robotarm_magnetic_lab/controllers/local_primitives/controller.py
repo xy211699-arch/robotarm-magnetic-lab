@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -24,6 +25,45 @@ from .types import (
     PrimitiveTelemetry,
     WrenchCommand,
 )
+
+
+@dataclass(frozen=True)
+class EndpointState:
+    """Rigid-body state of the virtual non-camera capsule endpoint."""
+
+    offset_world_m: np.ndarray
+    position_world_m: np.ndarray
+    velocity_world_m_s: np.ndarray
+
+
+def non_camera_endpoint_state(state: CapsuleState, half_length_m: float) -> EndpointState:
+    """Return the endpoint opposite local camera axis using rigid-body kinematics."""
+
+    axis = directed_axis_from_quaternion_wxyz(state.quaternion_wxyz)
+    offset = -float(half_length_m) * axis
+    return EndpointState(
+        offset_world_m=offset,
+        position_world_m=state.position_world_m + offset,
+        velocity_world_m_s=(
+            state.linear_velocity_world_m_s
+            + np.cross(state.angular_velocity_world_rad_s, offset)
+        ),
+    )
+
+
+def compose_endpoint_wrench(
+    endpoint_offset_world_m: np.ndarray,
+    endpoint_force_world_n: np.ndarray,
+    com_force_world_n: np.ndarray,
+    pose_torque_world_nm: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Convert a virtual endpoint force to one equivalent world COM wrench."""
+
+    offset = np.asarray(endpoint_offset_world_m, dtype=np.float64).reshape(3)
+    endpoint_force = np.asarray(endpoint_force_world_n, dtype=np.float64).reshape(3)
+    com_force = np.asarray(com_force_world_n, dtype=np.float64).reshape(3)
+    pose_torque = np.asarray(pose_torque_world_nm, dtype=np.float64).reshape(3)
+    return endpoint_force + com_force, pose_torque + np.cross(offset, endpoint_force)
 
 
 class LocalPrimitiveController:
@@ -52,6 +92,17 @@ class LocalPrimitiveController:
         zeros = np.zeros(3)
         self._last_desired = AxisTarget(WORLD_UP, zeros, zeros)
         self._last_actual_axis = WORLD_UP.copy()
+        self._previous_force_world_n = np.zeros(3, dtype=np.float64)
+        self._previous_torque_world_nm = np.zeros(3, dtype=np.float64)
+        self._pose_torque_world_nm = np.zeros(3, dtype=np.float64)
+        self._endpoint_force_world_n = np.zeros(3, dtype=np.float64)
+        self._endpoint_equivalent_torque_world_nm = np.zeros(3, dtype=np.float64)
+        self._total_force_world_n = np.zeros(3, dtype=np.float64)
+        self._total_torque_world_nm = np.zeros(3, dtype=np.float64)
+        self._force_saturated = False
+        self._torque_saturated = False
+        self._force_slew_limited = False
+        self._torque_slew_limited = False
 
     @property
     def anchor_xy(self) -> np.ndarray:
@@ -89,10 +140,8 @@ class LocalPrimitiveController:
         self.completion_time_s = None
         self._direction_xy = np.array([math.cos(azimuth_rad), math.sin(azimuth_rad)], dtype=np.float64)
         self._final_axis = self._target_axis(primitive, self._direction_xy)
-        self._anchor_xy = (
-            state.position_world_m[:2]
-            - self.cfg.capsule_half_total_length_m * actual_axis[:2]
-        )
+        endpoint = non_camera_endpoint_state(state, self.cfg.capsule_half_total_length_m)
+        self._anchor_xy = endpoint.position_world_m[:2].copy()
         self._initial_cone_phase = azimuth_from_axis(actual_axis, float(azimuth_rad))
         self._actual_cone_phase = 0.0
         self._previous_actual_azimuth = self._initial_cone_phase
@@ -111,6 +160,7 @@ class LocalPrimitiveController:
         if not state.is_finite:
             self.status = PrimitiveStatus.NONFINITE
             self.active_primitive = None
+            self._clear_wrench_state()
             return self._zero_command(), self._telemetry(self._last_desired, self._last_actual_axis)
 
         actual_axis = directed_axis_from_quaternion_wxyz(state.quaternion_wxyz)
@@ -121,12 +171,14 @@ class LocalPrimitiveController:
             PrimitiveStatus.TIMED_OUT,
             PrimitiveStatus.NONFINITE,
         ):
+            self._clear_wrench_state()
             return self._zero_command(), self._telemetry(self._last_desired, actual_axis)
 
         if self.status == PrimitiveStatus.RUNNING:
             self.elapsed_s += dt
             if self.elapsed_s > self.cfg.hard_timeout_s[int(self.active_primitive)]:
                 self.status = PrimitiveStatus.TIMED_OUT
+                self._clear_wrench_state()
                 return self._zero_command(), self._telemetry(self._last_desired, actual_axis)
 
         desired = self._sample_desired(self.elapsed_s)
@@ -134,7 +186,7 @@ class LocalPrimitiveController:
         if self.active_primitive == PrimitiveId.CONE_30_DEG_ONE_REVOLUTION:
             self._observe_cone(actual_axis)
 
-        command = self._compute_wrench(state, actual_axis, desired)
+        command = self._compute_wrench(state, actual_axis, desired, dt)
         if self.elapsed_s >= self.cfg.motion_duration_s[int(self.active_primitive)]:
             if self._is_stable(state, actual_axis):
                 self.stable_time_s += dt
@@ -160,29 +212,55 @@ class LocalPrimitiveController:
         state: CapsuleState,
         actual_axis: np.ndarray,
         desired: AxisTarget,
+        dt_s: float,
     ) -> WrenchCommand:
         omega = state.angular_velocity_world_rad_s
         omega_perpendicular = omega - float(np.dot(omega, actual_axis)) * actual_axis
         desired_omega = desired.angular_velocity_world_rad_s
-        torque = (
+        pose_torque = (
             self.cfg.axis_kp_nm_per_rad * np.cross(actual_axis, desired.axis_world)
             + self.cfg.axis_kd_nms_per_rad * (desired_omega - omega_perpendicular)
             - self.cfg.roll_damping_nms_per_rad * float(np.dot(omega, actual_axis)) * actual_axis
         )
-        torque = _clip_norm(torque, self.cfg.torque_limit_nm)
+        pose_torque = _clip_norm(pose_torque, self.cfg.pose_torque_limit_nm)
 
-        desired_position_xy = (
-            self._anchor_xy
-            + self.cfg.capsule_half_total_length_m * desired.axis_world[:2]
-        )
-        desired_velocity_xy = self.cfg.capsule_half_total_length_m * desired.axis_dot_world_s[:2]
+        endpoint = non_camera_endpoint_state(state, self.cfg.capsule_half_total_length_m)
         force_xy = (
-            self.cfg.anchor_kp_n_per_m * (desired_position_xy - state.position_world_m[:2])
-            + self.cfg.anchor_kd_ns_per_m * (desired_velocity_xy - state.linear_velocity_world_m_s[:2])
+            self.cfg.anchor_kp_n_per_m * (self._anchor_xy - endpoint.position_world_m[:2])
+            - self.cfg.anchor_kd_ns_per_m * endpoint.velocity_world_m_s[:2]
         )
-        force_xy = _clip_norm(force_xy, self.cfg.xy_force_limit_n)
-        force = np.array([force_xy[0], force_xy[1], -self.cfg.downward_preload_n], dtype=np.float64)
-        return WrenchCommand(force, torque)
+        endpoint_force = np.array(
+            [force_xy[0], force_xy[1], -self.cfg.endpoint_pin_force_n],
+            dtype=np.float64,
+        )
+        com_force = np.zeros(3, dtype=np.float64)
+        total_force, total_torque = compose_endpoint_wrench(
+            endpoint.offset_world_m, endpoint_force, com_force, pose_torque,
+        )
+        self._force_saturated = float(np.linalg.norm(total_force)) > self.cfg.total_force_limit_n
+        self._torque_saturated = float(np.linalg.norm(total_torque)) > self.cfg.total_torque_limit_nm
+        total_force = _clip_norm(total_force, self.cfg.total_force_limit_n)
+        total_torque = _clip_norm(total_torque, self.cfg.total_torque_limit_nm)
+        total_force, self._force_slew_limited = _slew_vector(
+            self._previous_force_world_n,
+            total_force,
+            self.cfg.force_slew_limit_n_per_s * dt_s,
+        )
+        total_torque, self._torque_slew_limited = _slew_vector(
+            self._previous_torque_world_nm,
+            total_torque,
+            self.cfg.torque_slew_limit_nm_per_s * dt_s,
+        )
+        self._previous_force_world_n = total_force.copy()
+        self._previous_torque_world_nm = total_torque.copy()
+        self._pose_torque_world_nm = pose_torque.copy()
+        self._endpoint_force_world_n = endpoint_force.copy()
+        self._endpoint_equivalent_torque_world_nm = np.cross(
+            endpoint.offset_world_m, endpoint_force,
+        )
+        self._total_force_world_n = total_force.copy()
+        self._total_torque_world_nm = total_torque.copy()
+        return WrenchCommand(total_force, total_torque)
 
     def _start_gate_allows(self, code: PrimitiveId, tilt_rad: float) -> bool:
         if code == PrimitiveId.SIDE_TO_UPRIGHT:
@@ -253,7 +331,30 @@ class LocalPrimitiveController:
             cone_tilt_rmse_rad=self._cone_rmse(),
             last_request_result=self.last_request_result,
             completion_time_s=self.completion_time_s,
+            pose_torque_world_nm=self._pose_torque_world_nm,
+            endpoint_force_world_n=self._endpoint_force_world_n,
+            endpoint_equivalent_torque_world_nm=self._endpoint_equivalent_torque_world_nm,
+            total_force_world_n=self._total_force_world_n,
+            total_torque_world_nm=self._total_torque_world_nm,
+            force_saturated=self._force_saturated,
+            torque_saturated=self._torque_saturated,
+            force_slew_limited=self._force_slew_limited,
+            torque_slew_limited=self._torque_slew_limited,
+            profile_sha256=self.cfg.profile_sha256,
         )
+
+    def _clear_wrench_state(self) -> None:
+        self._previous_force_world_n.fill(0.0)
+        self._previous_torque_world_nm.fill(0.0)
+        self._pose_torque_world_nm.fill(0.0)
+        self._endpoint_force_world_n.fill(0.0)
+        self._endpoint_equivalent_torque_world_nm.fill(0.0)
+        self._total_force_world_n.fill(0.0)
+        self._total_torque_world_nm.fill(0.0)
+        self._force_saturated = False
+        self._torque_saturated = False
+        self._force_slew_limited = False
+        self._torque_slew_limited = False
 
     @staticmethod
     def _zero_command() -> WrenchCommand:
@@ -265,3 +366,12 @@ def _clip_norm(vector: np.ndarray, limit: float) -> np.ndarray:
     if norm <= limit or norm <= 1.0e-15:
         return np.asarray(vector, dtype=np.float64)
     return np.asarray(vector, dtype=np.float64) * (limit / norm)
+
+
+def _slew_vector(previous: np.ndarray, target: np.ndarray, max_delta: float) -> tuple[np.ndarray, bool]:
+    delta = np.asarray(target, dtype=np.float64) - np.asarray(previous, dtype=np.float64)
+    norm = float(np.linalg.norm(delta))
+    limited = norm > max_delta
+    if limited and norm > 1.0e-15:
+        delta = delta * (max_delta / norm)
+    return np.asarray(previous, dtype=np.float64) + delta, limited

@@ -9,7 +9,12 @@ from .config import (
     make_local_primitive_controller_cfg,
     simulation_profile_sha256,
 )
-from .controller import LocalPrimitiveController
+from .controller import (
+    EndpointState,
+    LocalPrimitiveController,
+    compose_endpoint_wrench,
+    non_camera_endpoint_state,
+)
 from .trajectory import (
     WORLD_UP,
     axis_at_tilt,
@@ -35,11 +40,11 @@ from .types import (
 )
 
 __all__ = [
-    "AxisTarget", "CapsuleState", "LocalPrimitiveActionCfg", "LocalPrimitiveControllerCfg", "LocalPrimitiveController", "PrimitiveCode", "PrimitiveId",
+    "AxisTarget", "CapsuleState", "EndpointState", "LocalPrimitiveActionCfg", "LocalPrimitiveControllerCfg", "LocalPrimitiveController", "PrimitiveCode", "PrimitiveId",
     "PrimitiveRequest", "PrimitiveStatus", "PrimitiveTelemetry", "WORLD_UP",
-    "WrenchCommand", "axis_at_tilt", "azimuth_from_axis", "cone_axis", "desired_axis_sample",
+    "WrenchCommand", "axis_at_tilt", "azimuth_from_axis", "compose_endpoint_wrench", "cone_axis", "desired_axis_sample",
     "directed_axis_from_quaternion_wxyz", "make_local_primitive_action_cfg",
     "load_simulation_profile", "make_local_primitive_controller_cfg", "posture_axis",
     "quintic_progress", "quintic_scale", "SimulationAuthorityProfile",
-    "simulation_profile_sha256", "slerp_axis", "tilt_from_axis", "wrap_angle",
+    "non_camera_endpoint_state", "simulation_profile_sha256", "slerp_axis", "tilt_from_axis", "wrap_angle",
 ]
