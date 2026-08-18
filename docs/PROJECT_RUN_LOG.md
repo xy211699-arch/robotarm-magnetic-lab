@@ -743,3 +743,15 @@
 - 组合USD检查确认运行时shader读数为roughness 0.80、IOR 1.34、metallic 0且仍使用原
   metallic workflow；TASK-004与动态力专项104/104通过。自动Kit会话只完成RTX启动、未进入
   环境主循环，未生成新的相机诊断图，保留人工可视化验收项。
+
+## 2026-08-19 — TASK-005 十一动作动态控制器（needs_decision）
+
+- 实现公开ID 0–10、一秒240子步状态机、相机相对15° VIEW、HOLD、双向MOVE、动态COM
+  wrench、原生ContactSensor接触链路、键盘入口及自动标定/验收；运行期无状态写入。
+- 81组授权增益中11组通过canonical标定，冻结`0.02/0.0032/20/0.8`、MOVE `k=0.9`，
+  profile digest为`dba847d7…`；标定最大角误差1.837°、漂移1.101 mm。
+- 独立seed的130样本平面门禁失败：仅VIEW 4和MOVE POS通过，HOLD最坏5.57°，其余VIEW
+  受接触欠阻尼影响；MOVE NEG有1个预期valid被REJECTED。0 FAULT，按合同停止，未执行
+  100动作压力或胃部迁移，结论`needs_decision`。
+- 回归通过：TASK-005 74/74、TASK-004与动态力104/104、覆盖/动作层选择性87/87；GPU
+  PhysX仍报告启用GPU dynamics时禁用CCD。完整证据和扩权决策见TASK-005报告。
