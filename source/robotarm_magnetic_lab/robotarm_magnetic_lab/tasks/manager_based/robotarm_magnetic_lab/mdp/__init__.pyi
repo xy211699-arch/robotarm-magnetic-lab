@@ -12,3 +12,9 @@ from isaaclab.envs.mdp import *  # noqa: F401, F403
 
 from .rewards import joint_pos_target_l2
 from .vision import capsule_depth, capsule_rgb
+from .local_primitive_action import (
+    LocalPrimitiveAction,
+    LocalPrimitiveActionTermCfg,
+    PrimitiveCommandDecoder,
+    make_local_primitive_action_cfg,
+)
