@@ -1,7 +1,7 @@
 # Active task contracts
 
-The currently authorized Linux implementation task is `TASK-003-dynamic-capsule-force-teleop.md`.
+The currently authorized Linux implementation task is `TASK-004-local-dynamics-primitives.md`.
 
-Linux must fetch the Windows planning branch `workflow/TASK-003-dynamic-capsule-force-teleop`, record its exact head, create the isolated branch `feature/TASK-003-dynamic-capsule-force-teleop` from that exact head, execute the referenced plan, and return `handoffs/reports/TASK-003-dynamic-capsule-force-teleop-report.md` with reproducible evidence.
+Linux must fetch the Windows planning branch `workflow/TASK-004-local-dynamics-primitives`, record its exact head, create the isolated branch `feature/TASK-004-local-dynamics-primitives` from that exact head, execute the referenced plan, and return `handoffs/reports/TASK-004-local-dynamics-primitives-report.md` with reproducible evidence.
 
-TASK-003 is limited to a real non-kinematic capsule rigid body, six-direction world-frame keyboard force, continuous rendering, collision/contact diagnostics, validation, documentation, and evidence. No VLM, reinforcement learning, magnetic actuation, torque control, pose tracking, surface projection, physics-parameter tuning, camera recalibration, asset replacement, or modification of existing tasks is authorized.
+TASK-004 is limited to four direct force/torque closed-loop local capsule primitives, quantitative flat-table acceptance, and an unchanged-controller rendered migration to the existing approximately horizontal TASK-003 stomach reset. It forbids magnetic or robot actuation, direct capsule state writes outside reset, stomach-local geometry adaptation, spatial-clearance checks, collision avoidance, physics/asset changes, VLM/RL work, and stomach-only tuning.
