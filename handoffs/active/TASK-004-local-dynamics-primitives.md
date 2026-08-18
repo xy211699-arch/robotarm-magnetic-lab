@@ -1,75 +1,67 @@
-# TASK-004: Closed-Loop Local Dynamic Capsule Primitives
+# TASK-004: Simulation-First Closed-Loop Local Capsule Primitives
 
-**Status:** Approved for Linux implementation by the user on 2026-08-18.
+**Status:** Revised implementation authorized by the user on 2026-08-18 after review of the first flat failure.
 
 **Planning branch:** `workflow/TASK-004-local-dynamics-primitives`
 
-**Required Linux branch:** `feature/TASK-004-local-dynamics-primitives`
+**Linux continuation branch:** `feature/TASK-004-local-dynamics-primitives`
 
-**Base lineage:** `06b15caf9a69bc9c20f85522ce4abbb32c8b9245` from `origin/feature/TASK-003-dynamic-capsule-force-teleop`
+**Required continuation head:** `2bce0d2` or its exact descendant containing the existing TASK-004 report
 
-**Design authority:** `docs/superpowers/specs/2026-08-18-local-dynamics-primitives-design.md`
+**Superseding design:** `docs/superpowers/specs/2026-08-18-local-dynamics-primitives-simulation-first-revision.md`
 
-**Execution plan:** `docs/superpowers/plans/2026-08-18-local-dynamics-primitives.md`
+**Superseding plan:** `docs/superpowers/plans/2026-08-18-local-dynamics-primitives-simulation-first-revision.md`
 
-**Required report:** `handoffs/reports/TASK-004-local-dynamics-primitives-report.md`
+**Report to update:** `handoffs/reports/TASK-004-local-dynamics-primitives-report.md`
 
-## Objective
+## Revision Decision
 
-Implement four closed-loop local capsule primitives using only bounded force and torque applied directly to the existing non-kinematic dynamic capsule: side-lying to upright, upright to side-lying, upright to 30 degrees, and one full conical revolution at 30 degrees. Each primitive must complete in less than 10 seconds of simulated time.
+The user requires the four target motions in simulation and does not require realistic force, torque, magnetic-field, magnetic-moment, or hardware limits. The first TASK-004 report is an accepted failed attempt, not the end of the task.
 
-## Test Order
+Linux shall preserve the implementation and evidence and continue the existing feature branch. Do not recreate the branch from the planning branch and do not delete the original `partial` report content.
 
-Linux shall implement and quantitatively accept the controller in the flat-table environment first. Only after that gate passes shall Linux instantiate the same controller and the same parameter set in the existing TASK-003 stomach scene for rendered visual review.
+## Required Motion Mechanism
 
-The stomach reset is already the selected approximately horizontal region. Do not search for another region, estimate a surface normal, or reorient the capsule before the action sequence.
+The capsule remains a non-kinematic dynamic rigid body. Outside normal reset, every motion must result from force and torque applied to the capsule and integrated by PhysX. Direct pose, orientation, transform, linear-velocity, and angular-velocity writes remain forbidden.
 
-## Frozen Physical-Control Boundary
+Linux may use any finite force and torque needed to complete the actions. Former `mg`-based limits and the former `3e-5 N m` torque ceiling are superseded. Magnitudes are judged only against the revised numerical envelope and continuity checks, not physical realism.
 
-Outside the standard episode reset, capsule motion may arise only from gravity, contact, passive authored physics, and the TASK-004 center-of-mass force/torque command. No root pose, root velocity, transform, or velocity setter may occur in the action term, controller, launcher, validator, contact response, or failure path.
+## Revised Controller
 
-Do not call the robot, ASM, external magnet, magnetic action, ideal-surface action, or legacy collision bridge. Do not add pose projection, surface following, hidden recovery, or automatic penetration correction.
+Replace the former center-of-mass-only anchor assumption with a virtual non-camera endpoint force converted to an equivalent center-of-mass wrench. Combine endpoint force, equivalent endpoint torque, and closed-loop pose torque, then apply the total through the existing COM wrench API.
 
-## Frozen Coordinate Meaning
+The controller shall keep the non-camera endpoint anchored in world XY and apply a configurable world-down endpoint pin force. This explicitly biases side-to-upright toward non-camera support without a kinematic constraint or state write.
 
-The camera is on local `-Z`. The directed capsule axis points from the non-camera end to the camera end and is `u = R(q)[0,0,-1]`. Upright means `u` aligned with world `+Z`; side-lying means a 90-degree world tilt; the intermediate and cone angle is 30 degrees from world `+Z`. The default arbitrary direction is world `+X`.
+## Numerical Envelope
 
-The side-to-upright primitive shall favor the non-camera end as its pivot through the shared horizontal anchor controller. Flat acceptance must prove that the camera hemisphere is not selected as the load-bearing support; the controller may not enforce this by teleporting or collision filtering.
+Total force may be any finite value up to `5.0 N`. Total torque may be any finite value up to `0.02 N m`. Force slew may be up to `50.0 N/s`; torque slew may be up to `0.2 N m/s`. These are solver/continuity guardrails, not physical limits.
 
-## No Spatial-Margin Logic
+Do not stop or request a decision because a passing candidate is physically unrealistic. Describe the controller as simulation-only.
 
-No action performs space-availability, sweep, obstacle-margin, boundary-margin, clearance, ray-cast, nearest-triangle, or mesh-distance checks. Contact is allowed. A collision does not independently fail or abort an action. If contact blocks the requested motion, the ordinary posture/time criteria determine the result.
+## Calibration and Flat Gate
 
-## Shared-Controller Requirement
+Run the deterministic side-to-upright authority grids in the superseding design. Automatically expand to the second grid if necessary, select the lowest-authority passing candidate, and store the shared profile in `configs/local_primitives/simulation_profile.json` with SHA-256.
 
-The flat and stomach task configurations shall call the same `make_local_primitive_action_cfg()` factory. The stomach task may replace only scene/reset/viewer details inherited from TASK-003. It may not override controller gains, limits, timing, tolerances, coordinate semantics, trajectory generation, or force composition.
+Rerun all four flat sequences with one unchanged profile. Each action must finish in strictly less than 10 seconds. Rise must avoid load-bearing camera-hemisphere contact; cone actual unwrapped coverage must pass. Contact magnitude and physical implausibility are not failures.
 
-The controller shall use world vertical, not a measured stomach normal. No task-ID branch, stomach-local frame, surface query, or stomach-specific tuning is allowed.
+## Stomach Migration
 
-## Flat Acceptance
+After the flat gate passes, create the stomach task and continuous launcher. Inherit the TASK-003 scene, approximately horizontal reset, dynamic settings, contact, CCD, timing, and camera while loading the exact flat profile digest.
 
-The flat validator shall execute the four required sequences from the normal side-lying reset, using completed primitives to create upright and 30-degree prerequisites rather than directly writing those states. It shall verify command latching, 240 Hz feedback, bounded force/torque, finite state, target angle, stable hold, per-primitive completion time, actual cone azimuth coverage, and non-camera support during the rise.
+No stomach-specific gain, geometry query, local normal, clearance check, collision avoidance, or pose recovery is allowed. Stomach contact is allowed. The user judges the visual result.
 
-Every hard timeout must be strictly less than 10 seconds. Contact with the plane is expected and is not a failure.
+## Unchanged Prohibitions
 
-## Stomach Visual Acceptance
+Do not modify USD/USDZ assets, capsule geometry, camera, mass, inertia, gravity, materials, friction, restitution, solver/CCD settings, TASK-003 placement, robot/magnetic control, VLM/RL code, rewards, coverage logic, or prior evidence.
 
-After flat acceptance, Linux shall run the same sequences in `Template-Robotarm-Magnetic-Local-Primitives-Stomach-Lab-v0` with continuous external rendering and the 30 Hz capsule-camera view. Linux shall not add an automated stomach clearance or geometry gate. The report records quantitative tracking telemetry, artifacts, collisions, saturation, and timeouts, while the user decides whether the visible result is usable.
+Do not add a pose setter, velocity setter, teleport, kinematic switch, surface projection, space-margin check, automatic recovery, or hidden correction.
 
-A satisfactory run establishes only that the unchanged controller is usable at the current approximately horizontal initial region. It does not establish arbitrary-wall or arbitrary-fold robustness.
+## Execution Environment
 
-## Authorized Changes
+The superseding plan is self-contained. Linux shall execute its written tasks directly. No external Codex skill, plugin, subagent, or orchestration command is required.
 
-Linux may add focused pure controller modules, one center-of-mass force/torque action term, isolated flat and stomach task configurations and registrations, pure and live tests, a flat validator, a shared rendered launcher, operator documentation, and the required report. Linux may make the smallest export changes needed to expose those additions.
+## Delivery
 
-Linux may tune only shared controller gains, wrench limits, preload, and sub-10-second trajectory times within the explicit ranges in the design authority. Every attempt and final value must be reported. Once flat acceptance passes, parameters are frozen before the stomach run.
+Update the existing TASK-004 report with the revision, every calibration attempt, selected profile/digest, flat results, stomach rendered evidence, regressions, deviations, unverified visual claims, and external artifacts with sizes and SHA-256 hashes.
 
-## Forbidden Changes
-
-Linux shall not modify any USD/USDZ asset, capsule geometry, camera, physical material, mass, inertia, gravity, damping, restitution, CCD or solver configuration, stomach placement, TASK-003 placement, previous controller, previous report, VLM/RL code, rewards, or coverage logic.
-
-Linux shall not add a local normal estimator, surface mesh controller, clearance probe, swept-volume test, collision avoidance, magnetic actuation, direct state setter, or stomach-only adaptation.
-
-## Delivery Contract
-
-Linux shall push `feature/TASK-004-local-dynamics-primitives` without merging. The report shall include planning base, implementation head, branch, exact commands and observed results, final shared controller parameters, all calibration attempts, flat primitive metrics, stomach rendered artifacts, deviations, unverified claims, and external artifact paths with byte sizes and SHA-256 hashes.
+Push the existing `feature/TASK-004-local-dynamics-primitives` branch without merging.
