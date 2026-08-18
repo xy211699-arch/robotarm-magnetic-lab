@@ -29,6 +29,9 @@ STOMACH_ASSET_USD_PATH = os.environ.get(
     ),
 )
 STOMACH_CAMERA_UPDATE_PERIOD_S = 1.0
+STOMACH_DOME_LIGHT_INTENSITY = 4.0
+STOMACH_LED_INTENSITY = 4.0
+STOMACH_LED_RADIUS_M = 0.0035
 
 
 @configclass
@@ -92,17 +95,13 @@ class RobotarmMagneticStomachLabEnvCfg(RobotarmMagneticLabEnvCfg):
         # The shared bench task retains its validated 30 Hz camera. Only the
         # stomach-task camera is intentionally reduced to 1 Hz.
         self.scene.capsule_camera.update_period = STOMACH_CAMERA_UPDATE_PERIOD_S
-        # Endoscopic illumination calibration. The former 250-intensity LEDs
-        # plus a 500-intensity dome clipped the wall at the 1--2 mm working
-        # distance. Use a weak ambient term and four warm, extended emitters:
-        # the texture supplies the tissue color, while the larger source radius
-        # softens specular highlights. Values remain provisional until they are
-        # calibrated against the physical DS01 camera and capsule LEDs.
-        # The previous 15-unit emitters were acceptable at the nominal
-        # 10--30 mm working distance but still clipped close folds. Reduce
-        # direct and ambient energy while keeping a finite highlight; real
-        # capsule endoscopy does show small wet-tissue specular spots.
-        self.scene.dome_light.spawn.intensity = 15.0
+        # Low-glare endoscopic illumination profile. Millimetre-range folds
+        # clipped under the previous 8-intensity LEDs and 15-intensity dome.
+        # Reduce both direct and ambient energy and enlarge the emitters so the
+        # remaining wet-tissue highlight is broad rather than saturated. These
+        # values stay fixed across recorded and 30 Hz preview cameras; they
+        # remain provisional until calibrated against the physical DS01 camera.
+        self.scene.dome_light.spawn.intensity = STOMACH_DOME_LIGHT_INTENSITY
         for light_name in (
             "capsule_led_top",
             "capsule_led_bottom",
@@ -110,11 +109,11 @@ class RobotarmMagneticStomachLabEnvCfg(RobotarmMagneticLabEnvCfg):
             "capsule_led_right",
         ):
             light = getattr(self.scene, light_name).spawn
-            light.intensity = 8.0
+            light.intensity = STOMACH_LED_INTENSITY
             # Approximate the LED/lens diffuser as an extended source so the
             # millimetre-range highlight has a soft shoulder rather than a
             # saturated point.
-            light.radius = 0.0020
+            light.radius = STOMACH_LED_RADIUS_M
             light.color_temperature = 4800.0
         self.viewer.eye = (1.28, 0.45, 0.32)
         self.viewer.lookat = (1.06, 0.115, 0.01)

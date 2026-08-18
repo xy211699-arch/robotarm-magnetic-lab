@@ -121,13 +121,14 @@ def Xform "StomachEnvironment"
             {
                 over "mtl1_003"
                 {
-                    # Preserve a wet mucosal highlight, but broaden it enough
-                    # to avoid a hard white patch at millimetre working range.
-                    # This remains provisional until measured tissue BRDF and
-                    # DS01 exposure-response data are available.
-                    float inputs:roughness = 0.62
+                    # Low-glare nominal mucosa: retain a weak dielectric wet
+                    # highlight while spreading it enough to preserve texture
+                    # at millimetre working range. The source shader uses the
+                    # metallic workflow, so no unsupported independent
+                    # specular-level override is authored here.
+                    float inputs:roughness = 0.8
                     float inputs:metallic = 0
-                    float inputs:ior = 1.38
+                    float inputs:ior = 1.34
                 }
             }
         }

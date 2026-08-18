@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import gymnasium as gym
 
 import robotarm_magnetic_lab.tasks  # noqa: F401
@@ -41,3 +43,31 @@ def test_stomach_task_is_registered_with_only_local_primitive_action():
     assert term_names(cfg.actions) == ["local_primitive"]
     assert cfg.scene.num_envs == 1
     assert cfg.sim.device == "cpu"
+
+
+def test_stomach_task_uses_low_glare_illumination_and_material_profile():
+    from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_local_primitives_stomach_env_cfg import (
+        RobotarmMagneticLocalPrimitivesStomachLabEnvCfg,
+    )
+
+    cfg = RobotarmMagneticLocalPrimitivesStomachLabEnvCfg()
+    assert cfg.scene.dome_light.spawn.intensity == 4.0
+    for name in (
+        "capsule_led_top",
+        "capsule_led_bottom",
+        "capsule_led_left",
+        "capsule_led_right",
+    ):
+        light = getattr(cfg.scene, name).spawn
+        assert light.intensity == 4.0
+        assert light.radius == 0.0035
+
+    overlay = (
+        Path(__file__).resolve().parents[2]
+        / "assets"
+        / "stomach"
+        / "stomach_environment_lab.usda"
+    ).read_text(encoding="utf-8")
+    assert "float inputs:roughness = 0.8" in overlay
+    assert "float inputs:metallic = 0" in overlay
+    assert "float inputs:ior = 1.34" in overlay
