@@ -31,7 +31,12 @@ def test_simulation_profile_is_tracked_and_not_weight_limited():
 
 
 def test_profile_accepts_unrealistic_but_numerically_allowed_values(tmp_path):
-    path = _write_profile(tmp_path, total_force_limit_n=2.0, total_torque_limit_nm=0.01)
+    path = _write_profile(
+        tmp_path,
+        pose_torque_limit_nm=0.01,
+        total_force_limit_n=2.0,
+        total_torque_limit_nm=0.01,
+    )
     profile = load_simulation_profile(path)
     assert profile.total_force_limit_n == 2.0
     assert profile.total_torque_limit_nm == 0.01

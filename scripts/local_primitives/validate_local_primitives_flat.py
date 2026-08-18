@@ -50,15 +50,18 @@ def evaluate_flat_summary(summary: dict[str, Any]) -> dict[str, Any]:
             failures.append(f"{name}: completion time is not below 10 seconds")
         if int(record.get("nonfinite_samples", 0)):
             failures.append(f"{name}: nonfinite state or wrench")
-        if float(record.get("max_force_n", math.inf)) > float(record.get("force_bound_n", -math.inf)) + 1.0e-9:
+        if float(record.get("max_force_n", math.inf)) > float(record.get("force_bound_n", -math.inf)) + 1.0e-6:
             failures.append(f"{name}: force bound exceeded")
         if float(record.get("max_torque_nm", math.inf)) > float(record.get("torque_bound_nm", -math.inf)) + 1.0e-12:
             failures.append(f"{name}: torque bound exceeded")
         if float(record.get("max_physics_step_displacement_m", math.inf)) > 0.005:
             failures.append(f"{name}: physics-step center displacement exceeds 5 mm")
-        if float(record.get("max_force_slew_n_per_s", math.inf)) > float(record.get("force_slew_bound_n_per_s", -math.inf)) + 1.0e-9:
+        # PhysX telemetry passes through float32 tensors.  Allow only a tiny
+        # absolute comparison tolerance so a configured bound is not rejected
+        # by representation noise (for example 50.00000004 versus 50.0).
+        if float(record.get("max_force_slew_n_per_s", math.inf)) > float(record.get("force_slew_bound_n_per_s", -math.inf)) + 1.0e-6:
             failures.append(f"{name}: force slew bound exceeded")
-        if float(record.get("max_torque_slew_nm_per_s", math.inf)) > float(record.get("torque_slew_bound_nm_per_s", -math.inf)) + 1.0e-12:
+        if float(record.get("max_torque_slew_nm_per_s", math.inf)) > float(record.get("torque_slew_bound_nm_per_s", -math.inf)) + 1.0e-6:
             failures.append(f"{name}: torque slew bound exceeded")
     rise = records.get("side_to_upright", {})
     if "side_to_upright" in required_names:
@@ -252,8 +255,8 @@ def _run(args) -> tuple[dict[str, Any], Path]:
                         max_force = max_torque = 0.0
                         max_displacement = max_force_slew = max_torque_slew = 0.0
                         previous_position = None
-                        previous_force = np.zeros(3, dtype=np.float64)
-                        previous_torque = np.zeros(3, dtype=np.float64)
+                        previous_force = _flat(term.applied_force_world).copy()
+                        previous_torque = _flat(term.applied_torque_world).copy()
                         substep_index = len(term.substep_telemetry)
                         nonfinite = 0
                         action = np.array([1.0, float(code), direction[0], direction[1]], dtype=np.float32)

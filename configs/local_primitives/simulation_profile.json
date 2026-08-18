@@ -1,9 +1,9 @@
 {
-  "anchor_kd_ns_per_m": 20.0,
+  "anchor_kd_ns_per_m": 0.4,
   "anchor_kp_n_per_m": 10.0,
-  "axis_kd_nms_per_rad": 0.0008,
-  "axis_kp_nm_per_rad": 0.01,
-  "endpoint_pin_force_n": 1.0,
+  "axis_kd_nms_per_rad": 0.0016,
+  "axis_kp_nm_per_rad": 0.02,
+  "endpoint_pin_force_n": 0.1,
   "force_slew_limit_n_per_s": 50.0,
   "hard_timeout_s": [
     8.0,
@@ -17,8 +17,8 @@
     3.5,
     8.0
   ],
-  "pose_torque_limit_nm": 0.01,
-  "roll_damping_nms_per_rad": 0.0008,
+  "pose_torque_limit_nm": 0.02,
+  "roll_damping_nms_per_rad": 0.0016,
   "schema_version": "task004_simulation_authority_v1",
   "torque_slew_limit_nm_per_s": 0.2,
   "total_force_limit_n": 1.25,

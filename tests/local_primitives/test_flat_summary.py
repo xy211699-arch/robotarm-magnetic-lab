@@ -63,3 +63,11 @@ def test_numerical_discontinuity_still_fails():
     summary = valid_flat_summary()
     summary["continuity"] = {"max_physics_step_displacement_m": 0.0051}
     assert evaluate_flat_summary(summary)["status"] == "fail"
+
+
+def test_float32_slew_roundoff_does_not_fail():
+    summary = valid_flat_summary()
+    for record in summary["primitives"].values():
+        record["max_force_slew_n_per_s"] = record["force_slew_bound_n_per_s"] + 4.0e-8
+        record["max_torque_slew_nm_per_s"] = record["torque_slew_bound_nm_per_s"] + 3.0e-10
+    assert evaluate_flat_summary(summary)["status"] == "pass"
