@@ -22,7 +22,7 @@ def test_slerp_axis_is_unit_length_and_reaches_target():
     assert middle.axis_world[0] == pytest.approx(math.sqrt(0.5))
     final = slerp_axis(start, WORLD_UP, 2.0, 2.0)
     np.testing.assert_allclose(final.axis_world, WORLD_UP, atol=1e-12)
-    np.testing.assert_allclose(final.axis_dot_world, 0.0, atol=1e-12)
+    np.testing.assert_allclose(final.axis_dot_world_s, 0.0, atol=1e-12)
 
 
 def test_cone_completes_positive_revolution_at_constant_tilt():
@@ -30,8 +30,8 @@ def test_cone_completes_positive_revolution_at_constant_tilt():
     half = cone_axis(math.radians(30.0), 0.25, 4.0, 8.0)
     final = cone_axis(math.radians(30.0), 0.25, 8.0, 8.0)
     assert math.acos(first.axis_world[2]) == pytest.approx(math.radians(30.0))
-    assert half.phase_rad == pytest.approx(0.25 + math.pi)
-    assert final.phase_rad == pytest.approx(0.25 + 2.0 * math.pi)
+    assert half.unwrapped_target_phase_rad == pytest.approx(0.25 + math.pi)
+    assert final.unwrapped_target_phase_rad == pytest.approx(0.25 + 2.0 * math.pi)
     np.testing.assert_allclose(first.axis_world, final.axis_world, atol=1e-12)
 
 

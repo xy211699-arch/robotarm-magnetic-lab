@@ -6,23 +6,28 @@ import math
 
 import numpy as np
 
-from .types import AxisTarget
+from .types import AxisTarget, PrimitiveId
 
 
 WORLD_UP = np.array([0.0, 0.0, 1.0], dtype=np.float64)
 
 
-def quintic_progress(elapsed_s: float, duration_s: float) -> tuple[float, float]:
-    """Return minimum-jerk progress and its derivative."""
+def quintic_scale(ratio: float) -> tuple[float, float]:
+    """Return minimum-jerk scale and derivative with respect to its ratio."""
 
-    if duration_s <= 0.0:
-        raise ValueError("duration_s must be positive")
-    ratio = float(np.clip(elapsed_s / duration_s, 0.0, 1.0))
+    ratio = float(np.clip(ratio, 0.0, 1.0))
     progress = 10.0 * ratio**3 - 15.0 * ratio**4 + 6.0 * ratio**5
-    derivative = (30.0 * ratio**2 - 60.0 * ratio**3 + 30.0 * ratio**4) / duration_s
+    derivative = 30.0 * ratio**2 - 60.0 * ratio**3 + 30.0 * ratio**4
     if ratio >= 1.0:
         derivative = 0.0
     return progress, derivative
+
+
+def quintic_progress(elapsed_s: float, duration_s: float) -> tuple[float, float]:
+    if duration_s <= 0.0:
+        raise ValueError("duration_s must be positive")
+    progress, derivative = quintic_scale(elapsed_s / duration_s)
+    return progress, derivative / duration_s
 
 
 def axis_at_tilt(tilt_rad: float, direction_xy: np.ndarray) -> np.ndarray:
@@ -30,6 +35,16 @@ def axis_at_tilt(tilt_rad: float, direction_xy: np.ndarray) -> np.ndarray:
     direction /= np.linalg.norm(direction)
     return np.array(
         [math.sin(tilt_rad) * direction[0], math.sin(tilt_rad) * direction[1], math.cos(tilt_rad)],
+        dtype=np.float64,
+    )
+
+
+def posture_axis(tilt_deg: float, azimuth_rad: float) -> np.ndarray:
+    """Return a world axis from tilt in degrees and azimuth in radians."""
+
+    tilt = math.radians(float(tilt_deg))
+    return np.array(
+        [math.sin(tilt) * math.cos(azimuth_rad), math.sin(tilt) * math.sin(azimuth_rad), math.cos(tilt)],
         dtype=np.float64,
     )
 
@@ -43,7 +58,8 @@ def slerp_axis(start: np.ndarray, end: np.ndarray, elapsed_s: float, duration_s:
     dot = float(np.clip(np.dot(start_axis, end_axis), -1.0, 1.0))
     angle = math.acos(dot)
     if angle < 1.0e-9:
-        return AxisTarget(end_axis, np.zeros(3, dtype=np.float64))
+        zeros = np.zeros(3, dtype=np.float64)
+        return AxisTarget(end_axis, zeros, zeros)
     if math.pi - angle < 1.0e-7:
         raise ValueError("antipodal directed-axis interpolation is undefined")
     sin_angle = math.sin(angle)
@@ -54,7 +70,8 @@ def slerp_axis(start: np.ndarray, end: np.ndarray, elapsed_s: float, duration_s:
         -angle * math.cos((1.0 - progress) * angle) * start_axis
         + angle * math.cos(progress * angle) * end_axis
     ) / sin_angle
-    return AxisTarget(axis, derivative_progress * progress_dot)
+    axis_dot = derivative_progress * progress_dot
+    return AxisTarget(axis, axis_dot, np.cross(axis, axis_dot))
 
 
 def cone_axis(tilt_rad: float, initial_phase_rad: float, elapsed_s: float, duration_s: float) -> AxisTarget:
@@ -72,7 +89,28 @@ def cone_axis(tilt_rad: float, initial_phase_rad: float, elapsed_s: float, durat
         [-sin_tilt * math.sin(phase) * phase_dot, sin_tilt * math.cos(phase) * phase_dot, 0.0],
         dtype=np.float64,
     )
-    return AxisTarget(axis, axis_dot, phase)
+    return AxisTarget(axis, axis_dot, np.cross(axis, axis_dot), phase)
+
+
+def desired_axis_sample(
+    primitive_id: PrimitiveId,
+    start_axis_world: np.ndarray,
+    azimuth_rad: float,
+    elapsed_s: float,
+    duration_s: float,
+) -> AxisTarget:
+    """Sample the contract-defined target for one primitive."""
+
+    primitive = PrimitiveId(int(primitive_id))
+    if primitive == PrimitiveId.SIDE_TO_UPRIGHT:
+        target = WORLD_UP
+    elif primitive == PrimitiveId.UPRIGHT_TO_SIDE:
+        target = posture_axis(90.0, azimuth_rad)
+    elif primitive == PrimitiveId.UPRIGHT_TO_30_DEG:
+        target = posture_axis(30.0, azimuth_rad)
+    else:
+        return cone_axis(math.radians(30.0), azimuth_rad, elapsed_s, duration_s)
+    return slerp_axis(start_axis_world, target, elapsed_s, duration_s)
 
 
 def directed_axis_from_quaternion_wxyz(quaternion_wxyz: np.ndarray) -> np.ndarray:
