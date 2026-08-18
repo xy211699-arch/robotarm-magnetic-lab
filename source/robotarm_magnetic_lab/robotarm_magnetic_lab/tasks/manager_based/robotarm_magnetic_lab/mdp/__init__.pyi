@@ -18,3 +18,10 @@ from .local_primitive_action import (
     PrimitiveCommandDecoder,
     make_local_primitive_action_cfg,
 )
+from .eleven_action import (
+    ElevenActionRequestDecoder,
+    ElevenActionTerm,
+    ElevenActionTermCfg,
+    RequestGate,
+    eleven_action_fault,
+)
