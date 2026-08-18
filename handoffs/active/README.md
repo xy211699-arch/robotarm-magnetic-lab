@@ -1,7 +1,20 @@
 # Active task contracts
 
-The currently authorized Linux implementation task is `TASK-003-dynamic-capsule-force-teleop.md`.
+The currently authorized Linux implementation task is
+TASK-005-eleven-action-dynamic-controller.md.
 
-Linux must fetch the Windows planning branch `workflow/TASK-003-dynamic-capsule-force-teleop`, record its exact head, create the isolated branch `feature/TASK-003-dynamic-capsule-force-teleop` from that exact head, execute the referenced plan, and return `handoffs/reports/TASK-003-dynamic-capsule-force-teleop-report.md` with reproducible evidence.
+Linux must fetch the Windows planning branch
+workflow/TASK-005-eleven-action-dynamic-controller, record its exact head,
+confirm that it contains the accepted TASK-004 baseline
+87a80adcc367a3210fc1f8cfadea410f340e3918, create the isolated branch
+feature/TASK-005-eleven-action-dynamic-controller from that exact planning
+head, execute the referenced plan directly, and return
+handoffs/reports/TASK-005-eleven-action-dynamic-controller-report.md with
+reproducible evidence.
 
-TASK-003 is limited to a real non-kinematic capsule rigid body, six-direction world-frame keyboard force, continuous rendering, collision/contact diagnostics, validation, documentation, and evidence. No VLM, reinforcement learning, magnetic actuation, torque control, pose tracking, surface projection, physics-parameter tuning, camera recalibration, asset replacement, or modification of existing tasks is authorized.
+TASK-005 is limited to the simulation-only eleven-action dynamic capsule
+controller, flat quantitative acceptance, unchanged-profile stomach
+visualization, keyboard control, regression, documentation, and evidence.
+No VLM, Actor-Critic, reward, coverage, action-chunk, teacher-data, robot, or
+magnetic implementation is authorized. No external Codex skill or plugin is
+required.
