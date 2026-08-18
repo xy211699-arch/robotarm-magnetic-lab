@@ -140,11 +140,11 @@ class LocalPrimitiveAction(ActionTerm):
         wrench, telemetry = self.controller.update(state, self._physics_dt_s)
         self._telemetry = telemetry
         self._substep_telemetry.append(telemetry)
-        self._applied_force_world[0] = torch.as_tensor(
+        self._applied_force_world[0] = torch.tensor(
             wrench.force_world_n, device=self._applied_force_world.device,
             dtype=self._applied_force_world.dtype,
         )
-        self._applied_torque_world[0] = torch.as_tensor(
+        self._applied_torque_world[0] = torch.tensor(
             wrench.torque_world_nm, device=self._applied_torque_world.device,
             dtype=self._applied_torque_world.dtype,
         )
