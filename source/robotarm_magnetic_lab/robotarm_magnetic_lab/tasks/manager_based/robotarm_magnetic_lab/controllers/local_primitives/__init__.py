@@ -3,8 +3,11 @@
 from .config import (
     LocalPrimitiveActionCfg,
     LocalPrimitiveControllerCfg,
+    SimulationAuthorityProfile,
+    load_simulation_profile,
     make_local_primitive_action_cfg,
     make_local_primitive_controller_cfg,
+    simulation_profile_sha256,
 )
 from .controller import LocalPrimitiveController
 from .trajectory import (
@@ -36,5 +39,7 @@ __all__ = [
     "PrimitiveRequest", "PrimitiveStatus", "PrimitiveTelemetry", "WORLD_UP",
     "WrenchCommand", "axis_at_tilt", "azimuth_from_axis", "cone_axis", "desired_axis_sample",
     "directed_axis_from_quaternion_wxyz", "make_local_primitive_action_cfg",
-    "make_local_primitive_controller_cfg", "posture_axis", "quintic_progress", "quintic_scale", "slerp_axis", "tilt_from_axis", "wrap_angle",
+    "load_simulation_profile", "make_local_primitive_controller_cfg", "posture_axis",
+    "quintic_progress", "quintic_scale", "SimulationAuthorityProfile",
+    "simulation_profile_sha256", "slerp_axis", "tilt_from_axis", "wrap_angle",
 ]

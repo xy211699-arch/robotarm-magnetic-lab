@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, IntEnum
 
 import numpy as np
@@ -122,6 +122,16 @@ class PrimitiveTelemetry:
     cone_tilt_rmse_rad: float
     last_request_result: str
     completion_time_s: float | None
+    pose_torque_world_nm: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    endpoint_force_world_n: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    endpoint_equivalent_torque_world_nm: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    total_force_world_n: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    total_torque_world_nm: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    force_saturated: bool = False
+    torque_saturated: bool = False
+    force_slew_limited: bool = False
+    torque_slew_limited: bool = False
+    profile_sha256: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "status", PrimitiveStatus(self.status))
@@ -129,6 +139,16 @@ class PrimitiveTelemetry:
             object.__setattr__(self, "active_primitive", PrimitiveId(int(self.active_primitive)))
         object.__setattr__(self, "desired_axis_world", _vector(self.desired_axis_world, 3))
         object.__setattr__(self, "actual_axis_world", _vector(self.actual_axis_world, 3))
+        object.__setattr__(self, "pose_torque_world_nm", _vector(self.pose_torque_world_nm, 3))
+        object.__setattr__(self, "endpoint_force_world_n", _vector(self.endpoint_force_world_n, 3))
+        object.__setattr__(
+            self, "endpoint_equivalent_torque_world_nm",
+            _vector(self.endpoint_equivalent_torque_world_nm, 3),
+        )
+        object.__setattr__(self, "total_force_world_n", _vector(self.total_force_world_n, 3))
+        object.__setattr__(self, "total_torque_world_nm", _vector(self.total_torque_world_nm, 3))
+        if self.profile_sha256 and len(self.profile_sha256) != 64:
+            raise ValueError("profile_sha256 must be empty or a 64-character digest")
 
 
 def _vector(value: np.ndarray, size: int) -> np.ndarray:
