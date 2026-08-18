@@ -13,14 +13,22 @@ from .types import (
     Lifecycle,
     WrenchCommand,
 )
+from .contact_history import ContactRegion, ContactSample, SideContactHistory
+from .surface_query import FlatSurfaceQuery, LocalSurfaceHit, StomachSurfaceQuery
 
 __all__ = [
     "ActionResult",
     "ActionTelemetry",
     "CapsuleState",
+    "ContactRegion",
+    "ContactSample",
     "DynamicProfile",
     "ElevenActionId",
     "Lifecycle",
+    "LocalSurfaceHit",
+    "FlatSurfaceQuery",
+    "StomachSurfaceQuery",
+    "SideContactHistory",
     "WrenchCommand",
     "dynamic_profile_sha256",
     "load_dynamic_profile",
