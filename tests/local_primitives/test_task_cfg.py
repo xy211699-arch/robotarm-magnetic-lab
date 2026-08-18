@@ -7,6 +7,7 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_ma
 
 
 FLAT_ID = "Template-Robotarm-Magnetic-Local-Primitives-Flat-Lab-v0"
+STOMACH_ID = "Template-Robotarm-Magnetic-Local-Primitives-Stomach-Lab-v0"
 
 
 def term_names(cfg):
@@ -27,3 +28,16 @@ def test_flat_task_is_registered_isolated_and_uses_frozen_rates():
     assert term_names(cfg.events) == ["reset_scene"]
     assert term_names(cfg.rewards) == []
     assert term_names(cfg.terminations) == ["time_out"]
+
+
+def test_stomach_task_is_registered_with_only_local_primitive_action():
+    from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_local_primitives_stomach_env_cfg import (
+        RobotarmMagneticLocalPrimitivesStomachLabEnvCfg,
+    )
+
+    spec = gym.spec(STOMACH_ID)
+    cfg = RobotarmMagneticLocalPrimitivesStomachLabEnvCfg()
+    assert "LocalPrimitivesStomach" in spec.kwargs["env_cfg_entry_point"]
+    assert term_names(cfg.actions) == ["local_primitive"]
+    assert cfg.scene.num_envs == 1
+    assert cfg.sim.device == "cpu"
