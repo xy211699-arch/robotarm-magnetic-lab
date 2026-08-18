@@ -156,10 +156,11 @@ class SessionRecorder:
         self._stream.write(json.dumps(row, sort_keys=True) + "\n")
         self.samples += 1
 
-    def snapshot(self, row: dict, rgb: np.ndarray | None, label: str) -> None:
+    def snapshot(self, row: dict, rgb: np.ndarray | None, label: str) -> Path:
         self.snapshots += 1
         stem = f"snapshot_{self.snapshots:04d}_{label}"
-        (self.output / "snapshots" / f"{stem}.json").write_text(
+        json_path = self.output / "snapshots" / f"{stem}.json"
+        json_path.write_text(
             json.dumps(row, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
         if rgb is not None:
@@ -168,6 +169,7 @@ class SessionRecorder:
             Image.fromarray(np.asarray(rgb, dtype=np.uint8)).save(
                 self.output / "snapshots" / f"{stem}.png"
             )
+        return json_path
 
     def close(self, reason: str, sim_time_s: float) -> Path:
         self._stream.close()
@@ -300,7 +302,8 @@ def main() -> int:
                             print("LOCAL_PRIMITIVE_RESET", flush=True)
                         elif command.kind is CommandKind.SNAPSHOT:
                             row = _sample(env, term, step, reset_index, requested_id)
-                            recorder.snapshot(row, _camera_rgb(env), "f12")
+                            snapshot_path = recorder.snapshot(row, _camera_rgb(env), "f12")
+                            print(f"LOCAL_PRIMITIVE_SNAPSHOT {snapshot_path}", flush=True)
                         elif command.kind is CommandKind.ACTION and not scripted_mode:
                             pulse_id = int(command.action_id)
                             requested_id = pulse_id
@@ -355,14 +358,6 @@ def main() -> int:
                     recorder.snapshot(row, _camera_rgb(env), telemetry.status.value)
                     awaiting_terminal = False
                     requested_id = None
-                if step % 30 == 0:
-                    print(
-                        f"LOCAL_PRIMITIVE_STATE t={sim_time_s:.3f}s status={row.get('status', 'none')} "
-                        f"pos={np.round(row['position_world_m'], 5).tolist()} "
-                        f"force={np.round(row['total_force_world_n'], 5).tolist() if 'total_force_world_n' in row else []} "
-                        f"torque={np.round(row['total_torque_world_nm'], 6).tolist() if 'total_torque_world_nm' in row else []}",
-                        flush=True,
-                    )
                 if bool(terminated[0] or truncated[0]):
                     reason = "environment_termination"
                     recorder.snapshot(row, _camera_rgb(env), "termination")
@@ -383,6 +378,17 @@ def main() -> int:
     if recorder is not None:
         output = recorder.close(reason, sim_time_s)
         print(f"LOCAL_PRIMITIVES_SESSION {output / 'session.json'}", flush=True)
+        succeeded = sum(
+            outcome["status"] == PrimitiveStatus.SUCCEEDED_HOLDING.value
+            for outcome in recorder.outcomes
+        )
+        print(
+            "LOCAL_PRIMITIVES_FINISHED "
+            f"reason={reason} outcomes={len(recorder.outcomes)} "
+            f"succeeded={succeeded} failed={len(recorder.outcomes) - succeeded} "
+            f"sim_time_s={sim_time_s:.3f}",
+            flush=True,
+        )
     simulation_app.close()
     return exit_code
 

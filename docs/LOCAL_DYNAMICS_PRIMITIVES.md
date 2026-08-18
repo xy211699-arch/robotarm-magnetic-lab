@@ -151,6 +151,10 @@ cd /mnt/isaac-linux/robotarm_magnetic_lab
 调试窗口。每帧遥测、分解 wrench、profile digest、终态与快照写入
 `logs/local_primitives_teleop/<UTC时间>/`。
 
+终端采用事件驱动输出，只在启动、动作请求、动作成功/拒绝/超时、复位、快照、环境终止和
+会话结束时打印；不再每0.5秒打印位姿与wrench。此调整只减少终端噪声，逐帧
+`samples.jsonl`和最终`session.json`仍完整记录。
+
 自动序列示例：
 
 ```bash
