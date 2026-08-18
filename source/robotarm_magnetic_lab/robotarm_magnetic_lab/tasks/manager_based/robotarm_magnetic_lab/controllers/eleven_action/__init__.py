@@ -15,6 +15,7 @@ from .types import (
 )
 from .contact_history import ContactRegion, ContactSample, SideContactHistory
 from .surface_query import FlatSurfaceQuery, LocalSurfaceHit, StomachSurfaceQuery
+from .controller import ControllerStep, ElevenActionController
 
 __all__ = [
     "ActionResult",
@@ -22,8 +23,10 @@ __all__ = [
     "CapsuleState",
     "ContactRegion",
     "ContactSample",
+    "ControllerStep",
     "DynamicProfile",
     "ElevenActionId",
+    "ElevenActionController",
     "Lifecycle",
     "LocalSurfaceHit",
     "FlatSurfaceQuery",

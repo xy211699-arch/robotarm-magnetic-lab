@@ -79,6 +79,11 @@ class SideContactHistory:
             if cutoff < sample.physics_substep < int(current_substep)
         )
 
+    def recent_contacts(
+        self, *, current_substep: int, last_n_substeps: int = 12
+    ) -> tuple[ContactSample, ...]:
+        return self._recent(current_substep=current_substep, last_n_substeps=last_n_substeps)
+
     def had_sidewall_contact(self, *, current_substep: int, last_n_substeps: int = 12) -> bool:
         return any(
             sample.region is ContactRegion.SIDEWALL
@@ -93,4 +98,3 @@ class SideContactHistory:
             for sample in self._recent(current_substep=current_substep, last_n_substeps=last_n_substeps)
             if sample.region is ContactRegion.CAMERA_HEMISPHERE
         )
-
