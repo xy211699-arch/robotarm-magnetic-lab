@@ -61,7 +61,15 @@ class VirtualMagnetRequestAction(ActionTerm):
         if tuple(actions.shape) != tuple(self._raw_actions.shape):
             raise ValueError(f"expected action shape {tuple(self._raw_actions.shape)}, got {tuple(actions.shape)}")
         self._raw_actions[:] = actions
-        action_id = self.validate_action_id(float(actions[0, 0].item()))
+        value = float(actions[0, 0].item())
+        # -1 is reserved for repository-owned visualization/settling loops so
+        # PhysX can continue without creating a public request. It is not
+        # returned by validate_action_id and is never part of the Actor API.
+        if abs(value + 1.0) <= 1.0e-6:
+            self._processed_actions.fill_(-1.0)
+            self._pending_action_id = None
+            return
+        action_id = self.validate_action_id(value)
         self._processed_actions.fill_(float(action_id))
         self._pending_action_id = action_id
 
@@ -119,4 +127,3 @@ class VirtualMagnetRequestActionCfg(ActionTermCfg):
 @configclass
 class VirtualMagnetPhysicsActionCfg(ActionTermCfg):
     class_type: type[ActionTerm] = VirtualMagnetPhysicsAction
-
