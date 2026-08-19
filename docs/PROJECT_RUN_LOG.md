@@ -802,3 +802,15 @@
   求解，必须验证重启接触瞬态，不能直接视为TASK-006 Dynamic Lock已修复。
 - 精确的原生actor六轴锁只能通过自定义Kit C++扩展调用PhysX SDK，存在actor句柄映射和版本ABI
   风险；优先验证Tensor禁用方案，不采用逐子步回写位姿、sleep或未经授权的kinematic备用路径。
+
+## 2026-08-19 — Tensor disable-simulation GPU配对实验（needs_decision）
+
+- 经用户授权新增显式`tensor_disable_simulation`实验后端；直接调用PhysX Tensor禁用/启用与
+  wake接口，未改冻结profile、未启用kinematic、未接入正式动作，也没有运行期root pose写入。
+- 修正配对探针重复settle造成的初态污染后，CUDA正式门禁10次保持与100组配对：读回、API
+  跳变、零速度、1秒零位移及初态一致性全部PASS，证明该后端可以可靠中途停住动态胶囊。
+- 释放门禁FAIL：最坏前0.05秒位置差7.928 mm、轴差173.196°；首个活动solver步出现默认姿态
+  样重入和约20 rad/s角速度。不能安全恢复，故不进入RGB/正式控制/胃部；是否授权在释放边界
+  用Tensor恢复锁存pose属于新的架构与安全决策。
+- 回归88/88、104/104、87/87通过；正式证据位于
+  `logs/hybrid_latched_task006/backend_probe/20260819_082933_389672Z/`。

@@ -24,6 +24,7 @@
 1. `35aecc6` `feat: define hybrid latch contract`
 2. `af0f579` `feat: add hybrid latch lifecycle`
 3. `b0a622c` `test: probe dynamic six-dof latch runtime`
+4. `3908806` `test: probe tensor disable latch backend`
 
 ## 已实现范围
 
@@ -107,7 +108,59 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./run_isaaclab.sh -p -m pytest \
 - 因首个 GPU gate 失败，未验证 policy RGB latch barrier、平面随机动作效果、固定 100-ID 序列、胃部相同 digest 运行、键盘可视化或 wall FPS。
 - 当前实现停留在运行时后端门禁前的可复现阶段，不能声明 TASK-006 控制器可用于训练或胃部任务。
 
-## 需要 Windows 方案端决策
+## 原TASK-006需要 Windows 方案端决策
+
+## 用户授权后续：PhysX Tensor disable-simulation GPU 配对实验
+
+用户于2026-08-19明确同意验证直接PhysX Tensor运行时接口。本轮新增显式实验后端
+`tensor_disable_simulation`，通过Isaac Lab `RigidObject.root_view`调用
+`set_disable_simulations/get_disable_simulations/wake_up`；冻结profile中的
+`selected_backend`仍为`dynamic_lock_flags`，未启用kinematic，也未把实验后端接入正式动作执行。
+
+锁定边界顺序为：清永久wrench、清零速度、禁用simulation；释放边界顺序为：清wrench、
+重新启用simulation、清零速度、显式wake。没有运行期root pose写入。探针同时修正原配对方法：
+先生成一次样本初态，再把同一root pose与零速度分别恢复给direct和latched冷启动分支；新增初态
+位置/轴一致性门禁，避免两次接触settle导致的配对污染。光轴计算也做单位化，消除float32四元数
+范数带来的伪角漂移。
+
+正式命令：
+
+```bash
+./run_isaaclab.sh -p scripts/eleven_action/probe_hybrid_latch_backend.py \
+  --backend tensor_disable_simulation --device cuda:0 --headless
+```
+
+正式采样仍为10个一秒保持试验和动作1–10各10组、共100组配对释放。结果：
+
+| 检查项 | 阈值 | 实测最坏值 | 结果 |
+|---|---:|---:|---|
+| 禁用/启用读回 | 全部匹配 | 全部匹配 | PASS |
+| API位置跳变 | ≤1e-9 m | 0 m | PASS |
+| 锁定一秒位置漂移 | ≤1e-7 m | 0 m | PASS |
+| 锁定一秒轴漂移 | ≤1e-4° | 8.54e-7° | PASS |
+| 锁定线/角速度 | ≤1e-7 | 0 / 0 | PASS |
+| 配对初始位置差 | ≤1e-9 m | 0 m | PASS |
+| 配对初始轴差 | ≤1e-4° | 1.21e-6° | PASS |
+| 释放后位置差 | ≤0.5 mm | 7.928 mm | FAIL |
+| 释放后轴差 | ≤1° | 173.196° | FAIL |
+
+直接观测表明，该接口可以在CUDA PhysX上稳定冻结胶囊，但重新启用后的首个活动solver步出现
+严重重入瞬态：最坏样本的latched分支首帧角速度达到约20 rad/s，并呈现与采样初态显著不同、
+接近共同默认方向的轴姿态；direct分支没有该现象。证据与“actor重新加入solver时恢复了来源/默认
+姿态或丢失运行期接触状态”一致，但尚未通过原生actor内部句柄读回确认具体机制，因此该机制解释
+属于未验证推断。根据原门禁，实验后端结论仍为FAIL，不能用于训练、键盘控制或胃部迁移。
+
+第一次运行使用旧配对复位方式，发现两分支初态受重复settle污染，结果目录
+`20260819_082413_586668Z`仅作为探针诊断保留，不作为正式结论。正式证据：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `logs/hybrid_latched_task006/backend_probe/20260819_082933_389672Z/summary.json` | 1721 | `6e017c6d421aafc55671fc72eefa50fd3f60e7feaa2943df3394eec64440b303` |
+| `logs/hybrid_latched_task006/backend_probe/20260819_082933_389672Z/probe_rows.jsonl` | 387349 | `c7eed9350d3ebdec7a21ddebab6e0579d17b57e6bd8ffe09f80da8279d9dced6` |
+
+回归结果：十一动作`88 passed`，TASK-004/dynamic force `104 passed`，ideal surface/coverage/
+action layer选择性回归`87 passed`。当前需要方案端决定是否授权仅在释放边界调用Tensor
+`set_transforms`恢复锁存pose并建立新的门禁；这会突破TASK-006“运行期不写root pose”的边界。
 
 下一份合同需要明确选择新的边界稳定机制。可评估但本次未执行的方向包括：
 
