@@ -7,6 +7,7 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers
     ActionResult,
     CapsuleState,
     ElevenActionId,
+    LatchedContactSnapshot,
     Lifecycle,
     load_dynamic_profile,
 )
@@ -64,7 +65,7 @@ def test_each_view_uses_192_swing_48_hold_and_exact_240_substeps(action):
     assert records[238].telemetry.result is None
     assert records[239].telemetry.result is ActionResult.COMPLETED
     assert records[239].telemetry.substep_index == 240
-    assert controller.lifecycle is Lifecycle.READY_HOLD
+    assert controller.lifecycle is Lifecycle.LATCHED_READY
 
 
 def test_hold_and_consecutive_view_are_relative_to_each_real_start():
@@ -128,7 +129,9 @@ def test_move_precondition_is_latched_once_and_rejected_actions_still_take_240_s
     normal = np.asarray([0.0, 0.0, 1.0])
     axis = np.asarray([math.sin(math.radians(tilt_deg)), 0.0, math.cos(math.radians(tilt_deg))])
     state = _state(axis)
-    controller.observe_contact(ContactSample(8, [0, 0, 0], normal, 0.0))
+    controller.set_latched_contact_snapshot(
+        LatchedContactSnapshot(True, False, True, 8)
+    )
     assert controller.submit(ElevenActionId.MOVE_SIDE_POS, state, physics_substep=10)
     records = _run(controller, state, start_substep=10)
     expected = ActionResult.REJECTED if tilt_deg < 60.0 else ActionResult.COMPLETED
@@ -144,7 +147,9 @@ def test_move_requires_recent_sidewall_contact_and_uses_exact_three_phases():
     assert rejected_records[-1].telemetry.result is ActionResult.REJECTED
 
     controller = _controller()
-    controller.observe_contact(ContactSample(19, [0, 0, 0], [0, 0, 1], 0.0))
+    controller.set_latched_contact_snapshot(
+        LatchedContactSnapshot(True, False, True, 19)
+    )
     assert controller.submit(ElevenActionId.MOVE_SIDE_POS, state, physics_substep=20)
     records = _run(controller, state, start_substep=20)
     for index in list(range(60)) + list(range(180, 240)):
@@ -160,12 +165,14 @@ def test_move_requires_recent_sidewall_contact_and_uses_exact_three_phases():
 def test_degenerate_move_is_completed_low_effect_and_large_finite_rate_is_not_fault():
     controller = _controller()
     state = _state([0.0, 0.0, -1.0], angular_velocity=[1.0e6, -1.0e6, 2.0e6])
-    controller.observe_contact(ContactSample(3, [0, 0, 0], [0, 0, 1], 0.0))
+    controller.set_latched_contact_snapshot(
+        LatchedContactSnapshot(True, False, True, 3)
+    )
     assert controller.submit(ElevenActionId.MOVE_SIDE_NEG, state, physics_substep=4)
     records = _run(controller, state, start_substep=4)
     assert records[-1].telemetry.result is ActionResult.COMPLETED
     assert records[-1].telemetry.direction_degenerate
-    assert controller.lifecycle is Lifecycle.READY_HOLD
+    assert controller.lifecycle is Lifecycle.LATCHED_READY
 
 
 def test_only_nonfinite_state_faults_and_executing_submit_is_discarded():
@@ -179,16 +186,16 @@ def test_only_nonfinite_state_faults_and_executing_submit_is_discarded():
     assert controller.lifecycle is Lifecycle.FAULTED
 
 
-def test_fixed_view_hold_cancels_known_support_moment_but_keeps_support_force():
+def test_fixed_view_hold_is_latched_and_zero_wrench():
     controller = _controller()
     state = _state([1.0, 0.0, 0.0])
     assert controller.submit(ElevenActionId.HOLD_VIEW, state, physics_substep=0)
     step = controller.step(state, physics_substep=0)
     np.testing.assert_allclose(step.wrench.torque_world_nm, 0.0, atol=1.0e-12)
-    assert np.linalg.norm(step.wrench.force_world_n) > 0.0
+    np.testing.assert_allclose(step.wrench.force_world_n, 0.0, atol=1.0e-12)
 
 
-def test_hold_cancels_latest_measured_contact_swing_moment_without_axial_twist():
+def test_hold_ignores_live_contact_wrench_while_latched():
     controller = _controller()
     state = _state([1.0, 0.0, 0.0])
     point = state.position_world_m + np.asarray([0.01, 0.0, 0.0])
@@ -204,6 +211,5 @@ def test_hold_cancels_latest_measured_contact_swing_moment_without_axial_twist()
     )
     assert controller.submit(ElevenActionId.HOLD_VIEW, state, physics_substep=0)
     step = controller.step(state, physics_substep=0)
-    expected = -np.cross(point - state.position_world_m, force)
-    np.testing.assert_allclose(step.wrench.torque_world_nm, expected, atol=1.0e-12)
-    assert float(step.wrench.torque_world_nm @ capsule_axis_world(state)) == pytest.approx(0.0)
+    np.testing.assert_allclose(step.wrench.force_world_n, 0.0, atol=1.0e-12)
+    np.testing.assert_allclose(step.wrench.torque_world_nm, 0.0, atol=1.0e-12)

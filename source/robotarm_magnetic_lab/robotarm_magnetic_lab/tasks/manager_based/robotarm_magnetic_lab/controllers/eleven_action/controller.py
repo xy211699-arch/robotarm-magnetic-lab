@@ -9,6 +9,13 @@ import numpy as np
 
 from .config import DynamicProfile, dynamic_profile_sha256
 from .contact_history import ContactSample, SideContactHistory
+from .latch import (
+    LatchBackendName,
+    LatchIntent,
+    LatchReason,
+    LatchedContactSnapshot,
+    load_latch_profile,
+)
 from .geometry import (
     FrozenSupportPoint,
     camera_frame,
@@ -43,6 +50,8 @@ from .types import (
 class ControllerStep:
     wrench: WrenchCommand
     telemetry: ActionTelemetry
+    latch_intent: LatchIntent = LatchIntent.NONE
+    latch_reason: LatchReason | None = None
 
 
 def _clip_norm(vector: np.ndarray, limit: float) -> np.ndarray:
@@ -68,8 +77,9 @@ class ElevenActionController:
         self.profile = profile
         self.surface_query = surface_query
         self.profile_digest = dynamic_profile_sha256()
+        self.latch_profile = load_latch_profile()
         self.contact_history = SideContactHistory(capacity_substeps=profile.contact_history_substeps)
-        self.lifecycle = Lifecycle.READY_HOLD
+        self.lifecycle = Lifecycle.LATCHED_READY
         self.last_result: ActionResult | None = None
         self.discarded_request_count = 0
         self._request_id = 0
@@ -92,10 +102,39 @@ class ElevenActionController:
         self._hold_axis: np.ndarray | None = None
         self._hold_support: FrozenSupportPoint | None = None
         self._hold_normal = np.asarray([0.0, 0.0, 1.0])
+        self._runtime_latched = True
+        self._latch_backend: LatchBackendName | None = None
+        self._latch_reason: LatchReason = LatchReason.INITIAL
+        self._latch_substep: int | None = 0
+        self._latched_during_action = False
+        self._unlock_emitted = False
+        self._latched_contact_snapshot = LatchedContactSnapshot()
 
     @property
     def ready(self) -> bool:
-        return self.lifecycle is Lifecycle.READY_HOLD
+        return self.lifecycle is Lifecycle.LATCHED_READY and self._runtime_latched
+
+    @property
+    def target_axis_world(self) -> np.ndarray:
+        return self._target_axis.copy()
+
+    @property
+    def latched_contact_snapshot(self) -> LatchedContactSnapshot:
+        return self._latched_contact_snapshot
+
+    @property
+    def accepted_move(self) -> bool:
+        return bool(self._action is not None and self._action.is_move and not self._rejected_move)
+
+    def set_latched_contact_snapshot(self, snapshot: LatchedContactSnapshot) -> None:
+        self._latched_contact_snapshot = snapshot
+
+    def confirm_latched(self, backend_name: LatchBackendName | str) -> None:
+        self._runtime_latched = True
+        self._latch_backend = LatchBackendName(backend_name)
+
+    def confirm_unlocked(self) -> None:
+        self._runtime_latched = False
 
     def observe_contact(self, sample: ContactSample) -> None:
         self.contact_history.append(sample)
@@ -115,7 +154,7 @@ class ElevenActionController:
         )
 
     def submit(self, action_id, state: CapsuleState, *, physics_substep: int) -> bool:
-        if self.lifecycle is not Lifecycle.READY_HOLD:
+        if self.lifecycle is not Lifecycle.LATCHED_READY or not self._runtime_latched:
             self.discarded_request_count += 1
             return False
         action = ElevenActionId(int(action_id))
@@ -144,6 +183,10 @@ class ElevenActionController:
         self._move_start_position = state.position_world_m.copy()
         self._first_camera_contact_substep = None
         self._contact_cancel_delay = None
+        self._latched_during_action = False
+        self._unlock_emitted = False
+        self._latch_reason = LatchReason.HOLD if action is ElevenActionId.HOLD_VIEW else LatchReason.INITIAL
+        self._latch_substep = None
 
         if action.is_view:
             direction = grid_direction_world(action, up, right)
@@ -163,11 +206,10 @@ class ElevenActionController:
             tilt_deg = math.degrees(
                 math.acos(np.clip(float(optical @ hit.normal_world), -1.0, 1.0))
             )
-            recent_sidewall = self.contact_history.had_sidewall_contact(
-                current_substep=physics_substep,
-                last_n_substeps=self.profile.contact_history_substeps,
+            self._rejected_move = (
+                tilt_deg + 1.0e-10 < self.profile.move_min_tilt_deg
+                or not self._latched_contact_snapshot.sidewall_contact
             )
-            self._rejected_move = tilt_deg + 1.0e-10 < self.profile.move_min_tilt_deg or not recent_sidewall
         self.lifecycle = Lifecycle.EXECUTING
         self.last_result = None
         return True
@@ -274,6 +316,8 @@ class ElevenActionController:
         force_slew_limited: bool = False,
         torque_slew_limited: bool = False,
         message: str = "",
+        latch_intent: LatchIntent = LatchIntent.NONE,
+        latch_reason: LatchReason | None = None,
     ) -> ActionTelemetry:
         current_axis = self._start_axis if state is None or not state.is_finite else capsule_axis_world(state)
         recent_step = max(0, self._latest_physics_substep)
@@ -314,29 +358,27 @@ class ElevenActionController:
             force_slew_limited=force_slew_limited,
             torque_slew_limited=torque_slew_limited,
             profile_sha256=self.profile_digest,
+            latched=self._runtime_latched or self._latched_during_action,
+            latch_intent=latch_intent,
+            latch_reason=self._latch_reason if latch_reason is None else latch_reason,
+            latch_substep=self._latch_substep,
+            policy_frame_ready=(
+                self.lifecycle is Lifecycle.LATCHED_READY
+                and self._runtime_latched
+                and result is not None
+            ),
+            latch_backend=self._latch_backend,
             message=message,
         )
 
     def _ready_hold_step(self, state: CapsuleState) -> ControllerStep:
-        if self._hold_support is None or self._hold_axis is None:
-            self._freeze_hold(state)
-        force, torque, drift = self._support_wrench(
-            state,
-            self._hold_support,
-            self._hold_normal,
-            self._hold_axis,
-            cancel_support_torque=True,
-        )
-        wrench, force_slew, torque_slew = self._limited_wrench(force, torque)
+        wrench = WrenchCommand.zero()
         telemetry = self._telemetry(
             substep_index=0,
             result=None,
-            desired_axis=self._hold_axis,
+            desired_axis=capsule_axis_world(state),
             wrench=wrench,
             state=state,
-            support_drift=drift,
-            force_slew_limited=force_slew,
-            torque_slew_limited=torque_slew,
         )
         return ControllerStep(wrench, telemetry)
 
@@ -346,7 +388,7 @@ class ElevenActionController:
             return self._enter_fault("controller remains faulted")
         if not state.is_finite:
             return self._enter_fault("non-finite capsule state")
-        if self.lifecycle is Lifecycle.READY_HOLD:
+        if self.lifecycle is Lifecycle.LATCHED_READY:
             return self._ready_hold_step(state)
         if self._action is None or not 0 <= self._action_substep < self.profile.action_substeps:
             return self._enter_fault("invalid action state or substep")
@@ -356,8 +398,28 @@ class ElevenActionController:
         desired_swing_rate = np.zeros(3, dtype=np.float64)
         support_drift = 0.0
         force_slew = torque_slew = False
+        latch_intent = LatchIntent.NONE
+        latch_reason: LatchReason | None = None
 
-        if self._action.is_move and not self._rejected_move:
+        requires_motion = self._action.is_view or (
+            self._action.is_move and not self._rejected_move
+        )
+        if requires_motion and not self._unlock_emitted:
+            latch_intent = LatchIntent.UNLOCK
+            self._unlock_emitted = True
+        if self._action is ElevenActionId.HOLD_VIEW or self._rejected_move:
+            self._latched_during_action = True
+            self._latch_reason = (
+                LatchReason.HOLD
+                if self._action is ElevenActionId.HOLD_VIEW
+                else LatchReason.REJECTED_MOVE
+            )
+            self._latch_substep = 0
+
+        if self._latched_during_action:
+            wrench = WrenchCommand.zero()
+            desired_axis = self._target_axis.copy()
+        elif self._action.is_move and not self._rejected_move:
             if index == 60:
                 hit = self.surface_query.query(state.position_world_m)
                 self._surface_normal = hit.normal_world.copy()
@@ -385,11 +447,17 @@ class ElevenActionController:
                 )
                 if pushes_inward:
                     self._constrained = True
-                    self._target_axis = capsule_axis_world(state)
                     self._first_camera_contact_substep = min(item.physics_substep for item in contacts)
                     self._contact_cancel_delay = max(
                         1, int(physics_substep) - self._first_camera_contact_substep + 1
                     )
+                    self._latched_during_action = True
+                    self._latch_reason = LatchReason.CAMERA_CONTACT
+                    self._latch_substep = index
+                    latch_intent = LatchIntent.LOCK
+                    latch_reason = self._latch_reason
+                    wrench = WrenchCommand.zero()
+                    desired_axis = capsule_axis_world(state)
             if self._action.is_view and not self._constrained:
                 progress = quintic_progress(index, self.profile.view_motion_substeps)
                 desired_axis = swing_axis(self._start_axis, self._target_axis, progress)
@@ -404,16 +472,36 @@ class ElevenActionController:
                     progress_rate,
                 )
             else:
-                desired_axis = self._target_axis.copy()
-            force, torque, support_drift = self._support_wrench(
-                state,
-                self._support,
-                self._surface_normal,
-                desired_axis,
-                desired_swing_rate,
-                cancel_support_torque=True,
-            )
-            wrench, force_slew, torque_slew = self._limited_wrench(force, torque)
+                desired_axis = (
+                    capsule_axis_world(state)
+                    if self._latched_during_action and self._latch_reason is LatchReason.CAMERA_CONTACT
+                    else self._target_axis.copy()
+                )
+            if not self._latched_during_action:
+                force, torque, support_drift = self._support_wrench(
+                    state,
+                    self._support,
+                    self._surface_normal,
+                    desired_axis,
+                    desired_swing_rate,
+                    cancel_support_torque=True,
+                )
+                wrench, force_slew, torque_slew = self._limited_wrench(force, torque)
+                actual_axis = capsule_axis_world(state)
+                target_error_deg = math.degrees(math.acos(np.clip(
+                    float(actual_axis @ self._target_axis), -1.0, 1.0
+                )))
+                target_gate = (
+                    target_error_deg <= self.latch_profile.view_error_limit_deg
+                    and support_drift <= self.latch_profile.support_drift_limit_m
+                )
+                if self._action.is_view and target_gate:
+                    self._latched_during_action = True
+                    self._latch_reason = LatchReason.VIEW_TARGET
+                    self._latch_substep = index
+                    latch_intent = LatchIntent.LOCK
+                    latch_reason = self._latch_reason
+                    wrench = WrenchCommand.zero()
 
         self._action_substep += 1
         result = None
@@ -423,7 +511,14 @@ class ElevenActionController:
             else:
                 result = ActionResult.COMPLETED
             self.last_result = result
-            self.lifecycle = Lifecycle.READY_HOLD
+            self.lifecycle = Lifecycle.LATCHED_READY
+            if not self._latched_during_action:
+                self._latched_during_action = True
+                self._latch_reason = LatchReason.ACTION_BOUNDARY
+                self._latch_substep = self.profile.action_substeps
+                latch_intent = LatchIntent.LOCK
+                latch_reason = self._latch_reason
+                wrench = WrenchCommand.zero()
 
         telemetry = self._telemetry(
             substep_index=self._action_substep,
@@ -434,9 +529,10 @@ class ElevenActionController:
             support_drift=support_drift,
             force_slew_limited=force_slew,
             torque_slew_limited=torque_slew,
+            latch_intent=latch_intent,
+            latch_reason=latch_reason,
         )
         if result is not None:
-            # The next READY update holds the true finite terminal state with no
-            # zero-wrench gap, while preserving the slew history above.
-            self._freeze_hold(state)
-        return ControllerStep(wrench, telemetry)
+            self._previous_force = np.zeros(3)
+            self._previous_torque = np.zeros(3)
+        return ControllerStep(wrench, telemetry, latch_intent, latch_reason)
