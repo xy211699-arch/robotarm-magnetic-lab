@@ -17,7 +17,7 @@ EXTENSION_TOML_DATA = toml.load(os.path.join(EXTENSION_PATH, "config", "extensio
 
 # Minimum dependencies required prior to installation
 INSTALL_REQUIRES = [
-    # NOTE: Add dependencies
+    "magpylib==5.2.3",
     "psutil",
 ]
 
@@ -32,6 +32,12 @@ setup(
     description=EXTENSION_TOML_DATA["package"]["description"],
     keywords=EXTENSION_TOML_DATA["package"]["keywords"],
     install_requires=INSTALL_REQUIRES,
+    package_data={
+        "robotarm_magnetic_lab.magnetics": [
+            "THIRD_PARTY_NOTICES.md",
+            "resources/*.json",
+        ]
+    },
     license="Apache-2.0",
     include_package_data=True,
     python_requires=">=3.12",

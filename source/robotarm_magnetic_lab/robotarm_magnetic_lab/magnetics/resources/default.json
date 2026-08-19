@@ -1,0 +1,148 @@
+{
+  "simulation": {
+    "field_update_every_frames": 30,
+    "apply_forces": true,
+    "apply_linear_force": true,
+    "force_update_every_frames": 4,
+    "max_force_n": 0.005,
+    "max_torque_nm": 0.0009,
+    "wrench_filter_time_constant_s": 0.15,
+    "dt_seconds": 0.016666666666666666
+  },
+  "planning": {
+    "enabled": true,
+    "robot_urdf": "/home/multirobo/Desktop/robotarm/urdf/robotarm.urdf",
+    "robot_xrdf": "data/planning/robot.xrdf",
+    "tool_frame": "l6",
+    "tool_axis_local": [0.0, 0.0, -1.0],
+    "task_tool_to_l6_rpy_deg": [180.0, 0.0, 0.0],
+    "target_axis_tolerance_deg": 1.0,
+    "tool_position_tolerance_m": 0.003,
+    "execution_speed_scale": 0.25,
+    "trajectory_validation_dt_s": 0.01,
+    "lookahead_horizon_s": 1.0,
+    "lookahead_check_every_frames": 6,
+    "replan_cooldown_s": 0.5,
+    "maximum_replans": 8,
+    "graph_fallback_roll_samples": 24,
+    "graph_max_joint_speed_rad_s": 0.12,
+    "graph_max_joint_acceleration_rad_s2": 0.2,
+    "asm_self_collision_ignored_frames": [],
+    "asm_collision_inflation_m": 0.015,
+    "required_self_clearance_m": 0.0,
+    "max_tracking_error_rad": 0.025,
+    "capsule_collision_margin_m": 0.005,
+    "ground_collision_margin_m": 0.003,
+    "mount_translation_tolerance_m": 0.002,
+    "mount_rotation_tolerance_deg": 2.0,
+    "enforce_mount_from_config": true,
+    "asm_mount_l6_from_asm": {
+      "translation_m": [0.0, 0.0, 0.0],
+      "rotation": [[-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, -1.0]]
+    }
+  },
+  "robot": {
+    "articulation_prim": "/World/robotarm",
+    "base_link_name": "base_link",
+    "tool_link_name": "l6",
+    "ball_rigid_link_candidates": ["magl", "ballzl"],
+    "arm_joint_names": ["j1", "j2", "j3", "j4", "j5", "j6"],
+    "ball_joint_names": ["ballxj", "ballyj", "ballzj"],
+    "goal_joint_positions_rad": [-1.116527, 0.014048, -1.863144, 0.306371, 1.570835, 0.0],
+    "goal_tool_position_base_m": [0.313989, -0.366089, 0.320043],
+    "goal_tool_rpy_deg": [180.0, 0.0, 56.0],
+    "max_joint_speed_rad_s": 0.12,
+    "redundant_roll_joint_name": "j6",
+    "collision_safe_roll_rad": 0.0,
+    "collision_safe_roll_speed_rad_s": 0.15,
+    "collision_safe_roll_range_rad": [-3.141593, 3.141593],
+    "minimum_duration_s": 10.0,
+    "arm_stiffness": 3000.0,
+    "arm_damping": 300.0,
+    "arm_max_effort": 500.0,
+    "settle_position_tolerance_rad": 0.005,
+    "settle_position_delta_rad": 0.0002,
+    "settle_velocity_tolerance_rad_s": 0.02,
+    "settle_required_frames": 60,
+    "settle_timeout_s": 30.0,
+    "ball_init_stiffness": 300.0,
+    "ball_init_damping": 30.0,
+    "ball_stiffness": 0.0,
+    "ball_damping": 0.02,
+    "ball_max_effort": 10.0
+  },
+  "environment": {
+    "ground_prim": "/World/MagneticDemo/ground",
+    "ground_size_m": 3.0,
+    "ground_z_offset_from_base_m": 0.0,
+    "contact": {
+      "material_prim": "/World/MagneticDemo/PhysicsMaterials/capsule_ground",
+      "static_friction": 0.18,
+      "dynamic_friction": 0.15,
+      "restitution": 0.0,
+      "compliant_contact_acceleration_spring": true,
+      "compliant_contact_stiffness": 25000.0,
+      "compliant_contact_damping": 300.0
+    }
+  },
+  "external_magnet": {
+    "release_delay_s": 0.0,
+    "coupling_ramp_s": 0.5,
+    "initial_yaw_deg": 0.0,
+    "capsule": {
+      "diameter_m": 0.013,
+      "length_m": 0.025,
+      "wall_thickness_m": 0.002,
+      "shell_density_kg_m3": 1200.0,
+      "shell_mass_kg": 0.001918,
+      "total_mass_kg": 0.005735,
+      "center_of_mass_offset_axis_m": -0.002663,
+      "linear_damping": 0.5,
+      "angular_damping": 25.0,
+      "linear_drag_n_per_m_s": 0.0,
+      "angular_drag_nm_per_rad_s": 0.0012,
+      "max_linear_velocity_m_s": 0.25,
+      "max_angular_velocity_rad_s": 1.0,
+      "max_depenetration_velocity_m_s": 0.1
+    }
+  },
+  "scene": {
+    "main_magnet_prim": "/World/asm/Geometry/base_link/ballxl/ballyl/ballzl/magl",
+    "asm_base_prim": "/World/asm/Geometry/base_link",
+    "target_magnet_prim": "/World/MagneticDemo/target_magnet",
+    "field_visualization_prim": "/World/MagneticDemo/field_vectors"
+  },
+  "magnets": {
+    "main_cube": {
+      "shape": "cuboid",
+      "grade": "N52",
+      "dimensions_m": [0.05, 0.05, 0.05],
+      "mass_kg": 0.94,
+      "remanence_t": 1.45,
+      "polarization_axis_local": [0.0, 0.0, 1.0],
+      "force_meshing": 216
+    },
+    "target_cylinder": {
+      "shape": "cylinder",
+      "grade": "N52",
+      "diameter_m": 0.009,
+      "height_m": 0.008,
+      "center_offset_axis_m": -0.004,
+      "mass_kg": 0.003817,
+      "remanence_t": 1.45,
+      "polarization_axis_local": [0.0, 0.0, 1.0],
+      "force_meshing": 240
+    }
+  },
+  "visualization": {
+    "mode": "3d_streamlines",
+    "streamline_seed_radii_m": [0.008, 0.016, 0.022],
+    "streamline_seeds_per_ring": 12,
+    "streamline_step_m": 0.0025,
+    "streamline_max_steps": 300,
+    "streamline_max_radius_m": 0.20,
+    "streamline_min_field_t": 0.000001,
+    "line_width_m": 0.003,
+    "debug_line_width_px": 3
+  }
+}

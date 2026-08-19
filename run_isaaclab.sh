@@ -35,7 +35,7 @@ exec env \
     -u VIRTUAL_ENV \
     -u PYTHONEXE \
     -u PYTHONHOME \
-    -u PYTHONPATH \
     -u LD_LIBRARY_PATH \
     -u LD_PRELOAD \
+    PYTHONPATH="${PROJECT_DIR}/source/robotarm_magnetic_lab" \
     "${ISAACLAB_LAUNCHER}" "${ARGS[@]}"

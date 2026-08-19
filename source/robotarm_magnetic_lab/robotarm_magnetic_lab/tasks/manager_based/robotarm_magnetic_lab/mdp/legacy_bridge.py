@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import os
 from pathlib import Path
 import sys
 from types import ModuleType
@@ -19,6 +20,8 @@ import numpy as np
 import torch
 import yaml
 from isaaclab.managers import ManagerTermBase
+
+from robotarm_magnetic_lab.magnetics import FiniteMagnetSystem, config_sha256, load_config
 
 
 LEGACY_EXTENSION_ROOT = Path("/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim")
@@ -130,13 +133,6 @@ class LegacyMagneticCollisionBridge(ManagerTermBase):
     def __init__(self, cfg, env):
         super().__init__(cfg, env)
 
-        config_module = _load_source_module(
-            "_robotarm_legacy_config", "robotarm/magnetic_sim/config.py"
-        )
-        field_module = _load_source_module(
-            "_robotarm_legacy_field_models",
-            "robotarm/magnetic_sim/magnetics/field_models.py",
-        )
         streamline_module = _load_source_module(
             "_robotarm_legacy_streamlines",
             "robotarm/magnetic_sim/magnetics/streamlines.py",
@@ -146,8 +142,23 @@ class LegacyMagneticCollisionBridge(ManagerTermBase):
             "robotarm/magnetic_sim/visualization/magnetic_field.py",
         )
 
-        self.config = config_module.load_config(LEGACY_EXTENSION_ROOT)
-        self.model = field_module.FiniteMagnetSystem(self.config)
+        try:
+            self.config = load_config()
+            self.model = FiniteMagnetSystem(self.config)
+            model_source = "repository-local"
+        except Exception:
+            if os.environ.get("ROBOTARM_MAGNETIC_ALLOW_LEGACY_FALLBACK") != "1":
+                raise
+            config_module = _load_source_module(
+                "_robotarm_legacy_config", "robotarm/magnetic_sim/config.py"
+            )
+            field_module = _load_source_module(
+                "_robotarm_legacy_field_models",
+                "robotarm/magnetic_sim/magnetics/field_models.py",
+            )
+            self.config = config_module.load_config(LEGACY_EXTENSION_ROOT)
+            self.model = field_module.FiniteMagnetSystem(self.config)
+            model_source = "explicit-legacy-fallback"
         self.collision_model = XrdfSphereCollisionModel(
             env.scene["robot"],
             LEGACY_EXTENSION_ROOT / self.config["planning"]["robot_xrdf"],
@@ -179,6 +190,8 @@ class LegacyMagneticCollisionBridge(ManagerTermBase):
             )
         self._log(
             "LAB_BRIDGE_READY "
+            f"magnetic_model={model_source} "
+            f"magnetic_config_sha256={config_sha256()} "
             f"magnet_body_index={self.magnet_body_index} "
             f"arm_indices={self.arm_indices} "
             f"streamlines={len(self._local_streamlines)}"
