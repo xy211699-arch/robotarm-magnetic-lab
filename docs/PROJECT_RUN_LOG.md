@@ -791,3 +791,14 @@
   物理步重力、法向力和摩擦力会重新产生线/角加速度，使倾斜非平衡胶囊翻倒和滚动。
 - 六轴mask值与位姿写入本身无误，且全六轴时局部/世界轴差异不影响结论；后续若继续需使用
   可验证的PhysX/Fabric运行期actor接口，或在actor创建前预置并单独验证解锁/重锁同步。
+
+## 2026-08-19 — PhysX/Fabric 运行时锁存接口调查
+
+- 当前版本公开Python绑定未暴露`PxRigidDynamic::setRigidDynamicLockFlags`，继续热写USD六轴锁
+  不能保证活动CUDA actor采用；但PhysX Tensor `RigidBodyView`提供直接后端接口
+  `set_disable_simulations/get_disable_simulations/wake_up`，Isaac Lab胶囊可由`root_view`访问。
+- 建议新增独立`tensor_disable_simulation`实验后端：锁存时清wrench/速度并禁用simulation，
+  解锁时重新启用、清零速度、显式wake，再执行原配对释放门禁；该语义会在锁存期移出接触
+  求解，必须验证重启接触瞬态，不能直接视为TASK-006 Dynamic Lock已修复。
+- 精确的原生actor六轴锁只能通过自定义Kit C++扩展调用PhysX SDK，存在actor句柄映射和版本ABI
+  风险；优先验证Tensor禁用方案，不采用逐子步回写位姿、sleep或未经授权的kinematic备用路径。
