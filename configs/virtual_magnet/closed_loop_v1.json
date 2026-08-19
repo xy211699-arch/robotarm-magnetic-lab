@@ -40,7 +40,7 @@
   "minimum_separation_m": 0.04,
   "maximum_separation_m": 0.14,
   "maximum_relative_angle_rad": 3.141592653589793,
-  "condition_limit": 10000000000.0,
+  "condition_limit": 100000000000000.0,
   "nominal_position_capsule_m": [0.0, 0.0, 0.08],
   "nominal_quaternion_capsule_xyzw": [0.0, 0.0, 0.0, 1.0],
   "wrench_filter_time_constant_s": 0.035,

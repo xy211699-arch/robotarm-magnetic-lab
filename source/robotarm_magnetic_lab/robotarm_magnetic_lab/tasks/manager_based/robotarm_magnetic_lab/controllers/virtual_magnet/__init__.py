@@ -2,6 +2,13 @@
 
 from .config import ClosedLoopProfile, load_profile, profile_sha256
 from .geometry import move_direction, normalize, quintic_progress, unsigned_axis_tilt, view_target_axis
+from .pose_inverse import (
+    PoseInverseResult,
+    PoseInverseState,
+    integrate_pose_increment,
+    numerical_pose_jacobian,
+    solve_pose_increment,
+)
 from .types import (
     ActionId,
     ActionResult,
@@ -21,11 +28,16 @@ __all__ = [
     "ControllerTelemetry",
     "FrozenActionTarget",
     "Lifecycle",
+    "PoseInverseResult",
+    "PoseInverseState",
+    "integrate_pose_increment",
     "load_profile",
     "move_direction",
     "normalize",
+    "numerical_pose_jacobian",
     "profile_sha256",
     "quintic_progress",
     "unsigned_axis_tilt",
     "view_target_axis",
+    "solve_pose_increment",
 ]
