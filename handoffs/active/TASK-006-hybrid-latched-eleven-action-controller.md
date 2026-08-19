@@ -16,7 +16,7 @@ Required return report: `handoffs/reports/TASK-006-hybrid-latched-eleven-action-
 
 ## Linux execution instruction
 
-The Linux session must read the design and implementation plan completely before editing. The Linux environment is not required to install or invoke `superpowers:subagent-driven-development`, `superpowers:executing-plans`, or any other superpowers skill. Execute the repository checklist manually, task by task, with the specified tests and evidence gates.
+The Linux session must fetch `origin/workflow/TASK-006-hybrid-latched-v1`, create `feature/TASK-006-hybrid-latched-v1` from that planning branch, verify that the planning commit's parent is the exact implementation base `67b7bf44747f08422add0cee7e6b94280bbeff6d`, and read the design and implementation plan completely before editing. The Linux environment is not required to install or invoke `superpowers:subagent-driven-development`, `superpowers:executing-plans`, or any other superpowers skill. Execute the repository checklist manually, task by task, with the specified tests and evidence gates.
 
 Do not reuse the old TASK-005 `needs_decision` conclusion as a TASK-006 result. TASK-005 remains the baseline evidence showing that continuous dynamic settling failed. TASK-006 must produce new latch-backend, paired-release, flat randomized, RGB-boundary, stress, stomach, and regression evidence.
 

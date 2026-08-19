@@ -43,13 +43,14 @@
 - [ ] **Step 1: Verify and create the branch from the exact base**
 
 ```bash
-git fetch origin
-git switch --create feature/TASK-006-hybrid-latched-v1 67b7bf44747f08422add0cee7e6b94280bbeff6d
+git fetch origin workflow/TASK-006-hybrid-latched-v1
+git switch --create feature/TASK-006-hybrid-latched-v1 origin/workflow/TASK-006-hybrid-latched-v1
 git rev-parse HEAD
+git rev-parse HEAD^
 git status --short --branch
 ```
 
-Expected: HEAD is exactly the TASK-005 report commit and the worktree is clean before edits.
+Expected: HEAD contains the Windows planning commit, `HEAD^` is exactly the TASK-005 report commit `67b7bf44747f08422add0cee7e6b94280bbeff6d`, and the worktree is clean before edits.
 
 - [ ] **Step 2: Write failing contract tests**
 
