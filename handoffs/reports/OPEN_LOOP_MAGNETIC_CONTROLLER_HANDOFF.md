@@ -6,7 +6,7 @@
 
 基线提交：`8f89f85`（`origin/main`）
 
-交接分支：`agent/open-loop-magnetic-controller-handoff`
+交接分支：`workflow/OPEN-LOOP-MAGNETIC-CONTROLLER-linux-response`
 
 交接性质：文档、代码清单与证据归档；未修改控制器、环境、资产或既有实验结果。
 

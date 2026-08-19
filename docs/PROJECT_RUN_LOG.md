@@ -520,3 +520,10 @@
   可视化和已有实验日志的完整盘点，并区分已通过、失败和未重新验证项目。
 - 明确当前仓库尚依赖外部磁场扩展、Magpylib、XRDF、基础Stage和胃部源USD；交接包
   可供审阅和升级设计，但在依赖内聚与冷启动验证前不得宣称可独立运行。
+
+## 2026-08-19 — 开环控制器交接发布路径修正
+
+- 撤销误建在`shuozhang1007/robotarm-magnetic-lab`的草稿PR；未向该仓库推送代码。
+- 按双向交接规范将交付分支更名为
+  `workflow/OPEN-LOOP-MAGNETIC-CONTROLLER-linux-response`，目标仅为共享Fork
+  `xy211699-arch/robotarm-magnetic-lab`，供Windows方案端直接拉取核验。
