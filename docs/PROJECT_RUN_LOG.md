@@ -814,3 +814,11 @@
   用Tensor恢复锁存pose属于新的架构与安全决策。
 - 回归88/88、104/104、87/87通过；正式证据位于
   `logs/hybrid_latched_task006/backend_probe/20260819_082933_389672Z/`。
+
+## 2026-08-19 — TASK-005可视化入口复核
+
+- 确认保留入口为`scripts/eleven_action/teleop_eleven_action.py`，平面任务ID为
+  `Template-Robotarm-Magnetic-Eleven-Action-Flat-Lab-v0`；CUDA、120 FPS及胶囊相机窗口
+  的完整启动参数仍与TASK-005文档一致。
+- 键位为数字小键盘外围八方向VIEW、5为HOLD、E/Q分别为正/负MOVE；Backspace复位、F12
+  快照、Esc退出。TASK-005正式随机门禁仍为`needs_decision`，该入口仅用于复现和观察。
