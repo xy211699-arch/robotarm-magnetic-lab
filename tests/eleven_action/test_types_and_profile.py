@@ -42,7 +42,9 @@ def test_public_ids_and_results_are_frozen():
     assert {item.name: int(item) for item in ElevenActionId} == EXPECTED_IDS
     assert -1 not in [int(item) for item in ElevenActionId]
     assert {item.value for item in ActionResult} == {"completed", "rejected", "fault"}
-    assert {item.value for item in Lifecycle} == {"ready_hold", "executing", "faulted"}
+    assert {item.value for item in Lifecycle} == {
+        "ready_hold", "latched_ready", "executing", "faulted"
+    }
 
 
 def test_tracked_profile_has_exact_timing_and_canonical_digest():
@@ -92,7 +94,7 @@ def test_profile_digest_ignores_json_formatting(tmp_path):
 
 def test_telemetry_exposes_required_contract_fields():
     telemetry = ActionTelemetry.empty("a" * 64)
-    assert telemetry.lifecycle is Lifecycle.READY_HOLD
+    assert telemetry.lifecycle is Lifecycle.LATCHED_READY
     assert telemetry.result is None
     assert telemetry.action_id is None
     assert telemetry.request_id == 0

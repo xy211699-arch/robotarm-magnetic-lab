@@ -1,0 +1,13 @@
+{
+  "schema_version": "task006_hybrid_latched_v1",
+  "physics_hz": 240,
+  "policy_rgb_hz": 1,
+  "view_error_limit_deg": 3.0,
+  "support_drift_limit_m": 0.002,
+  "release_window_s": 0.05,
+  "release_position_delta_limit_m": 0.0005,
+  "release_axis_delta_limit_deg": 1.0,
+  "preferred_backend": "dynamic_lock_flags",
+  "fallback_backend": "kinematic",
+  "selected_backend": "dynamic_lock_flags"
+}

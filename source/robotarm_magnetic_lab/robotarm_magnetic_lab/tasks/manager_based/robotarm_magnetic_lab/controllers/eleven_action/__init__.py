@@ -13,6 +13,15 @@ from .types import (
     Lifecycle,
     WrenchCommand,
 )
+from .latch import (
+    LatchBackendName,
+    LatchIntent,
+    LatchProfile,
+    LatchReason,
+    LatchedContactSnapshot,
+    latch_profile_sha256,
+    load_latch_profile,
+)
 from .contact_history import ContactRegion, ContactSample, SideContactHistory
 from .surface_query import FlatSurfaceQuery, LocalSurfaceHit, StomachSurfaceQuery
 from .controller import ControllerStep, ElevenActionController
@@ -28,11 +37,18 @@ __all__ = [
     "ElevenActionId",
     "ElevenActionController",
     "Lifecycle",
+    "LatchBackendName",
+    "LatchIntent",
+    "LatchProfile",
+    "LatchReason",
+    "LatchedContactSnapshot",
     "LocalSurfaceHit",
     "FlatSurfaceQuery",
     "StomachSurfaceQuery",
     "SideContactHistory",
     "WrenchCommand",
     "dynamic_profile_sha256",
+    "latch_profile_sha256",
     "load_dynamic_profile",
+    "load_latch_profile",
 ]

@@ -7,6 +7,8 @@ from enum import Enum, IntEnum
 
 import numpy as np
 
+from .latch import LatchBackendName, LatchIntent, LatchReason
+
 
 class ElevenActionId(IntEnum):
     """Only IDs exposed to a future actor."""
@@ -40,6 +42,7 @@ class ActionResult(str, Enum):
 
 class Lifecycle(str, Enum):
     READY_HOLD = "ready_hold"
+    LATCHED_READY = "latched_ready"
     EXECUTING = "executing"
     FAULTED = "faulted"
 
@@ -124,6 +127,12 @@ class ActionTelemetry:
     force_slew_limited: bool = False
     torque_slew_limited: bool = False
     profile_sha256: str = ""
+    latched: bool = False
+    latch_intent: LatchIntent = LatchIntent.NONE
+    latch_reason: LatchReason | None = None
+    latch_substep: int | None = None
+    policy_frame_ready: bool = False
+    latch_backend: LatchBackendName | None = None
     message: str = ""
 
     def __post_init__(self) -> None:
@@ -132,6 +141,11 @@ class ActionTelemetry:
             object.__setattr__(self, "action_id", ElevenActionId(int(self.action_id)))
         if self.result is not None:
             object.__setattr__(self, "result", ActionResult(self.result))
+        object.__setattr__(self, "latch_intent", LatchIntent(self.latch_intent))
+        if self.latch_reason is not None:
+            object.__setattr__(self, "latch_reason", LatchReason(self.latch_reason))
+        if self.latch_backend is not None:
+            object.__setattr__(self, "latch_backend", LatchBackendName(self.latch_backend))
         for name in (
             "start_axis_world", "end_axis_world", "desired_axis_world", "surface_normal_world",
             "support_anchor_world_m", "move_direction_world", "force_world_n", "torque_world_nm",
@@ -142,13 +156,15 @@ class ActionTelemetry:
             raise ValueError("telemetry scalars must be finite")
         if self.request_id < 0 or self.substep_index < 0:
             raise ValueError("request and substep indices must be nonnegative")
+        if self.latch_substep is not None and self.latch_substep < 0:
+            raise ValueError("latch_substep must be nonnegative")
         if self.profile_sha256 and len(self.profile_sha256) != 64:
             raise ValueError("profile_sha256 must be empty or 64 characters")
 
     @classmethod
     def empty(cls, profile_sha256: str = "") -> "ActionTelemetry":
         return cls(
-            lifecycle=Lifecycle.READY_HOLD,
+            lifecycle=Lifecycle.LATCHED_READY,
             action_id=None,
             request_id=0,
             substep_index=0,
