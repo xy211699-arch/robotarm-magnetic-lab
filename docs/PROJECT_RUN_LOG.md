@@ -822,3 +822,10 @@
   的完整启动参数仍与TASK-005文档一致。
 - 键位为数字小键盘外围八方向VIEW、5为HOLD、E/Q分别为正/负MOVE；Backspace复位、F12
   快照、Esc退出。TASK-005正式随机门禁仍为`needs_decision`，该入口仅用于复现和观察。
+
+## 2026-08-19 — TASK-005可视化工作树路径修正
+
+- 用户在主工作树启动时报脚本不存在；确认主目录仍处于`workflow/TASK-000-linux-response`，
+  TASK-005脚本位于隔离工作树`/tmp/robotarm-task005`且文件完整。
+- 修正启动说明为先进入`/tmp/robotarm-task005`；不切换、不覆盖主工作树，也不要求从TASK-006
+  实验分支运行TASK-005基线可视化。
