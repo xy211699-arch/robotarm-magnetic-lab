@@ -22,13 +22,22 @@ def _tangent(vector, normal) -> np.ndarray:
     return value - normal_value * np.dot(value, normal_value)
 
 
-def _minimal_swing_torque(optical_axis, target_optical_axis, angular_velocity, kp, kd) -> np.ndarray:
+def _minimal_swing_torque(
+    optical_axis,
+    target_optical_axis,
+    angular_velocity,
+    kp,
+    kd,
+    target_angular_velocity=(0.0, 0.0, 0.0),
+) -> np.ndarray:
     optical = normalize(optical_axis)
     target = normalize(target_optical_axis)
     swing_error = np.cross(optical, target)
     angular = np.asarray(angular_velocity, dtype=np.float64)
-    angular_without_twist = angular - optical * np.dot(angular, optical)
-    torque = float(kp) * swing_error - float(kd) * angular_without_twist
+    target_angular = np.asarray(target_angular_velocity, dtype=np.float64)
+    angular_error = target_angular - angular
+    angular_error_without_twist = angular_error - optical * np.dot(angular_error, optical)
+    torque = float(kp) * swing_error + float(kd) * angular_error_without_twist
     return torque - optical * np.dot(torque, optical)
 
 
@@ -68,6 +77,7 @@ def desired_view_wrench(
     linear_velocity,
     angular_velocity,
     profile: ClosedLoopProfile,
+    target_angular_velocity=(0.0, 0.0, 0.0),
 ) -> np.ndarray:
     position_error = _tangent(np.asarray(tangent_anchor) - np.asarray(position), inward_normal)
     tangent_velocity = _tangent(linear_velocity, inward_normal)
@@ -78,6 +88,7 @@ def desired_view_wrench(
         angular_velocity,
         profile.view_axis_kp_nm,
         profile.view_axis_kd_nm_s,
+        target_angular_velocity,
     )
     return np.concatenate(
         (_clip(force, profile.max_desired_force_n), _clip(torque, profile.max_desired_torque_nm))

@@ -190,8 +190,28 @@ class VirtualMagnetElevenActionController:
                 self.frozen_target.target_optical_axis,
                 progress,
             )
+            start_axis = normalize(self.frozen_target.start_optical_axis)
+            final_axis = normalize(self.frozen_target.target_optical_axis)
+            swing_cross = np.cross(start_axis, final_axis)
+            swing_sine = float(np.linalg.norm(swing_cross))
+            swing_angle = math.atan2(
+                swing_sine,
+                float(np.clip(np.dot(start_axis, final_axis), -1.0, 1.0)),
+            )
+            target_angular_velocity = np.zeros(3)
+            if motion_fraction < 1.0 and swing_sine > 1.0e-12:
+                progress_rate = (
+                    30.0
+                    * motion_fraction**2
+                    * (1.0 - motion_fraction) ** 2
+                    / (self.profile.motion_substeps / self.profile.physics_hz)
+                )
+                target_angular_velocity = (
+                    swing_cross / swing_sine * swing_angle * progress_rate
+                )
             if state.camera_contact and np.dot(target_axis - state.optical_axis, self.frozen_target.inward_normal) < 0.0:
                 target_axis = normalize(state.optical_axis)
+                target_angular_velocity[:] = 0.0
                 self.telemetry.constrained = True
             return desired_view_wrench(
                 optical_axis=state.optical_axis,
@@ -201,6 +221,7 @@ class VirtualMagnetElevenActionController:
                 inward_normal=self.frozen_target.inward_normal,
                 linear_velocity=state.linear_velocity,
                 angular_velocity=state.angular_velocity,
+                target_angular_velocity=target_angular_velocity,
                 profile=self.profile,
             )
         target_position = (
@@ -235,17 +256,32 @@ class VirtualMagnetElevenActionController:
             nominal_position=nominal_position,
             nominal_quaternion_xyzw=Rotation.from_matrix(nominal_rotation).as_quat(),
         )
+        move_action = (
+            self._requested_action in (ActionId.MOVE_SIDE_POS, ActionId.MOVE_SIDE_NEG)
+            and not self._rejected_move
+        )
+        force_weights = self.profile.move_force_weights if move_action else self.profile.force_weights
+        torque_weights = self.profile.move_torque_weights if move_action else self.profile.torque_weights
+        stabilization = (
+            self._requested_action == ActionId.HOLD_VIEW
+            or self._action_substep >= self.profile.motion_substeps
+        )
+        rotation_trust = (
+            self.profile.stabilization_rotation_trust_rad
+            if stabilization
+            else self.profile.rotation_trust_rad
+        )
         result = solve_pose_increment(
             self._wrench_model,
             inverse_state,
             desired_wrench,
-            weights=np.asarray(self.profile.force_weights + self.profile.torque_weights),
+            weights=np.asarray(force_weights + torque_weights),
             translation_step_m=self.profile.translation_fd_step_m,
             rotation_step_rad=self.profile.rotation_fd_step_rad,
             damping=self.profile.inverse_damping,
             relative_regularization=self.profile.relative_regularization,
             translation_trust_m=self.profile.translation_trust_m,
-            rotation_trust_rad=self.profile.rotation_trust_rad,
+            rotation_trust_rad=rotation_trust,
             minimum_separation_m=self.profile.minimum_separation_m,
             maximum_separation_m=self.profile.maximum_separation_m,
             maximum_relative_angle_rad=self.profile.maximum_relative_angle_rad,
@@ -256,6 +292,7 @@ class VirtualMagnetElevenActionController:
         self._interpolation_target_position = result.position.copy()
         self._interpolation_target_quaternion = result.quaternion_xyzw.copy()
         self.telemetry.solver_saturated |= result.solver_saturated
+        self.telemetry.inverse_condition_number = result.condition_number
         self._feedback_updates += 1
 
     def _finish(self, state: ControllerState) -> None:
@@ -295,6 +332,15 @@ class VirtualMagnetElevenActionController:
             return None
         try:
             desired_wrench = self._desired_wrench(state)
+            stabilization = (
+                self._requested_action == ActionId.HOLD_VIEW
+                or self._action_substep >= self.profile.motion_substeps
+            )
+            if stabilization:
+                torque_norm = float(np.linalg.norm(desired_wrench[3:]))
+                torque_limit = self.profile.stabilization_max_desired_torque_nm
+                if torque_norm > torque_limit and torque_norm > 1.0e-12:
+                    desired_wrench[3:] *= torque_limit / torque_norm
             if self._action_substep % self.profile.feedback_stride == 0:
                 self._feedback_update(state, desired_wrench)
             interpolation_phase = self._action_substep % self.profile.feedback_stride

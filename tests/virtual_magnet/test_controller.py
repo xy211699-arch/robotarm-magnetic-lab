@@ -44,7 +44,7 @@ def _controller(profile=None):
     return VirtualMagnetElevenActionController(
         profile or load_profile(),
         _model,
-        initial_magnet_position=np.array([0.0, 0.0, 0.08]),
+        initial_magnet_position=np.array([0.0, 0.0, 0.18]),
         initial_magnet_quaternion_xyzw=np.array([0.0, 0.0, 0.0, 1.0]),
     )
 

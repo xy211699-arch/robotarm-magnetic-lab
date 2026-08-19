@@ -129,15 +129,15 @@ def test_finite_model_iteration_reduces_nearby_reachable_wrench_residual():
         force, torque = finite.force_torque_si(position, rotation, capsule_position, capsule_rotation)
         return np.concatenate((force, torque))
 
-    desired_position = np.array([0.003, -0.002, 0.08])
+    desired_position = np.array([0.003, -0.002, 0.18])
     desired_rotation = Rotation.from_rotvec([0.02, -0.015, 0.01]).as_matrix()
     desired = model(desired_position, desired_rotation)
     state = PoseInverseState(
-        position=np.array([0.0, 0.0, 0.08]),
+        position=np.array([0.0, 0.0, 0.18]),
         quaternion_xyzw=np.array([0.0, 0.0, 0.0, 1.0]),
         capsule_magnet_position=capsule_position,
         capsule_magnet_rotation=capsule_rotation,
-        nominal_position=np.array([0.0, 0.0, 0.08]),
+        nominal_position=np.array([0.0, 0.0, 0.18]),
         nominal_quaternion_xyzw=np.array([0.0, 0.0, 0.0, 1.0]),
     )
     start_residual = np.linalg.norm(desired - model(state.position, np.eye(3)))

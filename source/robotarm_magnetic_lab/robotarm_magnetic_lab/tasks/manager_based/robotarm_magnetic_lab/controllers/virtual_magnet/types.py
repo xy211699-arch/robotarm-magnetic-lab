@@ -75,6 +75,7 @@ class ControllerCommand:
     desired_wrench: np.ndarray
     model_wrench: np.ndarray
     solver_saturated: bool = False
+    inverse_condition_number: float = 0.0
 
 
 @dataclass
@@ -87,6 +88,7 @@ class ControllerTelemetry:
     constrained: bool = False
     low_effect: bool = False
     solver_saturated: bool = False
+    inverse_condition_number: float = 0.0
     optical_axis_error_deg: float = 0.0
     tangent_drift_m: float = 0.0
     move_signed_displacement_m: float = 0.0

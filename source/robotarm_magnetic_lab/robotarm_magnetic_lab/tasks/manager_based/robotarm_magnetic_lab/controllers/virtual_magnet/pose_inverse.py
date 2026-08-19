@@ -157,7 +157,17 @@ def solve_pose_increment(
     weighted_jacobian = weight_values[:, None] * jacobian
     weighted_residual = weight_values * residual
     singular_values = np.linalg.svd(weighted_jacobian, compute_uv=False)
-    condition = math.inf if singular_values[-1] <= 1.0e-18 else float(singular_values[0] / singular_values[-1])
+    # An axially magnetized finite magnet has one physically irrelevant pose
+    # direction: roll about its polarization axis.  Measure conditioning only
+    # on the observable wrench subspace instead of rejecting the whole inverse
+    # because that exact symmetry contributes a zero singular value.
+    observable_floor = max(1.0e-18, float(singular_values[0]) * 1.0e-12)
+    observable = singular_values[singular_values > observable_floor]
+    condition = (
+        math.inf
+        if observable.size == 0
+        else float(observable[0] / observable[-1])
+    )
     if not math.isfinite(condition) or condition > condition_limit:
         return _hold_result(state, current, residual, condition)
 
@@ -180,25 +190,101 @@ def solve_pose_increment(
     if not np.isfinite(raw_increment).all():
         return _hold_result(state, current, residual, condition)
 
-    next_position, next_quaternion, clipped = integrate_pose_increment(
-        state.position,
-        state.quaternion_xyzw,
-        raw_increment,
-        translation_trust_m=translation_trust_m,
-        rotation_trust_rad=rotation_trust_rad,
+    capsule_position = _finite_vector(
+        state.capsule_magnet_position, 3, "capsule magnet position"
     )
-    separation = float(np.linalg.norm(next_position - _finite_vector(state.capsule_magnet_position, 3, "capsule magnet position")))
     capsule_rotation = np.asarray(state.capsule_magnet_rotation, dtype=np.float64).reshape(3, 3)
-    relative_angle = Rotation.from_matrix(
-        capsule_rotation.T @ Rotation.from_quat(next_quaternion).as_matrix()
-    ).magnitude()
-    if (
-        not minimum_separation_m <= separation <= maximum_separation_m
-        or relative_angle > maximum_relative_angle_rad
-        or not np.isfinite(next_position).all()
-        or not np.isfinite(next_quaternion).all()
-    ):
+    def bounded_candidate(scale: float):
+        candidate_position, candidate_quaternion, candidate_clipped = integrate_pose_increment(
+            state.position,
+            state.quaternion_xyzw,
+            raw_increment * scale,
+            translation_trust_m=translation_trust_m,
+            rotation_trust_rad=rotation_trust_rad,
+        )
+        separation_vector = candidate_position - capsule_position
+        separation = float(np.linalg.norm(separation_vector))
+        # Preserve tangential and rotational progress at a radial workspace
+        # boundary instead of rejecting the complete 6-D update.
+        if separation > maximum_separation_m and separation > 1.0e-12:
+            candidate_position = capsule_position + separation_vector * (
+                maximum_separation_m / separation
+            )
+            candidate_clipped = True
+        elif separation < minimum_separation_m:
+            if separation <= 1.0e-12:
+                return None
+            candidate_position = capsule_position + separation_vector * (
+                minimum_separation_m / separation
+            )
+            candidate_clipped = True
+        candidate_rotation = Rotation.from_quat(candidate_quaternion).as_matrix()
+        relative_angle = Rotation.from_matrix(
+            capsule_rotation.T @ candidate_rotation
+        ).magnitude()
+        if (
+            relative_angle > maximum_relative_angle_rad
+            or not np.isfinite(candidate_position).all()
+            or not np.isfinite(candidate_quaternion).all()
+        ):
+            return None
+        return candidate_position, candidate_quaternion, candidate_clipped
+
+    # The central-difference Jacobian already costs thirteen finite-magnet
+    # integrations per 60 Hz update.  Apply its trust-bounded full step
+    # directly; repeated nonlinear line-search evaluations make the one-second
+    # real-time contract impractical and did not improve the live residual.
+    candidate = bounded_candidate(1.0)
+    if candidate is None:
         return _hold_result(state, current, residual, condition)
+    next_position, next_quaternion, clipped = candidate
+
+    # The cuboid is geometrically cubic and axially magnetized, so the full
+    # pose-to-wrench problem contains an orientation null direction.  A final
+    # torque-only Newton correction selects the physically useful orientation
+    # branch without changing the translation chosen by the 6-D solve.
+    base_quaternion = _unit_quaternion_xyzw(state.quaternion_xyzw)
+    base_rotation = Rotation.from_quat(base_quaternion).as_matrix()
+    base_wrench = _finite_vector(
+        model(next_position, base_rotation), 6, "orientation-refinement wrench"
+    )
+    torque_jacobian = np.empty((3, 3), dtype=np.float64)
+    for axis in range(3):
+        delta = np.zeros(3)
+        delta[axis] = rotation_step_rad
+        plus_rotation = base_rotation @ Rotation.from_rotvec(delta).as_matrix()
+        minus_rotation = base_rotation @ Rotation.from_rotvec(-delta).as_matrix()
+        plus = _finite_vector(
+            model(next_position, plus_rotation), 6, "orientation plus wrench"
+        )[3:]
+        minus = _finite_vector(
+            model(next_position, minus_rotation), 6, "orientation minus wrench"
+        )[3:]
+        torque_jacobian[:, axis] = (plus - minus) / (2.0 * rotation_step_rad)
+    torque_hessian = torque_jacobian.T @ torque_jacobian
+    torque_hessian += float(damping) ** 2 * np.eye(3)
+    try:
+        torque_increment = np.linalg.solve(
+            torque_hessian,
+            torque_jacobian.T @ (desired[3:] - base_wrench[3:]),
+        )
+    except np.linalg.LinAlgError:
+        torque_increment = np.zeros(3)
+    if np.isfinite(torque_increment).all():
+        torque_norm = float(np.linalg.norm(torque_increment))
+        if torque_norm > rotation_trust_rad:
+            torque_increment *= rotation_trust_rad / torque_norm
+            clipped = True
+        refined_rotation = base_rotation @ Rotation.from_rotvec(torque_increment).as_matrix()
+        refined_relative_angle = Rotation.from_matrix(
+            capsule_rotation.T @ refined_rotation
+        ).magnitude()
+        if refined_relative_angle <= maximum_relative_angle_rad:
+            next_quaternion = _unit_quaternion_xyzw(
+                Rotation.from_matrix(refined_rotation).as_quat()
+            )
+            if float(np.dot(next_quaternion, base_quaternion)) < 0.0:
+                next_quaternion = -next_quaternion
     applied_increment = np.concatenate(
         (
             next_position - np.asarray(state.position, dtype=np.float64),

@@ -44,14 +44,18 @@ class ClosedLoopProfile:
     move_cross_kd_n_s_m: float
     max_desired_force_n: float
     max_desired_torque_nm: float
+    stabilization_max_desired_torque_nm: float
     force_weights: list[float]
     torque_weights: list[float]
+    move_force_weights: list[float]
+    move_torque_weights: list[float]
     translation_fd_step_m: float
     rotation_fd_step_rad: float
     inverse_damping: float
     relative_regularization: float
     translation_trust_m: float
     rotation_trust_rad: float
+    stabilization_rotation_trust_rad: float
     minimum_separation_m: float
     maximum_separation_m: float
     maximum_relative_angle_rad: float
@@ -127,8 +131,14 @@ def load_profile(path: str | Path | None = None) -> ClosedLoopProfile:
         raise ValueError("contact/stability windows must be 12/24 substeps")
     if not (profile.move_acceptance_min_m <= profile.move_target_m <= profile.move_acceptance_max_m):
         raise ValueError("MOVE target must lie in its acceptance interval")
-    if len(profile.force_weights) != 3 or len(profile.torque_weights) != 3:
-        raise ValueError("wrench weights must contain three force and three torque values")
+    weight_groups = (
+        profile.force_weights,
+        profile.torque_weights,
+        profile.move_force_weights,
+        profile.move_torque_weights,
+    )
+    if any(len(group) != 3 for group in weight_groups):
+        raise ValueError("wrench weights must contain three force and three torque values per action family")
     if len(profile.nominal_position_capsule_m) != 3 or len(profile.nominal_quaternion_capsule_xyzw) != 4:
         raise ValueError("nominal relative pose has invalid shape")
     positive = [
@@ -136,10 +146,12 @@ def load_profile(path: str | Path | None = None) -> ClosedLoopProfile:
         profile.rotation_fd_step_rad,
         profile.translation_trust_m,
         profile.rotation_trust_rad,
+        profile.stabilization_rotation_trust_rad,
         profile.minimum_separation_m,
         profile.maximum_separation_m,
         profile.max_desired_force_n,
         profile.max_desired_torque_nm,
+        profile.stabilization_max_desired_torque_nm,
     ]
     if min(positive) <= 0.0 or profile.minimum_separation_m >= profile.maximum_separation_m:
         raise ValueError("profile limits must be positive and ordered")
@@ -149,4 +161,3 @@ def load_profile(path: str | Path | None = None) -> ClosedLoopProfile:
 def profile_sha256(path: str | Path | None = None) -> str:
     source = default_profile_path() if path is None else Path(path)
     return hashlib.sha256(source.read_bytes()).hexdigest()
-

@@ -87,6 +87,8 @@ class VirtualMagnetBridge(ManagerTermBase):
             initial_magnet_position=nominal_position,
             initial_magnet_quaternion_xyzw=Rotation.from_matrix(nominal_rotation).as_quat(),
         )
+        self._idle_magnet_position = nominal_position.copy()
+        self._idle_magnet_quaternion = Rotation.from_matrix(nominal_rotation).as_quat()
         self.audit = self._empty_audit()
         env._virtual_magnet_bridge = self
         env._virtual_magnet_audit = self.audit
@@ -102,6 +104,7 @@ class VirtualMagnetBridge(ManagerTermBase):
     def _empty_audit(self) -> dict:
         return {
             "physics_substeps": 0,
+            "action_substeps": 0,
             "feedback_updates": 0,
             "request_serial": 0,
             "terminal_serial": 0,
@@ -116,6 +119,7 @@ class VirtualMagnetBridge(ManagerTermBase):
             "virtual_magnet_quaternion_xyzw": np.array([0.0, 0.0, 0.0, 1.0]),
             "virtual_magnet_relative_position": np.zeros(3),
             "solver_saturated": False,
+            "inverse_condition_number": 0.0,
             "constrained": False,
             "low_effect": False,
             "optical_axis_error_deg": 0.0,
@@ -218,6 +222,14 @@ class VirtualMagnetBridge(ManagerTermBase):
         self._filtered_wrench[:] = 0.0
         self._last_result = None
         self._last_lifecycle = Lifecycle.READY
+        state = self._read_state()
+        self._idle_magnet_position = state.capsule_magnet_position + state.capsule_magnet_rotation @ np.asarray(
+            self.profile.nominal_position_capsule_m, dtype=np.float64
+        )
+        self._idle_magnet_quaternion = Rotation.from_matrix(
+            state.capsule_magnet_rotation
+            @ Rotation.from_quat(self.profile.nominal_quaternion_capsule_xyzw).as_matrix()
+        ).as_quat()
         self.audit.clear()
         self.audit.update(self._empty_audit())
         self.capsule.permanent_wrench_composer.reset(env_ids=env_ids)
@@ -228,23 +240,40 @@ class VirtualMagnetBridge(ManagerTermBase):
         self._elapsed_s += float(self.env.physics_dt)
         self._physics_substeps += 1
 
-        raw_wrench = np.zeros(6, dtype=np.float64)
+        raw_wrench = self._model_wrench(
+            self._idle_magnet_position,
+            Rotation.from_quat(self._idle_magnet_quaternion).as_matrix(),
+        )
         desired_wrench = np.zeros(6, dtype=np.float64)
-        magnet_position = self.audit["virtual_magnet_position"]
-        magnet_quaternion = self.audit["virtual_magnet_quaternion_xyzw"]
+        magnet_position = self._idle_magnet_position
+        magnet_quaternion = self._idle_magnet_quaternion
         if command is not None:
             raw_wrench = command.model_wrench.copy()
             desired_wrench = command.desired_wrench.copy()
             magnet_position = command.virtual_magnet_position.copy()
             magnet_quaternion = command.virtual_magnet_quaternion_xyzw.copy()
+            self._idle_magnet_position = magnet_position.copy()
+            self._idle_magnet_quaternion = magnet_quaternion.copy()
 
-        force = _clip_norm(raw_wrench[:3], float(self.sim_cfg["max_force_n"]))
-        torque = _clip_norm(raw_wrench[3:], float(self.sim_cfg["max_torque_nm"]))
+        force = _clip_norm(raw_wrench[:3], self.profile.max_desired_force_n)
+        stabilization = (
+            self.controller.telemetry.action_id is not None
+            and (
+                self.controller.telemetry.action_id == 0
+                or self.controller.telemetry.substep >= self.profile.motion_substeps
+            )
+        )
+        torque_limit = (
+            self.profile.stabilization_max_desired_torque_nm
+            if stabilization
+            else self.profile.max_desired_torque_nm
+        )
+        torque = _clip_norm(raw_wrench[3:], torque_limit)
         ramp = min(self._elapsed_s / max(self.profile.coupling_ramp_s, 1.0e-9), 1.0)
         force = force * ramp - float(self.capsule_cfg.get("linear_drag_n_per_m_s", 0.0)) * state.linear_velocity
         torque = torque * ramp - float(self.capsule_cfg.get("angular_drag_nm_per_rad_s", 0.0)) * state.angular_velocity
-        force = _clip_norm(force, float(self.sim_cfg["max_force_n"]))
-        torque = _clip_norm(torque, float(self.sim_cfg["max_torque_nm"]))
+        force = _clip_norm(force, self.profile.max_desired_force_n)
+        torque = _clip_norm(torque, torque_limit)
         target = np.concatenate((force, torque))
         tau = max(self.profile.wrench_filter_time_constant_s, 0.0)
         alpha = 1.0 if tau <= 0.0 else 1.0 - math.exp(-float(self.env.physics_dt) / tau)
@@ -275,6 +304,7 @@ class VirtualMagnetBridge(ManagerTermBase):
         contact_force = float(np.linalg.norm(self.contact.data.net_forces_w.torch[0, 0].detach().cpu().numpy()))
         self.audit.update(
             physics_substeps=self._physics_substeps,
+            action_substeps=telemetry.substep,
             feedback_updates=telemetry.feedback_updates,
             terminal_serial=self._terminal_serial,
             lifecycle=telemetry.lifecycle.value,
@@ -287,6 +317,7 @@ class VirtualMagnetBridge(ManagerTermBase):
             virtual_magnet_quaternion_xyzw=np.asarray(magnet_quaternion).copy(),
             virtual_magnet_relative_position=np.asarray(magnet_position) - state.capsule_magnet_position,
             solver_saturated=telemetry.solver_saturated,
+            inverse_condition_number=telemetry.inverse_condition_number,
             constrained=telemetry.constrained,
             low_effect=telemetry.low_effect,
             optical_axis_error_deg=telemetry.optical_axis_error_deg,
