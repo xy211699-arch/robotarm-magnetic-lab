@@ -45,6 +45,7 @@ class LatchReason(str, Enum):
 
 class LatchBackendName(str, Enum):
     DYNAMIC_LOCK_FLAGS = "dynamic_lock_flags"
+    TENSOR_DISABLE_SIMULATION = "tensor_disable_simulation"
     KINEMATIC = "kinematic"
 
 

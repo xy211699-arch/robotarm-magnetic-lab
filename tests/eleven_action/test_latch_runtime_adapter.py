@@ -44,12 +44,38 @@ class _Composer:
     def reset(self): self.reset_count += 1
 
 
+class _RootView:
+    def __init__(self):
+        self.disabled = np.zeros((1, 1), dtype=np.uint8)
+        self.wake_count = 0
+
+    @staticmethod
+    def _numpy(value):
+        if hasattr(value, "numpy"):
+            return value.numpy()
+        if hasattr(value, "detach"):
+            return value.detach().cpu().numpy()
+        return np.asarray(value)
+
+    def set_disable_simulations(self, data, indices):
+        data_np = self._numpy(data).reshape(-1)
+        indices_np = self._numpy(indices).reshape(-1)
+        self.disabled[indices_np.astype(np.int64), 0] = data_np[: len(indices_np)]
+
+    def get_disable_simulations(self):
+        return self.disabled.copy()
+
+    def wake_up(self, indices):
+        self.wake_count += len(self._numpy(indices).reshape(-1))
+
+
 class _Capsule:
     def __init__(self):
         self.pose = np.asarray([0.1, 0.2, 0.3, 1.0, 0.0, 0.0, 0.0])
         self.velocity = np.ones(6)
         self.last_written_velocity = None
         self.permanent_wrench_composer = _Composer()
+        self.root_view = _RootView()
 
     def state(self):
         return CapsuleState(self.pose[:3], self.pose[3:], self.velocity[:3], self.velocity[3:])
@@ -84,3 +110,18 @@ def test_unlock_clears_flags_but_does_not_change_pose():
 def test_kinematic_fallback_is_not_selected_silently():
     with pytest.raises(RuntimeError, match="fallback requires tracked profile selection"):
         CapsuleLatchRuntime.auto_fallback(_Capsule(), _Api())
+
+
+def test_tensor_disable_simulation_lock_and_release_are_direct_and_woken():
+    capsule, api = _Capsule(), _Api()
+    runtime = CapsuleLatchRuntime.tensor_disable_simulation(capsule, api)
+    locked = runtime.lock_current(capsule.state(), LatchReason.INITIAL)
+    assert locked.latched
+    assert locked.simulation_disabled
+    assert capsule.root_view.disabled[0, 0] == 1
+    released = runtime.unlock_zeroed(capsule.state())
+    assert not released.latched
+    assert not released.simulation_disabled
+    assert capsule.root_view.disabled[0, 0] == 0
+    assert capsule.root_view.wake_count == 1
+    np.testing.assert_allclose(capsule.last_written_velocity, 0.0)

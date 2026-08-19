@@ -32,6 +32,7 @@ class LatchReadback:
     locked_position_axis_mask: int
     locked_rotation_axis_mask: int
     kinematic_enabled: bool
+    simulation_disabled: bool = False
     reason: LatchReason | None = None
 
     def __post_init__(self) -> None:
@@ -70,6 +71,10 @@ class CapsuleLatchRuntime:
     @classmethod
     def dynamic_lock_flags(cls, capsule: Any, physx_api: Any, rigid_api: Any | None = None):
         return cls(capsule, physx_api, rigid_api, LatchBackendName.DYNAMIC_LOCK_FLAGS)
+
+    @classmethod
+    def tensor_disable_simulation(cls, capsule: Any, physx_api: Any, rigid_api: Any | None = None):
+        return cls(capsule, physx_api, rigid_api, LatchBackendName.TENSOR_DISABLE_SIMULATION)
 
     @classmethod
     def kinematic(cls, capsule: Any, physx_api: Any, rigid_api: Any):
@@ -111,11 +116,55 @@ class CapsuleLatchRuntime:
             raise RuntimeError("kinematic backend requires UsdPhysics.RigidBodyAPI")
         _get_or_create(self.rigid_api, "KinematicEnabled").Set(bool(enabled))
 
+    def _tensor_indices(self):
+        try:
+            import warp as wp
+
+            return wp.array([0], dtype=wp.uint32, device="cpu")
+        except ImportError:
+            return np.asarray([0], dtype=np.uint32)
+
+    def _set_simulation_disabled(self, disabled: bool) -> None:
+        view = getattr(self.capsule, "root_view", None)
+        setter = getattr(view, "set_disable_simulations", None)
+        if setter is None:
+            raise RuntimeError("PhysX Tensor disable-simulation setter is unavailable")
+        try:
+            import warp as wp
+
+            flags = wp.array([int(disabled)], dtype=wp.uint8, device="cpu")
+        except ImportError:
+            flags = np.asarray([int(disabled)], dtype=np.uint8)
+        setter(flags, self._tensor_indices())
+
+    def _simulation_disabled(self) -> bool:
+        view = getattr(self.capsule, "root_view", None)
+        getter = getattr(view, "get_disable_simulations", None)
+        if getter is None:
+            raise RuntimeError("PhysX Tensor disable-simulation getter is unavailable")
+        value = getter()
+        if hasattr(value, "numpy"):
+            value = value.numpy()
+        elif hasattr(value, "detach"):
+            value = value.detach().cpu().numpy()
+        else:
+            value = np.asarray(value)
+        return bool(np.asarray(value).reshape(-1)[0])
+
+    def _wake_up(self) -> None:
+        view = getattr(self.capsule, "root_view", None)
+        wake_up = getattr(view, "wake_up", None)
+        if wake_up is None:
+            raise RuntimeError("PhysX Tensor wake-up method is unavailable")
+        wake_up(self._tensor_indices())
+
     def lock_current(self, _state: Any, reason: LatchReason) -> LatchReadback:
         self._clear_wrench()
         self._zero_velocity()
         if self.backend is LatchBackendName.DYNAMIC_LOCK_FLAGS:
             self._set_dynamic_masks(0b111)
+        elif self.backend is LatchBackendName.TENSOR_DISABLE_SIMULATION:
+            self._set_simulation_disabled(True)
         else:
             self._set_kinematic(True)
         self._last_reason = LatchReason(reason)
@@ -126,10 +175,15 @@ class CapsuleLatchRuntime:
 
     def unlock_zeroed(self, _state: Any) -> LatchReadback:
         self._clear_wrench()
-        self._zero_velocity()
         if self.backend is LatchBackendName.DYNAMIC_LOCK_FLAGS:
+            self._zero_velocity()
             self._set_dynamic_masks(0)
+        elif self.backend is LatchBackendName.TENSOR_DISABLE_SIMULATION:
+            self._set_simulation_disabled(False)
+            self._zero_velocity()
+            self._wake_up()
         else:
+            self._zero_velocity()
             self._set_kinematic(False)
         result = self.readback()
         if result.latched:
@@ -145,11 +199,15 @@ class CapsuleLatchRuntime:
         kinematic = False
         if self.rigid_api is not None:
             kinematic = bool(_get_or_create(self.rigid_api, "KinematicEnabled").Get() or False)
-        latched = (
-            pos_mask == 0b111 and rot_mask == 0b111
-            if self.backend is LatchBackendName.DYNAMIC_LOCK_FLAGS
-            else kinematic
-        )
+        simulation_disabled = False
+        if self.backend is LatchBackendName.TENSOR_DISABLE_SIMULATION:
+            simulation_disabled = self._simulation_disabled()
+        if self.backend is LatchBackendName.DYNAMIC_LOCK_FLAGS:
+            latched = pos_mask == 0b111 and rot_mask == 0b111
+        elif self.backend is LatchBackendName.TENSOR_DISABLE_SIMULATION:
+            latched = simulation_disabled
+        else:
+            latched = kinematic
         return LatchReadback(
             backend=self.backend,
             latched=latched,
@@ -160,6 +218,7 @@ class CapsuleLatchRuntime:
             locked_position_axis_mask=pos_mask,
             locked_rotation_axis_mask=rot_mask,
             kinematic_enabled=kinematic,
+            simulation_disabled=simulation_disabled,
             reason=self._last_reason,
         )
 

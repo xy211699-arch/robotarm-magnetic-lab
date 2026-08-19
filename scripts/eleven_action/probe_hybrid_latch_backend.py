@@ -31,7 +31,8 @@ def _axis_from_xyzw(quaternion_xyzw) -> np.ndarray:
             [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
         ]
     )
-    return rotation @ np.asarray([0.0, 0.0, -1.0])
+    axis = rotation @ np.asarray([0.0, 0.0, -1.0])
+    return axis / np.linalg.norm(axis)
 
 
 def _pose(capsule) -> tuple[np.ndarray, np.ndarray]:
@@ -59,6 +60,7 @@ def _jsonable_readback(value) -> dict:
         "locked_position_axis_mask": int(value.locked_position_axis_mask),
         "locked_rotation_axis_mask": int(value.locked_rotation_axis_mask),
         "kinematic_enabled": bool(value.kinematic_enabled),
+        "simulation_disabled": bool(value.simulation_disabled),
         "reason": None if value.reason is None else value.reason.value,
     }
 
@@ -85,6 +87,22 @@ def _run_prefix(env, term, action_id: int, steps: int = 3) -> list[dict]:
     return rows
 
 
+def _restore_trial_state(env, profile, root_pose):
+    """Restore an identical cold-start state for one paired branch."""
+    import torch
+    from calibrate_eleven_action import set_runtime_profile
+
+    env.reset()
+    term = env.unwrapped.action_manager.get_term("eleven_action")
+    set_runtime_profile(term, profile)
+    capsule = term.capsule
+    capsule.write_root_pose_to_sim_index(root_pose=root_pose.clone())
+    capsule.write_root_velocity_to_sim_index(
+        root_velocity=torch.zeros((1, 6), device=env.unwrapped.device)
+    )
+    return term
+
+
 def _write_rows(path: Path, rows: list[dict]) -> None:
     with path.open("w", encoding="utf-8") as stream:
         for row in rows:
@@ -99,7 +117,11 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--task", default=TASK_ID)
-    parser.add_argument("--backend", choices=("dynamic_lock_flags",), default="dynamic_lock_flags")
+    parser.add_argument(
+        "--backend",
+        choices=("dynamic_lock_flags", "tensor_disable_simulation"),
+        default="dynamic_lock_flags",
+    )
     parser.add_argument("--seed", type=int, default=20260819)
     parser.add_argument(
         "--output_directory",
@@ -134,7 +156,7 @@ def main() -> int:
     output.mkdir(parents=True, exist_ok=False)
     rows: list[dict] = []
     summary = {
-        "schema_version": "task006_hybrid_latch_backend_probe_v1",
+        "schema_version": "task006_hybrid_latch_backend_probe_v2",
         "status": "fail",
         "backend": args.backend,
         "seed": args.seed,
@@ -168,7 +190,10 @@ def main() -> int:
             if not physx_api:
                 physx_api = PhysxSchema.PhysxRigidBodyAPI.Apply(prim)
             rigid_api = UsdPhysics.RigidBodyAPI(prim)
-            runtime = CapsuleLatchRuntime.dynamic_lock_flags(capsule, physx_api, rigid_api)
+            if args.backend == "tensor_disable_simulation":
+                runtime = CapsuleLatchRuntime.tensor_disable_simulation(capsule, physx_api, rigid_api)
+            else:
+                runtime = CapsuleLatchRuntime.dynamic_lock_flags(capsule, physx_api, rigid_api)
             summary["capsule_prim_path"] = prim_path
             summary["cuda_device"] = str(env.unwrapped.device)
             idle = torch.full((1, 1), -1.0, device=env.unwrapped.device)
@@ -217,26 +242,23 @@ def main() -> int:
                     tilt = float(rng.uniform(62.0, 88.0) if action_id >= 9 else rng.uniform(5.0, 85.0))
                     azimuth = float(rng.uniform(0.0, 360.0))
                     roll = float(rng.uniform(0.0, 360.0))
-                    term = reset_flat_trial(
+                    sampled_term = reset_flat_trial(
                         env, profile, tilt_deg=tilt, azimuth_deg=azimuth, roll_deg=roll, settle_steps=12
                     )
+                    paired_root_pose = sampled_term.capsule.data.root_pose_w.torch.clone()
+
+                    term = _restore_trial_state(env, profile, paired_root_pose)
                     capsule = term.capsule
-                    capsule.write_root_velocity_to_sim_index(
-                        root_velocity=torch.zeros((1, 6), device=env.unwrapped.device)
-                    )
+                    direct_start_position, direct_start_axis = _pose(capsule)
                     if action_id >= 9:
                         term.controller.set_latched_contact_snapshot(
                             LatchedContactSnapshot(True, False, True, term._physics_substep)
                         )
                     direct = _run_prefix(env, term, action_id)
 
-                    term = reset_flat_trial(
-                        env, profile, tilt_deg=tilt, azimuth_deg=azimuth, roll_deg=roll, settle_steps=12
-                    )
+                    term = _restore_trial_state(env, profile, paired_root_pose)
                     capsule = term.capsule
-                    capsule.write_root_velocity_to_sim_index(
-                        root_velocity=torch.zeros((1, 6), device=env.unwrapped.device)
-                    )
+                    latched_start_position, latched_start_axis = _pose(capsule)
                     lock = runtime.lock_current(term.controller, LatchReason.INITIAL)
                     for _ in range(60):
                         env.step(idle)
@@ -266,6 +288,12 @@ def main() -> int:
                             "roll_deg": roll,
                             "lock_readback": _jsonable_readback(lock),
                             "unlock_readback": _jsonable_readback(unlock),
+                            "initial_position_delta_m": float(
+                                np.linalg.norm(latched_start_position - direct_start_position)
+                            ),
+                            "initial_target_axis_delta_deg": _angle_deg(
+                                latched_start_axis, direct_start_axis
+                            ),
                             "direct_first_0p05_s": direct,
                             "latched_first_0p05_s": latched,
                             "max_position_delta_m": position_delta,
@@ -286,21 +314,37 @@ def main() -> int:
             summary["max_locked_angular_speed_rad_s"] = max(row["locked_angular_speed_rad_s"] for row in hold_rows)
             summary["max_release_position_delta_m"] = max(row["max_position_delta_m"] for row in pair_rows)
             summary["max_release_axis_delta_deg"] = max(row["max_target_axis_delta_deg"] for row in pair_rows)
-            masks_ok = all(
-                row["lock_readback"]["locked_position_axis_mask"] == 0b111
-                and row["lock_readback"]["locked_rotation_axis_mask"] == 0b111
-                and row["unlock_readback"]["locked_position_axis_mask"] == 0
-                and row["unlock_readback"]["locked_rotation_axis_mask"] == 0
-                for row in rows
+            summary["max_initial_position_delta_m"] = max(
+                row["initial_position_delta_m"] for row in pair_rows
             )
-            summary["mask_readback_pass"] = masks_ok
+            summary["max_initial_axis_delta_deg"] = max(
+                row["initial_target_axis_delta_deg"] for row in pair_rows
+            )
+            if args.backend == "tensor_disable_simulation":
+                readback_ok = all(
+                    row["lock_readback"]["simulation_disabled"]
+                    and not row["unlock_readback"]["simulation_disabled"]
+                    for row in rows
+                )
+                summary["simulation_disable_readback_pass"] = readback_ok
+            else:
+                readback_ok = all(
+                    row["lock_readback"]["locked_position_axis_mask"] == 0b111
+                    and row["lock_readback"]["locked_rotation_axis_mask"] == 0b111
+                    and row["unlock_readback"]["locked_position_axis_mask"] == 0
+                    and row["unlock_readback"]["locked_rotation_axis_mask"] == 0
+                    for row in rows
+                )
+                summary["mask_readback_pass"] = readback_ok
             checks = {
-                "mask_readback": masks_ok,
+                "backend_readback": readback_ok,
                 "api_pose_jump": summary["max_api_pose_jump_m"] <= 1.0e-9,
                 "locked_position_drift": summary["max_locked_position_drift_m"] <= 1.0e-7,
                 "locked_axis_drift": summary["max_locked_axis_drift_deg"] <= 1.0e-4,
                 "locked_zero_linear_velocity": summary["max_locked_linear_speed_m_s"] <= 1.0e-7,
                 "locked_zero_angular_velocity": summary["max_locked_angular_speed_rad_s"] <= 1.0e-7,
+                "paired_identical_initial_position": summary["max_initial_position_delta_m"] <= 1.0e-9,
+                "paired_identical_initial_axis": summary["max_initial_axis_delta_deg"] <= 1.0e-4,
                 "paired_position": summary["max_release_position_delta_m"] <= 0.0005,
                 "paired_axis": summary["max_release_axis_delta_deg"] <= 1.0,
                 "trial_counts": summary["hold_trials"] >= 10 and summary["release_pairs"] >= 100,
