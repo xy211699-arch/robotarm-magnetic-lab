@@ -1,3 +1,5 @@
 # Active task contracts
 
-This directory contains only the task contract currently authorized for Linux execution. There is no active implementation task after completion of `TASK-000-git-handoff`. Windows planning must add an approved task contract here before Linux starts new implementation work.
+The currently authorized Linux implementation task is `TASK-007-virtual-magnet-eleven-action-closed-loop.md`.
+
+Its authority is limited to the virtual-magnet eleven-action closed-loop controller, its repository-local finite magnetic model, flat/stomach validation, keyboard visualization, evidence, and return report. Earlier TASK-005 and TASK-006 contracts are not implementation authority for this branch.
