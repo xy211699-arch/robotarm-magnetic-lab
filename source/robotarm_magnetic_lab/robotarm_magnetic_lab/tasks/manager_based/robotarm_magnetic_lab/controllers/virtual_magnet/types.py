@@ -83,6 +83,7 @@ class ControllerTelemetry:
     action_id: ActionId | None = None
     result: ActionResult | None = None
     substep: int = 0
+    feedback_updates: int = 0
     constrained: bool = False
     low_effect: bool = False
     solver_saturated: bool = False
@@ -94,4 +95,3 @@ class ControllerTelemetry:
     angular_speed_rad_s: float = 0.0
     magnetic_wrench: np.ndarray = field(default_factory=lambda: np.zeros(6))
     virtual_magnet_relative_position: np.ndarray = field(default_factory=lambda: np.zeros(3))
-

@@ -1,6 +1,7 @@
 """TASK-007 virtual-magnet eleven-action closed-loop controller."""
 
 from .config import ClosedLoopProfile, load_profile, profile_sha256
+from .controller import VirtualMagnetElevenActionController
 from .geometry import move_direction, normalize, quintic_progress, unsigned_axis_tilt, view_target_axis
 from .pose_inverse import (
     PoseInverseResult,
@@ -28,6 +29,7 @@ __all__ = [
     "ControllerTelemetry",
     "FrozenActionTarget",
     "Lifecycle",
+    "VirtualMagnetElevenActionController",
     "PoseInverseResult",
     "PoseInverseState",
     "integrate_pose_increment",
