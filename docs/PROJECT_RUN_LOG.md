@@ -527,3 +527,14 @@
 - 按双向交接规范将交付分支更名为
   `workflow/OPEN-LOOP-MAGNETIC-CONTROLLER-linux-response`，目标仅为共享Fork
   `xy211699-arch/robotarm-magnetic-lab`，供Windows方案端直接拉取核验。
+
+## 2026-08-20 — TASK-007 虚拟外磁体闭环控制执行
+
+- 内聚 Magpylib 5.2.3 有限磁体模型，完成 11 动作、240/60/1 Hz 闭环、动态胶囊
+  力矩桥、确定性试验协议和键盘可视化；仓库测试 57/57 通过。
+- 固定样本验证 HOLD、VIEW_UP、无效 MOVE 可通过，正/反 MOVE 位移达到约
+  5.10/5.53 mm 但末段角速度略超限；八方向 VIEW 呈可复现方向性。
+- 增大磁矩可改善姿态但使末段速度失败，减小磁矩则 1 s 内误差超限；平桌开发
+  门禁未满足，依合同未运行 held-out、扰动、胃部及 100 动作门禁。
+- 处置为 `needs_decision`；详细证据、哈希和方案端待决项见
+  `handoffs/reports/TASK-007-virtual-magnet-eleven-action-closed-loop-report.md`。
