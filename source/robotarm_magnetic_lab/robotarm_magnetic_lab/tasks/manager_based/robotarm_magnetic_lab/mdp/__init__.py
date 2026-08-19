@@ -24,3 +24,13 @@ from .atomic_action import (  # noqa: F401
     external_magnet_state,
 )
 from .vision import capsule_depth, capsule_rgb  # noqa: F401
+from .virtual_magnet_action import (  # noqa: F401
+    VirtualMagnetPhysicsAction,
+    VirtualMagnetPhysicsActionCfg,
+    VirtualMagnetRequestAction,
+    VirtualMagnetRequestActionCfg,
+)
+from .virtual_magnet_bridge import (  # noqa: F401
+    VirtualMagnetBridge,
+    virtual_magnet_public_observation,
+)
