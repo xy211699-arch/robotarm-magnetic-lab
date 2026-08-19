@@ -55,3 +55,12 @@ MOVE。动作执行期间的新按键被丢弃，不缓存、不排队、不抢�
 当前正式门禁输出 `ELEVEN_ACTION_FLAT_ACCEPTANCE_FAIL`。详细数据和停止原因见
 `handoffs/reports/TASK-005-eleven-action-dynamic-controller-report.md`。
 
+## TASK-006 Hybrid Latch 状态
+
+TASK-006 已实现锁存数据合同、纯控制生命周期和 CUDA Dynamic Lock 探针，但首选
+`dynamic_lock_flags` 后端未通过阻断门：USD mask 可读回 `0b111`，GPU PhysX 中仍出现
+最大 7.328 mm 位置漂移、66.77°光轴漂移，配对释放差异也超出 0.5 mm/1°门限。
+
+按用户补充要求，本轮没有启用 kinematic 备用方案，后续 action term、1 Hz RGB barrier、
+平面/胃部验收均未执行。当前 disposition 为 `needs_decision`，详见
+`handoffs/reports/TASK-006-hybrid-latched-eleven-action-controller-report.md`。
