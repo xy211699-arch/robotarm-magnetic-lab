@@ -538,3 +538,10 @@
   门禁未满足，依合同未运行 held-out、扰动、胃部及 100 动作门禁。
 - 处置为 `needs_decision`；详细证据、哈希和方案端待决项见
   `handoffs/reports/TASK-007-virtual-magnet-eleven-action-closed-loop-report.md`。
+
+## 2026-08-20 — TASK-007 可视化工作树修正
+
+- 首次启动失败不是控制器错误：功能分支被 `/tmp/robotarm-task007` 工作树占用，导致
+  主仓库仍停留在 TASK-000 分支并找不到新增脚本。
+- 核验临时工作树、主仓库均无未提交修改；释放临时工作树分支占用后，将主仓库安全
+  切换至 TASK-007 分支，使标准可视化命令可直接运行。
