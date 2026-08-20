@@ -17,6 +17,7 @@ from ..controllers.virtual_magnet import (
     ActionResult,
     Lifecycle,
     VirtualMagnetElevenActionController,
+    camera_image_axes_from_ros_rotation,
     load_profile,
     profile_sha256,
 )
@@ -52,11 +53,20 @@ class VirtualMagnetBridge(ManagerTermBase):
         params = dict(getattr(cfg, "params", {}) or {})
         asset_name = str(params.get("asset_name", "capsule"))
         contact_sensor_name = str(params.get("contact_sensor_name", "capsule_contact"))
+        camera_sensor_name = str(params.get("camera_sensor_name", "capsule_camera"))
+        camera_mount_quaternion = _finite_array(
+            params.get("camera_mount_quaternion_capsule_xyzw", (0.0, 1.0, 0.0, 0.0)), 4
+        )
         self.profile_path = str(params.get("profile_path", ""))
         self.debug_xform = bool(params.get("debug_xform", True))
         self.env = env
         self.capsule = env.scene[asset_name]
         self.contact = env.scene[contact_sensor_name]
+        try:
+            self.camera = env.scene[camera_sensor_name]
+        except KeyError:
+            self.camera = None
+        self._camera_mount_rotation = _quat_xyzw_to_matrix(camera_mount_quaternion)
         self.profile = load_profile(self.profile_path or None)
         self.magnetic_config = load_config()
         self.model = FiniteMagnetSystem(self.magnetic_config)
@@ -131,6 +141,13 @@ class VirtualMagnetBridge(ManagerTermBase):
             "sidewall_contact": False,
             "contact_force_n": 0.0,
             "capsule_dynamic": True,
+            "start_optical_axis": np.zeros(3),
+            "target_optical_axis": np.zeros(3),
+            "final_optical_axis": np.zeros(3),
+            "frozen_camera_up": np.zeros(3),
+            "frozen_camera_right": np.zeros(3),
+            "image_delta_up": 0.0,
+            "image_delta_right": 0.0,
         }
 
     def _model_wrench(self, main_position: np.ndarray, main_rotation: np.ndarray) -> np.ndarray:
@@ -146,6 +163,13 @@ class VirtualMagnetBridge(ManagerTermBase):
         position = _finite_array(self.capsule.data.root_pos_w.torch[0].detach().cpu().numpy(), 3)
         quaternion = _finite_array(self.capsule.data.root_quat_w.torch[0].detach().cpu().numpy(), 4)
         rotation = _quat_xyzw_to_matrix(quaternion)
+        camera_rotation = rotation @ self._camera_mount_rotation
+        if self.camera is not None:
+            camera_quaternion = _finite_array(
+                self.camera.data.quat_w_ros.torch[0].detach().cpu().numpy(), 4
+            )
+            if float(np.linalg.norm(camera_quaternion)) > 1.0e-12:
+                camera_rotation = _quat_xyzw_to_matrix(camera_quaternion)
         linear_velocity = _finite_array(self.capsule.data.root_lin_vel_w.torch[0].detach().cpu().numpy(), 3)
         angular_velocity = _finite_array(self.capsule.data.root_ang_vel_w.torch[0].detach().cpu().numpy(), 3)
         magnet_offset = np.array(
@@ -154,12 +178,12 @@ class VirtualMagnetBridge(ManagerTermBase):
         self._capsule_magnet_position = position + rotation @ magnet_offset
         self._capsule_magnet_rotation = rotation
 
-        # The DS01 optical axis is capsule local -Z. The capsule long axis is
-        # unsigned for MOVE eligibility, so local +Z is sufficient there.
-        optical_axis = -rotation[:, 2]
+        # Freeze VIEW in the actual rendered ROS image frame. ROS camera axes
+        # are +Z forward, +Y image-down and +X image-right. Do not substitute
+        # capsule local axes: the 180-degree camera mount reverses both image
+        # axes relative to the former hard-coded convention.
+        optical_axis, camera_up, camera_right = camera_image_axes_from_ros_rotation(camera_rotation)
         long_axis = rotation[:, 2]
-        camera_up = rotation[:, 1]
-        camera_right = rotation[:, 0]
         inward_normal = np.array([0.0, 0.0, 1.0], dtype=np.float64)
         contact_force = _finite_array(self.contact.data.net_forces_w.torch[0, 0].detach().cpu().numpy(), 3)
         contact = float(np.linalg.norm(contact_force)) > 1.0e-4
@@ -207,6 +231,8 @@ class VirtualMagnetBridge(ManagerTermBase):
         asset_name: str = "capsule",
         contact_sensor_name: str = "capsule_contact",
         profile_path: str = "",
+        camera_sensor_name: str = "capsule_camera",
+        camera_mount_quaternion_capsule_xyzw=(0.0, 1.0, 0.0, 0.0),
         debug_xform: bool = True,
     ) -> None:
         # Parameters are consumed during ManagerTermBase construction. They
@@ -297,6 +323,22 @@ class VirtualMagnetBridge(ManagerTermBase):
             raise AssertionError("applied capsule wrench differs from filtered finite-model wrench")
 
         telemetry = self.controller.telemetry
+        frozen = self.controller.frozen_target
+        if frozen is None:
+            start_optical_axis = np.zeros(3)
+            target_optical_axis = np.zeros(3)
+            frozen_camera_up = np.zeros(3)
+            frozen_camera_right = np.zeros(3)
+            image_delta_up = 0.0
+            image_delta_right = 0.0
+        else:
+            start_optical_axis = frozen.start_optical_axis.copy()
+            target_optical_axis = frozen.target_optical_axis.copy()
+            frozen_camera_up = frozen.camera_up.copy()
+            frozen_camera_right = frozen.camera_right.copy()
+            optical_delta = state.optical_axis - frozen.start_optical_axis
+            image_delta_up = float(np.dot(optical_delta, frozen.camera_up))
+            image_delta_right = float(np.dot(optical_delta, frozen.camera_right))
         if telemetry.lifecycle == Lifecycle.TERMINAL and self._last_lifecycle != Lifecycle.TERMINAL:
             self._terminal_serial += 1
         self._last_lifecycle = telemetry.lifecycle
@@ -328,6 +370,13 @@ class VirtualMagnetBridge(ManagerTermBase):
             camera_contact=state.camera_contact,
             sidewall_contact=state.sidewall_contact,
             contact_force_n=contact_force,
+            start_optical_axis=start_optical_axis,
+            target_optical_axis=target_optical_axis,
+            final_optical_axis=state.optical_axis.copy(),
+            frozen_camera_up=frozen_camera_up,
+            frozen_camera_right=frozen_camera_right,
+            image_delta_up=image_delta_up,
+            image_delta_right=image_delta_right,
         )
         if command is not None:
             self._update_debug_xform(magnet_position, magnet_quaternion)

@@ -2,7 +2,14 @@
 
 from .config import ClosedLoopProfile, load_profile, profile_sha256
 from .controller import VirtualMagnetElevenActionController
-from .geometry import move_direction, normalize, quintic_progress, unsigned_axis_tilt, view_target_axis
+from .geometry import (
+    camera_image_axes_from_ros_rotation,
+    move_direction,
+    normalize,
+    quintic_progress,
+    unsigned_axis_tilt,
+    view_target_axis,
+)
 from .pose_inverse import (
     PoseInverseResult,
     PoseInverseState,
@@ -23,6 +30,7 @@ from .types import (
 __all__ = [
     "ActionId",
     "ActionResult",
+    "camera_image_axes_from_ros_rotation",
     "ClosedLoopProfile",
     "ControllerCommand",
     "ControllerState",

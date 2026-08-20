@@ -16,6 +16,24 @@ def normalize(vector) -> np.ndarray:
     return value / norm
 
 
+def camera_image_axes_from_ros_rotation(rotation) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return optical, image-up, and image-right axes from a ROS camera pose.
+
+    Isaac Lab's ROS camera frame uses +Z forward, +Y image-down, and +X
+    image-right. Keeping this conversion in one helper prevents the controller
+    from silently substituting capsule-body axes for image axes.
+    """
+    value = np.asarray(rotation, dtype=np.float64).reshape(3, 3)
+    if not np.isfinite(value).all():
+        raise ValueError("camera rotation must be finite")
+    optical = normalize(value[:, 2])
+    up = normalize(-value[:, 1])
+    right = normalize(value[:, 0])
+    if abs(float(np.dot(optical, up))) > 1.0e-6 or abs(float(np.dot(optical, right))) > 1.0e-6:
+        raise ValueError("camera rotation does not define orthogonal image axes")
+    return optical, up, right
+
+
 _VIEW_IMAGE_DIRECTIONS = {
     ActionId.VIEW_UP: (1.0, 0.0),
     ActionId.VIEW_UP_RIGHT: (1.0, 1.0),
@@ -60,4 +78,3 @@ def move_direction(axis, normal, sign: int) -> np.ndarray:
 def quintic_progress(value: float) -> float:
     t = float(np.clip(value, 0.0, 1.0))
     return 10.0 * t**3 - 15.0 * t**4 + 6.0 * t**5
-

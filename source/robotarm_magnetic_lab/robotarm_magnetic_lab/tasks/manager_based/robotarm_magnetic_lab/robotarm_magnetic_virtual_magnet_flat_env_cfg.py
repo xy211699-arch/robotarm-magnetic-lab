@@ -56,6 +56,8 @@ class VirtualMagnetEventsCfg:
         params={
             "asset_name": "capsule",
             "contact_sensor_name": "capsule_contact",
+            "camera_sensor_name": "capsule_camera",
+            "camera_mount_quaternion_capsule_xyzw": (0.0, 1.0, 0.0, 0.0),
             "profile_path": "",
             "debug_xform": True,
         },

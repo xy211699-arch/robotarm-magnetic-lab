@@ -5,11 +5,13 @@ import math
 
 import numpy as np
 import pytest
+from scipy.spatial.transform import Rotation
 
 from virtual_magnet import (
     ActionId,
     ActionResult,
     ClosedLoopProfile,
+    camera_image_axes_from_ros_rotation,
     load_profile,
     move_direction,
     profile_sha256,
@@ -70,6 +72,28 @@ def test_view_geometry_uses_frozen_camera_image_frame():
     assert up_target[1] > 0.0 and abs(up_target[0]) < 1.0e-12
     assert right_target[0] > 0.0 and abs(right_target[1]) < 1.0e-12
     assert diagonal[0] == pytest.approx(diagonal[1])
+
+
+def test_real_camera_mount_maps_ros_image_axes_without_sign_reversal():
+    # Both quaternions are xyzw. The camera is mounted at the capsule -Z end
+    # with a 180-degree rotation about capsule Y.
+    capsule_rotation = Rotation.from_quat(
+        [-0.2565394892869615, 0.6589290481048662, 0.2565394892869615, 0.6589290481048662]
+    ).as_matrix()
+    camera_mount_rotation = Rotation.from_quat([0.0, 1.0, 0.0, 0.0]).as_matrix()
+    camera_rotation = capsule_rotation @ camera_mount_rotation
+    optical, up, right = camera_image_axes_from_ros_rotation(camera_rotation)
+
+    np.testing.assert_allclose(optical, -capsule_rotation[:, 2], atol=1.0e-12)
+    np.testing.assert_allclose(up, -capsule_rotation[:, 1], atol=1.0e-12)
+    np.testing.assert_allclose(right, -capsule_rotation[:, 0], atol=1.0e-12)
+
+    up_target = view_target_axis(optical, up, right, ActionId.VIEW_UP, 15.0)
+    right_target = view_target_axis(optical, up, right, ActionId.VIEW_RIGHT, 15.0)
+    assert np.dot(up_target - optical, up) > 0.0
+    assert abs(float(np.dot(up_target - optical, right))) < 1.0e-12
+    assert np.dot(right_target - optical, right) > 0.0
+    assert abs(float(np.dot(right_target - optical, up))) < 1.0e-12
 
 
 def test_move_uses_unsigned_tilt_and_frozen_opposite_tangents():
