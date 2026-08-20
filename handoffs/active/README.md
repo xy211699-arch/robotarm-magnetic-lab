@@ -1,5 +1,5 @@
 # Active task contracts
 
-The currently authorized Linux implementation task is `TASK-007-virtual-magnet-eleven-action-closed-loop.md`.
+The currently authorized Linux implementation task is `TASK-007-R1-generalized-wrench-surface-frame.md`.
 
-Its authority is limited to the virtual-magnet eleven-action closed-loop controller, its repository-local finite magnetic model, flat/stomach validation, keyboard visualization, evidence, and return report. Earlier TASK-005 and TASK-006 contracts are not implementation authority for this branch.
+R1 continues from the reported TASK-007 implementation and is limited to the approved COM generalized-wrench correction, surface-action-frame reference, shared prescribed-time terminal governor, real multi-candidate calibration, remaining flat/stomach gates, continuous sequences, visualization, and evidence. The earlier TASK-007 contract remains baseline history but is no longer execution authority. TASK-005 and TASK-006 are not implementation authority for this branch.
