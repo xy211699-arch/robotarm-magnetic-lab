@@ -21,6 +21,7 @@ from .visibility import (
     WarpFirstHitRaycaster,
     candidate_vertices,
     visible_from_first_hits,
+    camera_facing_first_hits,
 )
 from robotarm_magnetic_lab.ui.coverage_view import (
     KitCoveragePointCloudView,
@@ -72,6 +73,7 @@ def reference_from_stage(prim_path: str = DEFAULT_INNER_SURFACE_PATH):
         face_vertex_counts=np.asarray(mesh.GetFaceVertexCountsAttr().Get(), dtype=np.int64),
         face_vertex_indices=np.asarray(mesh.GetFaceVertexIndicesAttr().Get(), dtype=np.int64),
         world_transform=_matrix_values(UsdGeom.Xformable(prim).ComputeLocalToWorldTransform(0.0)),
+        orientation=str(mesh.GetOrientationAttr().Get() or "rightHanded"),
     )
     return preprocess_reference_mesh([mesh_input], [prim_path])
 
@@ -89,13 +91,17 @@ class P0CoverageRuntime:
         commit: str,
         branch: str,
         enable_view: bool = False,
+        require_camera_facing_normal: bool = False,
+        raycast_device: str | None = None,
         surface_prim_path: str = DEFAULT_INNER_SURFACE_PATH,
     ) -> None:
         self.env = env.unwrapped
         self.camera = self.env.scene["capsule_camera"]
         self.capsule = self.env.scene["capsule"]
         self.reference = reference_from_stage(surface_prim_path)
-        self.raycaster = WarpFirstHitRaycaster(self.reference, device=str(self.env.device))
+        self.require_camera_facing_normal = bool(require_camera_facing_normal)
+        self.raycast_device = str(raycast_device or self.env.device)
+        self.raycaster = WarpFirstHitRaycaster(self.reference, device=self.raycast_device)
         self.accumulator = CoverageAccumulator(len(self.reference.vertices_world))
         self.clock = RecordedFrameClock(float(self.camera.cfg.update_period))
         self.trajectory: list[np.ndarray] = []
@@ -128,6 +134,8 @@ class P0CoverageRuntime:
                 "half_angle_deg": FOV_HALF_ANGLE_DEG,
                 "hit_distance_tolerance_m": HIT_DISTANCE_TOLERANCE_M,
                 "ray_backend": "isaaclab.utils.warp.ops.raycast_mesh CUDA first hit",
+                "raycast_device": self.raycast_device,
+                "require_camera_facing_normal": self.require_camera_facing_normal,
                 "synchronization": (
                     "Each timing ends after CUDA hit distances and face IDs are copied to CPU; "
                     "the copy synchronizes the query before the elapsed time is recorded."
@@ -193,6 +201,13 @@ class P0CoverageRuntime:
             hit_faces,
             self.reference.incident_triangles,
         )
+        if self.require_camera_facing_normal:
+            visible &= camera_facing_first_hits(
+                center,
+                self.reference.vertices_world[candidates],
+                hit_faces,
+                self.reference,
+            )
         update = self.accumulator.update(frame_id, candidates[visible])
         elapsed = time.perf_counter() - started
         capsule_position = self.capsule_position()

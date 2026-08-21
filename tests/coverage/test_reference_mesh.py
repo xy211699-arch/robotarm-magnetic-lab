@@ -80,3 +80,21 @@ def test_empty_or_unknown_selection_is_rejected():
         preprocess_reference_mesh([mesh], [])
     with pytest.raises(ValueError, match="not found"):
         preprocess_reference_mesh([mesh], ["/Missing"])
+
+
+def test_orientation_is_preserved_and_changes_hash():
+    right = _triangle("/Mesh", [[0, 0, 0], [1, 0, 0], [0, 1, 0]])
+    left = MeshInput(
+        prim_path=right.prim_path,
+        vertices=right.vertices,
+        face_vertex_counts=right.face_vertex_counts,
+        face_vertex_indices=right.face_vertex_indices,
+        world_transform=right.world_transform,
+        orientation="leftHanded",
+    )
+    reference_right = preprocess_reference_mesh([right], ["/Mesh"])
+    reference_left = preprocess_reference_mesh([left], ["/Mesh"])
+    assert reference_right.authored_orientations == (("/Mesh", "rightHanded"),)
+    assert reference_left.authored_orientations == (("/Mesh", "leftHanded"),)
+    assert reference_right.geometry_sha256 != reference_left.geometry_sha256
+    assert np.array_equal(reference_left.triangles, reference_right.triangles[:, [0, 2, 1]])

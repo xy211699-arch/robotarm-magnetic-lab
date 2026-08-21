@@ -9,7 +9,9 @@ import numpy as np
 from robotarm_magnetic_lab.coverage.reference_mesh import MeshInput, preprocess_reference_mesh
 from robotarm_magnetic_lab.coverage.visibility import (
     ScalarFirstHitRaycaster,
+    camera_facing_first_hits,
     candidate_vertices,
+    triangle_normals,
     visible_from_first_hits,
 )
 
@@ -73,3 +75,38 @@ def test_scalar_oracle_returns_nearest_face():
     assert math.isclose(distances[0], 0.02, abs_tol=1.0e-12)
     assert face_ids.tolist() == [0, -1]
     assert math.isinf(distances[1])
+
+
+def test_camera_facing_normal_gate_and_winding_correction():
+    vertices = np.asarray([[-1.0, -1.0, 1.0], [1.0, -1.0, 1.0], [0.0, 1.0, 1.0]])
+    common = dict(
+        prim_path="/Face",
+        vertices=vertices,
+        face_vertex_counts=np.asarray([3]),
+        face_vertex_indices=np.asarray([0, 1, 2]),
+        world_transform=np.eye(4),
+    )
+    back = preprocess_reference_mesh([MeshInput(**common)], ["/Face"])
+    front = preprocess_reference_mesh(
+        [MeshInput(**common, orientation="leftHanded")], ["/Face"]
+    )
+    origin = np.asarray([0.0, 0.0, 0.0])
+    target = np.asarray([[0.0, 0.0, 1.0]])
+    assert triangle_normals(back)[0, 2] > 0.0
+    assert camera_facing_first_hits(origin, target, np.asarray([0]), back).tolist() == [False]
+    assert camera_facing_first_hits(origin, target, np.asarray([0]), front).tolist() == [True]
+
+
+def test_camera_facing_rejects_grazing_with_tolerance():
+    mesh = MeshInput(
+        "/Face",
+        np.asarray([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
+        np.asarray([3]),
+        np.asarray([0, 1, 2]),
+        np.eye(4),
+    )
+    reference = preprocess_reference_mesh([mesh], ["/Face"])
+    accepted = camera_facing_first_hits(
+        np.zeros(3), np.asarray([[0.0, 1.0, 0.0]]), np.asarray([0]), reference
+    )
+    assert accepted.tolist() == [False]

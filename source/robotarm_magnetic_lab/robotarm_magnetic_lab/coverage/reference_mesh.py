@@ -20,6 +20,7 @@ class MeshInput:
     face_vertex_counts: np.ndarray
     face_vertex_indices: np.ndarray
     world_transform: np.ndarray
+    orientation: str = "rightHanded"
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,7 @@ class ReferenceMesh:
     selected_prim_paths: tuple[str, ...]
     weld_tolerance_m: float
     geometry_sha256: str
+    authored_orientations: tuple[tuple[str, str], ...] = ()
 
 
 def _validated(mesh: MeshInput) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -95,12 +97,14 @@ def _hash(
     triangles: np.ndarray,
     prim_paths: tuple[str, ...],
     tolerance: float,
+    authored_orientations: tuple[tuple[str, str], ...],
 ) -> str:
     payload = {
         "vertices_world": np.round(vertices, 12).tolist(),
         "triangles": triangles.tolist(),
         "selected_prim_paths": list(prim_paths),
         "weld_tolerance_m": tolerance,
+        "authored_orientations": [list(item) for item in authored_orientations],
     }
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
@@ -122,13 +126,21 @@ def preprocess_reference_mesh(
 
     point_blocks: list[np.ndarray] = []
     triangle_blocks: list[np.ndarray] = []
+    authored_orientations: list[tuple[str, str]] = []
     point_offset = 0
     for path in selected_paths:
         vertices, _, indices, transform = _validated(by_path[path])
+        orientation = str(by_path[path].orientation)
+        if orientation not in ("rightHanded", "leftHanded"):
+            raise ValueError(f"{path}: unsupported USD mesh orientation {orientation!r}")
         world = _transform_points(vertices, transform)
         point_blocks.append(world)
         triangles = indices.reshape(-1, 3) + point_offset
+        # USD left-handed orientation reverses the authored winding.
+        if orientation == "leftHanded":
+            triangles = triangles[:, [0, 2, 1]]
         triangle_blocks.append(triangles)
+        authored_orientations.append((path, orientation))
         point_offset += len(world)
     all_points = np.concatenate(point_blocks, axis=0)
     source_triangles = np.concatenate(triangle_blocks, axis=0)
@@ -154,5 +166,12 @@ def preprocess_reference_mesh(
         incident_triangles=incident_tuple,
         selected_prim_paths=selected_paths,
         weld_tolerance_m=float(weld_tolerance_m),
-        geometry_sha256=_hash(welded, triangles, selected_paths, float(weld_tolerance_m)),
+        geometry_sha256=_hash(
+            welded,
+            triangles,
+            selected_paths,
+            float(weld_tolerance_m),
+            tuple(authored_orientations),
+        ),
+        authored_orientations=tuple(authored_orientations),
     )

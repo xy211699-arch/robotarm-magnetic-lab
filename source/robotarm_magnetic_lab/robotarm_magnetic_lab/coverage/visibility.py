@@ -13,6 +13,51 @@ from .reference_mesh import ReferenceMesh
 MAX_OBSERVATION_DISTANCE_M = 0.05
 FOV_HALF_ANGLE_DEG = 60.0
 HIT_DISTANCE_TOLERANCE_M = 1.0e-4
+NORMAL_DOT_TOLERANCE = 1.0e-10
+
+
+def triangle_normals(reference: ReferenceMesh) -> np.ndarray:
+    """Return unit world-space normals after USD orientation correction."""
+    vertices = np.asarray(reference.vertices_world, dtype=np.float64)
+    triangles = np.asarray(reference.triangles, dtype=np.int64)
+    edges_a = vertices[triangles[:, 1]] - vertices[triangles[:, 0]]
+    edges_b = vertices[triangles[:, 2]] - vertices[triangles[:, 0]]
+    normals = np.cross(edges_a, edges_b)
+    norms = np.linalg.norm(normals, axis=1)
+    if np.any(~np.isfinite(norms)) or np.any(norms <= np.finfo(np.float64).eps):
+        raise ValueError("reference mesh contains a non-finite or degenerate face normal")
+    return normals / norms[:, None]
+
+
+def camera_facing_first_hits(
+    origin_world: np.ndarray,
+    targets_world: np.ndarray,
+    hit_face_ids: np.ndarray,
+    reference: ReferenceMesh,
+    tolerance: float = NORMAL_DOT_TOLERANCE,
+) -> np.ndarray:
+    """Accept hits whose oriented face normal points strictly toward the camera."""
+    origin = np.asarray(origin_world, dtype=np.float64).reshape(3)
+    targets = np.asarray(targets_world, dtype=np.float64).reshape(-1, 3)
+    face_ids = np.asarray(hit_face_ids, dtype=np.int64).reshape(-1)
+    if len(targets) != len(face_ids):
+        raise ValueError("target and hit-face arrays must have equal length")
+    directions = targets - origin
+    norms = np.linalg.norm(directions, axis=1)
+    valid = (
+        np.isfinite(directions).all(axis=1)
+        & np.isfinite(norms)
+        & (norms > np.finfo(np.float64).eps)
+        & (face_ids >= 0)
+        & (face_ids < len(reference.triangles))
+    )
+    result = np.zeros(len(targets), dtype=np.bool_)
+    if not np.any(valid):
+        return result
+    rays = directions[valid] / norms[valid, None]
+    normals = triangle_normals(reference)[face_ids[valid]]
+    result[valid] = np.einsum("ij,ij->i", normals, rays) < -abs(float(tolerance))
+    return result
 
 
 def candidate_vertices(
