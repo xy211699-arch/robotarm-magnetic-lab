@@ -7,6 +7,7 @@ import argparse
 from dataclasses import asdict, replace
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -15,6 +16,10 @@ from isaaclab.app import AppLauncher
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_ROOT = ROOT / "source" / "robotarm_magnetic_lab"
 sys.path.insert(0, str(PACKAGE_ROOT))
+HEADLESS = "--headless" in sys.argv
+if HEADLESS:
+    sys.argv.remove("--headless")
+    os.environ["HEADLESS"] = "1"
 
 from common import (
     coarse_candidates,
@@ -36,6 +41,7 @@ parser.add_argument("--max_ratio", type=float, default=3.0)
 parser.add_argument("--refinement_rounds", type=int, default=3)
 parser.add_argument("--output_dir", type=Path, default=Path("/tmp/task008-dynamic-force-calibration"))
 AppLauncher.add_app_launcher_args(parser)
+parser.set_defaults(visualizer=[] if HEADLESS else ["kit"])
 args_cli = parser.parse_args()
 args_cli.enable_cameras = True
 launcher = AppLauncher(args_cli)

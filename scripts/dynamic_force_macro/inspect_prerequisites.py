@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import sys
 
@@ -16,10 +17,15 @@ from isaaclab.app import AppLauncher
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_ROOT = ROOT / "source" / "robotarm_magnetic_lab"
 sys.path.insert(0, str(PACKAGE_ROOT))
+HEADLESS = "--headless" in sys.argv
+if HEADLESS:
+    sys.argv.remove("--headless")
+    os.environ["HEADLESS"] = "1"
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--task", default="Template-Robotarm-Magnetic-Dynamic-Force-Macro-Table-Lab-v0")
 parser.add_argument("--output", type=Path, default=Path("/tmp/task008-preflight.json"))
 AppLauncher.add_app_launcher_args(parser)
+parser.set_defaults(visualizer=[] if HEADLESS else ["kit"])
 args_cli = parser.parse_args()
 args_cli.enable_cameras = True
 launcher = AppLauncher(args_cli)
