@@ -32,6 +32,7 @@ class MacroTelemetry:
     force_active: bool
     applied_force_world: tuple[float, float, float]
     applied_torque_world: tuple[float, float, float]
+    com_world: tuple[float, float, float]
     camera_center_world: tuple[float, float, float]
     other_center_world: tuple[float, float, float]
     camera_axis_world: tuple[float, float, float]
@@ -116,6 +117,11 @@ class DynamicForceMacroAction(ActionTerm):
             return
         phase = phase_for_substep(self.current_action, self.substep)
         com, camera, other, axis, lateral = self._geometry()
+        commanded_lateral = (
+            -lateral
+            if self.current_action in (DynamicForceMacroActionId.MOVE_NEG, DynamicForceMacroActionId.VIEW_NEG)
+            else lateral
+        )
         points = ()
         if phase.force_active:
             points = point_forces_for_action(
@@ -139,7 +145,7 @@ class DynamicForceMacroAction(ActionTerm):
         )
         item = MacroTelemetry(
             int(self.current_action), self.substep, phase.name, phase.force_active,
-            tuple(force), tuple(torque), tuple(camera), tuple(other), tuple(axis), tuple(lateral),
+            tuple(force), tuple(torque), tuple(com), tuple(camera), tuple(other), tuple(axis), tuple(commanded_lateral),
         )
         self.trace.append(item)
         self.last_telemetry = item
