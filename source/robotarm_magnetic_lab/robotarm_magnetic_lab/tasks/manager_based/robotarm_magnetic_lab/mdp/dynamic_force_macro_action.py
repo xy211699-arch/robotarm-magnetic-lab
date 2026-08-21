@@ -102,7 +102,8 @@ class DynamicForceMacroAction(ActionTerm):
         link_pos = self.capsule.data.root_link_pos_w.torch[0].detach().cpu().numpy().astype(np.float64)
         link_quat = self.capsule.data.root_link_quat_w.torch[0].detach().cpu().numpy().astype(np.float64)
         com = self.capsule.data.root_com_pos_w.torch[0].detach().cpu().numpy().astype(np.float64)
-        rotation = Rotation.from_quat(link_quat).as_matrix()
+        # Isaac Lab rigid-body state is wxyz; SciPy explicitly consumes xyzw.
+        rotation = Rotation.from_quat(link_quat[[1, 2, 3, 0]]).as_matrix()
         half = 0.5 * self.config.cylinder_height_m
         camera_local = np.array([0.0, 0.0, -half])
         other_local = np.array([0.0, 0.0, half])

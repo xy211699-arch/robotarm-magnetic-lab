@@ -39,6 +39,29 @@ def make_manifest(split: str, samples: int, seed: int, actions=(1, 2, 3, 4, 5)) 
     return rows
 
 
+def replacement_trial(spec: TrialSpec, attempt: int) -> TrialSpec:
+    """Deterministically replace an invalid reset without consuming its slot."""
+    if attempt <= 0:
+        raise ValueError("replacement attempt must be positive")
+    value = int(
+        hashlib.sha256(
+            f"{spec.split}:{spec.seed}:{spec.action_id}:{spec.trial_index}:replacement:{attempt}".encode()
+        ).hexdigest()[:8],
+        16,
+    )
+    rng = np.random.default_rng(value)
+    return TrialSpec(
+        spec.split,
+        spec.action_id,
+        spec.trial_index,
+        value,
+        rng.uniform(-0.01, 0.01),
+        rng.uniform(-0.01, 0.01),
+        rng.uniform(-np.pi, np.pi),
+        rng.uniform(-np.pi, np.pi),
+    )
+
+
 def manifest_sha256(rows: list[TrialSpec]) -> str:
     return hashlib.sha256(json.dumps([asdict(row) for row in rows], sort_keys=True).encode()).hexdigest()
 

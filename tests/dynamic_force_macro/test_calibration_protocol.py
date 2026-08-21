@@ -1,4 +1,10 @@
-from scripts.dynamic_force_macro.common import coarse_candidates, make_manifest, manifest_sha256, midpoint_refinements
+from scripts.dynamic_force_macro.common import (
+    coarse_candidates,
+    make_manifest,
+    manifest_sha256,
+    midpoint_refinements,
+    replacement_trial,
+)
 
 
 def test_manifests_are_disjoint_and_deterministic():
@@ -16,3 +22,13 @@ def test_candidate_schedule_and_refinements():
     mids = midpoint_refinements(0.9, 1.125, 3)
     assert len(mids) == 3
     assert all(0.9 < value < 1.125 for value in mids)
+
+
+def test_invalid_setup_replacement_is_deterministic_and_keeps_slot():
+    original = make_manifest("calibration", 1, 8008, actions=(1,))[0]
+    replacement = replacement_trial(original, 1)
+    assert replacement == replacement_trial(original, 1)
+    assert replacement.seed != original.seed
+    assert replacement.split == original.split
+    assert replacement.action_id == original.action_id
+    assert replacement.trial_index == original.trial_index

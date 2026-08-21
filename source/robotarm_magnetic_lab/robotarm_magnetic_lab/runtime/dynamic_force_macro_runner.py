@@ -43,26 +43,41 @@ class SynchronousMacroRunner:
     def _capture(self):
         if hasattr(self.base, "capture_boundary_rgb"):
             return self.base.capture_boundary_rgb()
-        return self.base.scene["capsule_camera"].data.output["rgb"].torch[0].clone()
+        image = self.base.scene["capsule_camera"].data.output["rgb"]
+        tensor = getattr(image, "torch", image)
+        return tensor[0].clone()
 
     def step(self, action_id) -> MacroTransition:
         import torch
+        import numpy as np
 
         action = int(action_id)
         start_frame = self._frame_id()
         start_time = float(getattr(self.base, "sim_time", getattr(self.base, "common_step_counter", 0) / 60.0))
+        interrupted = False
         for _ in range(60):
             value = torch.tensor([[float(action)]], device=getattr(self.base, "device", "cpu"))
-            self.env.step(value)
+            result = self.env.step(value)
+            if isinstance(result, tuple) and len(result) >= 5:
+                terminated, truncated = result[2], result[3]
+                interrupted |= bool(torch.as_tensor(terminated).any() or torch.as_tensor(truncated).any())
             if self.coverage_evaluator is not None:
                 self.coverage_evaluator.maybe_update()
         if self.term.lifecycle != "boundary_ready":
             raise RuntimeError(f"macro ended in unexpected lifecycle {self.term.lifecycle}")
         boundary_frame = self._frame_id()
         boundary_rgb = self._capture()
+        finite_trace = all(
+            np.isfinite(np.asarray(item.com_world)).all()
+            and np.isfinite(np.asarray(item.applied_force_world)).all()
+            and np.isfinite(np.asarray(item.applied_torque_world)).all()
+            for item in getattr(self.term, "trace", ())
+        )
         self.term.release_after_boundary_capture()
-        end_time = start_time + 1.0
+        end_time = float(
+            getattr(self.base, "sim_time", getattr(self.base, "common_step_counter", 60) / 60.0)
+        )
         return MacroTransition(
             action, start_frame, boundary_frame, start_time, end_time,
-            self.term.trace_digest, boundary_rgb, False,
+            self.term.trace_digest, boundary_rgb, interrupted or not finite_trace,
         )
