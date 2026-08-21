@@ -8,6 +8,7 @@ from .dynamic_force_keyboard import (
     DynamicForceCommandKind,
     DynamicForceKeyboard,
 )
+from .dynamic_force_macro_keyboard import DynamicForceMacroKeyboard
 
 __all__ = [
     "AtomicKeyboard",
@@ -17,6 +18,7 @@ __all__ = [
     "DynamicForceCommand",
     "DynamicForceCommandKind",
     "DynamicForceKeyboard",
+    "DynamicForceMacroKeyboard",
     "RequestOutcome",
     "SessionController",
     "SessionRecord",
