@@ -66,6 +66,11 @@ SETUP_LINEAR_SPEED_M_S = 0.02
 SETUP_ANGULAR_SPEED_RAD_S = 0.5
 SETUP_CONTACT_FORCE_N = 1.0e-4
 SETUP_MAX_HOLD_MACROS = 3
+# The reset sampler spans +/-10 mm. The delivered capsule has a 0.25 m/s
+# authored linear-velocity guard, so a one-second trial plus one radius yields
+# this conservative, reproducible test-region radius about the force-onset COM.
+TABLE_TEST_REGION_RADIUS_M = 0.01 + 0.25 + 0.0065
+TABLE_TRAVERSAL_Z_BELOW_ONSET_M = 0.025
 
 
 def apply_reset(env, spec) -> None:
@@ -169,9 +174,27 @@ def run_candidate(env, runner, specs, group: str, ratio: float) -> dict:
             raise RuntimeError(f"previously validated setup did not reproduce: {spec} {setup}")
         transition = runner.step(spec.action_id)
         finite = all(np.isfinite(np.asarray(item.com_world)).all() for item in term.trace)
-        fault = bool(not finite or transition.catastrophic_fault)
-        passed, metrics = evaluate_trace(spec.action_id, term.trace) if not fault else (False, {"reason": "nonfinite_or_solver_interruption"})
-        rows.append({**asdict(spec), "ratio": ratio, "pass": passed, "fault": fault, "setup": setup, "metrics": metrics, "trace_digest": transition.trace_digest, "boundary_frame": transition.boundary_rgb_frame_id, "boundary_before_release": term.lifecycle == "idle"})
+        onset_com = np.asarray(term.trace[0].com_world) if term.trace else np.full(3, np.nan)
+        end_com = np.asarray(term.trace[-1].com_world) if term.trace else np.full(3, np.nan)
+        escaped = bool(
+            finite
+            and np.linalg.norm(end_com[:2] - onset_com[:2]) > TABLE_TEST_REGION_RADIUS_M
+        )
+        traversed = bool(
+            finite and end_com[2] < onset_com[2] - TABLE_TRAVERSAL_Z_BELOW_ONSET_M
+        )
+        fault_reasons = []
+        if not finite:
+            fault_reasons.append("nonfinite")
+        if transition.catastrophic_fault:
+            fault_reasons.append("solver_interruption")
+        if escaped:
+            fault_reasons.append("escaped_derived_table_region")
+        if traversed:
+            fault_reasons.append("complete_table_traversal")
+        fault = bool(fault_reasons)
+        passed, metrics = evaluate_trace(spec.action_id, term.trace) if not fault else (False, {"reason": fault_reasons})
+        rows.append({**asdict(spec), "ratio": ratio, "pass": passed, "fault": fault, "fault_reasons": fault_reasons, "setup": setup, "metrics": metrics, "trace_digest": transition.trace_digest, "boundary_frame": transition.boundary_rgb_frame_id, "boundary_before_release": term.lifecycle == "idle"})
     counts = {action: sum(row["pass"] for row in rows if row["action_id"] == action) for action in GROUPS[group]}
     faults = sum(row["fault"] for row in rows)
     required = int(np.ceil(0.8 * args_cli.calibration_samples))
