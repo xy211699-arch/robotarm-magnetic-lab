@@ -99,3 +99,21 @@ gym.register(
         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:PPORunnerCfg",
     },
 )
+
+gym.register(
+    id="Template-Robotarm-Magnetic-Dynamic-Force-Macro-Table-Lab-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.robotarm_magnetic_dynamic_force_macro_table_env_cfg:RobotarmMagneticDynamicForceMacroTableLabEnvCfg",
+    },
+)
+
+gym.register(
+    id="Template-Robotarm-Magnetic-Dynamic-Force-Macro-Stomach-Lab-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.robotarm_magnetic_dynamic_force_macro_stomach_env_cfg:RobotarmMagneticDynamicForceMacroStomachLabEnvCfg",
+    },
+)

@@ -1,0 +1,26 @@
+import gymnasium as gym
+import pytest
+
+import robotarm_magnetic_lab.tasks  # noqa: F401
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_dynamic_force_macro_table_env_cfg import RobotarmMagneticDynamicForceMacroTableLabEnvCfg
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_dynamic_force_macro_stomach_env_cfg import RobotarmMagneticDynamicForceMacroStomachLabEnvCfg
+
+
+@pytest.mark.parametrize("task", [
+    "Template-Robotarm-Magnetic-Dynamic-Force-Macro-Table-Lab-v0",
+    "Template-Robotarm-Magnetic-Dynamic-Force-Macro-Stomach-Lab-v0",
+])
+def test_task_registered(task):
+    assert gym.spec(task) is not None
+
+
+@pytest.mark.parametrize("cfg_type", [RobotarmMagneticDynamicForceMacroTableLabEnvCfg, RobotarmMagneticDynamicForceMacroStomachLabEnvCfg])
+def test_task_contract(cfg_type):
+    cfg = cfg_type()
+    assert cfg.decimation == 4
+    assert cfg.sim.dt == pytest.approx(1 / 240)
+    assert cfg.sim.render_interval == 4
+    assert cfg.scene.capsule_camera.update_period == pytest.approx(1 / 30)
+    assert cfg.sim.device == "cpu"
+    assert list(name for name in vars(cfg.actions) if not name.startswith("_")) == ["dynamic_force_macro"]
+    assert vars(cfg.rewards) == {}
