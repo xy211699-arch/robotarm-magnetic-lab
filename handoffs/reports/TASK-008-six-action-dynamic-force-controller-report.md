@@ -15,7 +15,7 @@
 - 规划提交：`a232ac4d060efe17669ecfe8341331ed88fa8555`
 - 固定基线：`06b15caf9a69bc9c20f85522ce4abbb32c8b9245`
 - 实施分支：`feature/TASK-008-six-action-dynamic-force-controller`
-- 本报告前实现头：`f6b16f0`
+- 最终代码实现头（不含本报告后续文字提交）：`bfc7ae4eb9e61ce4e100e2baac2fb44cafcb22f5`
 - 未修改 USD、TASK-003 原控制器、磁场、理想表面、VLM/RL、latch、virtual-magnet 或既有实验报告。
 
 实施提交：
@@ -29,6 +29,7 @@
 | `63cc6c8` | USD 朝向敏感的相机朝向法线覆盖门控 |
 | `c352c19` | 修正 Isaac Lab `wxyz`/SciPy `xyzw`，加固 settle、重采样和 live 检查 |
 | `f6b16f0` | 单按键宏动作及胃部三视图验收入口 |
+| `bfc7ae4` | 补齐派生平面测试区域逃逸与完整穿越 FAULT 分类 |
 
 ## 3. 实现结果
 
