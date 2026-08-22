@@ -32,3 +32,12 @@ def test_stomach_uses_confirmed_migrated_force_ratios():
     assert term.move_force_ratio == pytest.approx(0.40)
     assert term.view_force_ratio == pytest.approx(0.25)
     assert term.up_force_ratio == pytest.approx(0.85)
+
+
+def test_stomach_close_range_lighting_is_low_glare():
+    cfg = RobotarmMagneticDynamicForceMacroStomachLabEnvCfg()
+    assert cfg.scene.dome_light.spawn.intensity == pytest.approx(5.0)
+    for name in ("capsule_led_top", "capsule_led_bottom", "capsule_led_left", "capsule_led_right"):
+        light = getattr(cfg.scene, name).spawn
+        assert light.intensity == pytest.approx(4.0)
+        assert light.radius == pytest.approx(0.0030)

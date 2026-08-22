@@ -98,11 +98,11 @@ class RobotarmMagneticStomachLabEnvCfg(RobotarmMagneticLabEnvCfg):
         # the texture supplies the tissue color, while the larger source radius
         # softens specular highlights. Values remain provisional until they are
         # calibrated against the physical DS01 camera and capsule LEDs.
-        # The previous 15-unit emitters were acceptable at the nominal
-        # 10--30 mm working distance but still clipped close folds. Reduce
-        # direct and ambient energy while keeping a finite highlight; real
-        # capsule endoscopy does show small wet-tissue specular spots.
-        self.scene.dome_light.spawn.intensity = 15.0
+        # Even the previous 8-unit emitters and 15-unit dome clipped close
+        # folds. Reduce direct and ambient energy again while keeping a finite
+        # wet-tissue highlight, and enlarge the normalized source to broaden
+        # its remaining specular shoulder.
+        self.scene.dome_light.spawn.intensity = 5.0
         for light_name in (
             "capsule_led_top",
             "capsule_led_bottom",
@@ -110,11 +110,11 @@ class RobotarmMagneticStomachLabEnvCfg(RobotarmMagneticLabEnvCfg):
             "capsule_led_right",
         ):
             light = getattr(self.scene, light_name).spawn
-            light.intensity = 8.0
+            light.intensity = 4.0
             # Approximate the LED/lens diffuser as an extended source so the
             # millimetre-range highlight has a soft shoulder rather than a
             # saturated point.
-            light.radius = 0.0020
+            light.radius = 0.0030
             light.color_temperature = 4800.0
         self.viewer.eye = (1.28, 0.45, 0.32)
         self.viewer.lookat = (1.06, 0.115, 0.01)

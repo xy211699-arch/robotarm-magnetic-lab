@@ -44,6 +44,49 @@ def test_up_is_active_on_final_substep():
     assert phase_for_substep(DynamicForceMacroActionId.UP, 239).force_active
 
 
+@pytest.mark.parametrize(
+    "camera,other",
+    [
+        ([-0.006, 0.0, 0.0], [0.006, 0.0, 0.0]),
+        ([-0.004, 0.0, 0.004], [0.004, 0.0, -0.004]),
+        ([0.003, -0.004, -0.002], [-0.003, 0.004, 0.002]),
+    ],
+)
+def test_up_is_camera_lift_other_end_down_pure_couple(camera, other):
+    camera = np.asarray(camera, dtype=np.float64)
+    other = np.asarray(other, dtype=np.float64)
+    points = point_forces_for_action(
+        DynamicForceMacroActionId.UP,
+        mass_kg=0.005735,
+        lateral_direction_world=np.array([0.0, 1.0, 0.0]),
+        camera_center_world=camera,
+        other_center_world=other,
+        config=DynamicForceMacroConfig(up_force_ratio=0.85),
+    )
+    assert [point.endpoint for point in points] == ["camera", "other"]
+    np.testing.assert_allclose(points[0].force_world, -points[1].force_world)
+    assert points[0].force_world[2] >= 0.0
+    assert points[1].force_world[2] <= 0.0
+    force, torque = equivalent_com_wrench(points, 0.5 * (camera + other))
+    np.testing.assert_allclose(force, np.zeros(3), atol=1.0e-12)
+    camera_axis = (camera - other) / np.linalg.norm(camera - other)
+    camera_vertical_acceleration_sign = float(np.dot(np.cross(torque, camera_axis), np.array([0.0, 0.0, 1.0])))
+    assert camera_vertical_acceleration_sign >= 0.0
+
+
+def test_up_camera_down_uses_deterministic_nonzero_tipping_couple():
+    points = point_forces_for_action(
+        DynamicForceMacroActionId.UP,
+        mass_kg=0.005735,
+        lateral_direction_world=np.array([0.0, 1.0, 0.0]),
+        camera_center_world=np.array([0.0, 0.0, -0.006]),
+        other_center_world=np.array([0.0, 0.0, 0.006]),
+        config=DynamicForceMacroConfig(up_force_ratio=0.85),
+    )
+    assert np.linalg.norm(points[0].force_world) > 0.0
+    np.testing.assert_allclose(points[0].force_world, -points[1].force_world)
+
+
 def test_lateral_direction_rejects_vertical_axis():
     with pytest.raises(NumericalContractError):
         lateral_direction_world([0.0, 0.0, 1.0])

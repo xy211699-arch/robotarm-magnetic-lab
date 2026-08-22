@@ -127,8 +127,29 @@ def point_forces_for_action(
             direction = -direction
         force = config.view_force_ratio * mass * GRAVITY_M_S2 * direction
         return (PointForce("camera", camera, force),)
-    force = config.up_force_ratio * mass * GRAVITY_M_S2 * WORLD_UP
-    return (PointForce("camera", camera, force),)
+    # UP is a pure endpoint couple, not a net upward body force.  The previous
+    # camera-only vertical force produced the desired moment but also lifted the
+    # COM; on a changing stomach-wall contact patch, the resulting contact
+    # reaction could pivot the capsule about the camera end and visibly raise
+    # the wrong end.  Resolve the same orientation moment into equal/opposite
+    # endpoint forces: the camera end is driven toward world +Z while the other
+    # end is explicitly driven into the support surface.
+    camera_axis = _unit(camera - other, name="camera endpoint axis")
+    camera_lift = WORLD_UP - float(np.dot(WORLD_UP, camera_axis)) * camera_axis
+    if float(np.linalg.norm(camera_lift)) <= 1.0e-12:
+        # At exactly camera-down the shortest rise plane is geometrically
+        # ambiguous.  Use the already deterministic lateral direction to tip
+        # away from that unstable pole.  Camera-up needs no further moment.
+        camera_lift = (
+            _unit(lateral_direction_world, name="camera-down lift direction")
+            if float(np.dot(WORLD_UP, camera_axis)) < 0.0
+            else np.zeros(3, dtype=np.float64)
+        )
+    force = 0.5 * config.up_force_ratio * mass * GRAVITY_M_S2 * camera_lift
+    return (
+        PointForce("camera", camera, force),
+        PointForce("other", other, -force),
+    )
 
 
 def equivalent_com_wrench(point_forces: tuple[PointForce, ...], com_world) -> tuple[np.ndarray, np.ndarray]:
@@ -157,7 +178,8 @@ def resolved_force_levels_n(mass_kg: float, config: DynamicForceMacroConfig) -> 
         "view_force_ratio": config.view_force_ratio,
         "view_camera_endpoint_force_n": config.view_force_ratio * weight,
         "up_force_ratio": config.up_force_ratio,
-        "up_camera_endpoint_force_n": config.up_force_ratio * weight,
+        "up_couple_force_ratio": config.up_force_ratio,
+        "up_force_per_endpoint_max_n": 0.5 * config.up_force_ratio * weight,
     }
 
 

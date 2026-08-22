@@ -6,7 +6,9 @@ def test_stomach_launcher_contains_required_three_views_and_normal_gate():
     assert "configure_capsule_camera_view" in source
     assert "enable_view=not HEADLESS" in source
     assert "require_camera_facing_normal=True" in source
-    assert "StatusPanel" in source
+    assert "StatusPanel" not in source
+    assert "omni.ui.Window" not in source
+    assert "TASK008_STOMACH_FORCE_CONFIG" not in source
     assert "simulation_app.update()" in source
 
 
@@ -20,3 +22,11 @@ def test_stomach_launcher_uses_confirmed_migrated_force_values_without_tuning():
     assert "coverage.update_view()" in source
     assert "search_group" not in source
     assert "coarse_candidates" not in source
+
+
+def test_stomach_material_uses_broadened_low_glare_highlight():
+    source = (
+        Path(__file__).resolve().parents[2] / "assets/stomach/stomach_environment_lab.usda"
+    ).read_text(encoding="utf-8")
+    assert "float inputs:roughness = 0.78" in source
+    assert "float inputs:ior = 1.34" in source

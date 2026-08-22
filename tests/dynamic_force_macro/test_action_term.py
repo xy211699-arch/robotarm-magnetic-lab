@@ -31,4 +31,5 @@ def test_resolved_force_levels_report_total_and_endpoint_newtons():
     assert levels["move_total_force_n"] == pytest.approx(0.2 * levels["weight_n"])
     assert levels["move_force_per_endpoint_n"] == pytest.approx(0.5 * levels["move_total_force_n"])
     assert levels["view_camera_endpoint_force_n"] == pytest.approx(0.5 * levels["weight_n"])
-    assert levels["up_camera_endpoint_force_n"] == pytest.approx(1.05 * levels["weight_n"])
+    assert levels["up_couple_force_ratio"] == pytest.approx(1.05)
+    assert levels["up_force_per_endpoint_max_n"] == pytest.approx(0.5 * 1.05 * levels["weight_n"])

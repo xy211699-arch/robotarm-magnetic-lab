@@ -125,9 +125,9 @@ def Xform "StomachEnvironment"
                     # to avoid a hard white patch at millimetre working range.
                     # This remains provisional until measured tissue BRDF and
                     # DS01 exposure-response data are available.
-                    float inputs:roughness = 0.62
+                    float inputs:roughness = 0.78
                     float inputs:metallic = 0
-                    float inputs:ior = 1.38
+                    float inputs:ior = 1.34
                 }
             }
         }

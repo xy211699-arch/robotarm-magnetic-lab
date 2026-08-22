@@ -110,8 +110,16 @@ class DynamicForceMacroAction(ActionTerm):
         other_local = np.array([0.0, 0.0, half])
         camera = link_pos + rotation @ camera_local
         other = link_pos + rotation @ other_local
-        axis = (camera - com) / np.linalg.norm(camera - com)
-        lateral = lateral_direction_world(axis)
+        axis = (camera - other) / np.linalg.norm(camera - other)
+        try:
+            lateral = lateral_direction_world(axis)
+        except ValueError:
+            # A vertical long axis has no world-horizontal cross-product.
+            # Preserve a deterministic camera-image direction from local +X;
+            # this is also the tie-break direction for an exactly camera-down
+            # UP request.
+            lateral = rotation[:, 0] - np.dot(rotation[:, 0], axis) * axis
+            lateral /= np.linalg.norm(lateral)
         return com, camera, other, axis, lateral
 
     def apply_actions(self) -> None:

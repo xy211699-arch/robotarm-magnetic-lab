@@ -46,7 +46,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--up_force_ratio", type=force_ratio, default=0.85,
-    help="UP相机侧端点力相对于胶囊自重mg的倍率；胃部确认值为0.85。",
+    help="UP差动力偶相对于胶囊自重mg的倍率；水平时每端最大为其一半，胃部确认值为0.85。",
 )
 parser.add_argument("--output_directory", type=Path, default=Path("/tmp/task008-stomach-inspection"))
 parser.add_argument("--scripted_actions", default="", help="逗号分隔的动作名或 0..5；用于无键盘启动检查。")
@@ -65,7 +65,6 @@ import carb
 import gymnasium as gym
 import numpy as np
 import omni.appwindow
-import omni.ui
 import torch
 
 import robotarm_magnetic_lab.tasks  # noqa: F401
@@ -120,26 +119,6 @@ class KitKeyboardSource:
         self.keyboard.release_all()
 
 
-class StatusPanel:
-    def __init__(self) -> None:
-        self.window = omni.ui.Window("TASK-008 动态力动作状态", width=430, height=150)
-        with self.window.frame:
-            with omni.ui.VStack(spacing=5):
-                self.action = omni.ui.Label("动作：IDLE")
-                self.phase = omni.ui.Label("阶段：PAUSED")
-                self.time = omni.ui.Label("仿真时间：0.000 s")
-                self.coverage = omni.ui.Label("累计覆盖率：0.000%")
-
-    def update(self, action: str, phase: str, sim_time: float, fraction: float) -> None:
-        self.action.text = f"动作：{action}"
-        self.phase.text = f"阶段：{phase}"
-        self.time.text = f"仿真时间：{sim_time:.3f} s"
-        self.coverage.text = f"累计覆盖率：{100.0 * fraction:.3f}%"
-
-    def close(self) -> None:
-        self.window.visible = False
-
-
 def save_boundary_rgb(output: Path, index: int, rgb) -> Path:
     from PIL import Image
     array = rgb.detach().cpu().numpy() if hasattr(rgb, "detach") else np.asarray(rgb)
@@ -161,7 +140,7 @@ def main() -> int:
     cfg.actions.dynamic_force_macro.up_force_ratio = args_cli.up_force_ratio
     if not HEADLESS:
         configure_capsule_camera_view(cfg)
-    env = keyboard = camera_view = panel = coverage = None
+    env = keyboard = camera_view = coverage = None
     records = []
     reason = "initialization_failed"
     with launch_simulation(cfg, args_cli):
@@ -189,9 +168,7 @@ def main() -> int:
             if not HEADLESS:
                 keyboard = KitKeyboardSource()
                 camera_view = attach_capsule_camera_policy_view(env)
-                panel = StatusPanel()
                 print("TASK008_COVERAGE_VIEW_READY window='P0 Stomach Coverage' refresh_hz=30", flush=True)
-            print(f"TASK008_STOMACH_FORCE_CONFIG {json.dumps(forces, sort_keys=True)}", flush=True)
             print(
                 "TASK008_STOMACH_READY Space=HOLD D/A=MOVE+/- E/Q=VIEW+/- W=UP "
                 "Backspace=重置 F12=快照 Esc=退出",
@@ -214,9 +191,6 @@ def main() -> int:
                     if coverage.view is not None and now_wall - coverage_display_last >= 1.0 / 30.0:
                         coverage.update_view()
                         coverage_display_last = now_wall
-                    if panel is not None:
-                        fraction = float(coverage.accumulator.mask.mean())
-                        panel.update("IDLE", "PAUSED", coverage.total_sim_time_s, fraction)
                     continue
                 if command.kind is CommandKind.EXIT:
                     reason = "keyboard_exit"
@@ -233,8 +207,6 @@ def main() -> int:
                     continue
                 action = int(command.action_id)
                 print(f"TASK008_ACTION_START id={action} name={ACTION_NAMES[action]}", flush=True)
-                if panel is not None:
-                    panel.update(ACTION_NAMES[action], "RUNNING", coverage.total_sim_time_s, float(coverage.accumulator.mask.mean()))
                 transition = runner.step(action)
                 action_count += 1
                 rgb_path = save_boundary_rgb(coverage.partial_directory, action_count, transition.boundary_rgb)
@@ -274,8 +246,6 @@ def main() -> int:
                 keyboard.close()
             if camera_view is not None:
                 camera_view.close()
-            if panel is not None:
-                panel.close()
             if env is not None:
                 env.close()
 

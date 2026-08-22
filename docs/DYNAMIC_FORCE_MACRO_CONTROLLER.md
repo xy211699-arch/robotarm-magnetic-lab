@@ -18,7 +18,7 @@ RGB；胶囊真值、力、轨迹和覆盖率仅供标定与评估使用。
 | 2 | `MOVE_NEG` | 两端各施加同向 `-d` 力，产生反向平移合力 |
 | 3 | `VIEW_POS` | 只在相机端施加 `+d` 力，产生相机光轴正向偏转力矩 |
 | 4 | `VIEW_NEG` | 只在相机端施加 `-d` 力，产生反向偏转力矩 |
-| 5 | `UP` | 只在相机端施加世界 `+Z` 力，使相机侧抬升 |
+| 5 | `UP` | 相机端向上、另一端向下施加等量反向力，形成只抬相机端的纯力偶 |
 
 胶囊半径为 `0.0065 m`，圆柱段高度为 `0.012 m`，总长为 `0.025 m`。相机侧位于胶囊
 局部 `-Z`，两个半球中心由圆柱段半高得到：`z=-0.006 m` 和 `z=+0.006 m`。
@@ -36,7 +36,10 @@ d = normalize(z_w × u_cam)
 
 - MOVE：两端分别为 `0.5*r_move*m*g*d`；
 - VIEW：相机端为 `r_view*m*g*d`；
-- UP：相机端为 `r_up*m*g*z_w`。
+- UP：令 `d_up = z_w - (z_w·u_cam)u_cam`，相机端为
+  `+0.5*r_up*m*g*d_up`，另一端为其反向力。两端合力为零，力矩与旧单点力等价，
+  但非相机端会被明确压向支撑面；相机端已朝正上时力偶自然归零，恰好朝下时采用确定性
+  横向方向脱离不稳定点。
 
 多个端点力通过等价质心力/力矩一次性提交到 PhysX：
 
@@ -95,7 +98,7 @@ cd /mnt/isaac-linux/robotarm_magnetic_lab
 ```bash
 ./run_isaaclab.sh -p scripts/dynamic_force_macro/teleop_stomach.py \
   --task Template-Robotarm-Magnetic-Dynamic-Force-Macro-Stomach-Lab-v0 \
-  --profile /tmp/task008-dynamic-force-calibration/selected_profile.json \
+  --move_force_ratio 0.40 --view_force_ratio 0.25 --up_force_ratio 0.85 \
   --viz kit
 ```
 
@@ -103,8 +106,8 @@ cd /mnt/isaac-linux/robotarm_magnetic_lab
 `Backspace=胶囊与覆盖率一起复位`、`F12=快照`、`Esc=退出`。按键按下沿只触发一次动作，
 操作系统按键重复不会重启宏动作。动作结束后暂停物理，只刷新 Kit 界面，直到下一次按键。
 
-界面同时显示默认外部视口、30 Hz 胶囊 RGB、独立累计覆盖窗口及动作/阶段/仿真时间/
-覆盖率状态。覆盖率使用 120°圆形 FOV、50 mm 距离、首次命中遮挡和相机朝向三角面法线
+界面显示默认外部视口、30 Hz 胶囊 RGB和独立累计覆盖窗口；不再创建中文动作/力度状态
+窗口。覆盖率使用 120°圆形 FOV、50 mm 距离、首次命中遮挡和相机朝向三角面法线
 门控；该门控仅由 TASK-008 显式开启，旧覆盖率默认行为不变。
 
 脚本化六动作冒烟：
@@ -112,7 +115,7 @@ cd /mnt/isaac-linux/robotarm_magnetic_lab
 ```bash
 ./run_isaaclab.sh -p scripts/dynamic_force_macro/teleop_stomach.py \
   --task Template-Robotarm-Magnetic-Dynamic-Force-Macro-Stomach-Lab-v0 \
-  --profile /tmp/task008-dynamic-force-calibration/selected_profile.json \
+  --move_force_ratio 0.40 --view_force_ratio 0.25 --up_force_ratio 0.85 \
   --scripted_actions 0,1,2,3,4,5 --max_actions 6 --viz kit
 ```
 
