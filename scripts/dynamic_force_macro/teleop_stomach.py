@@ -46,7 +46,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--up_force_ratio", type=force_ratio, default=0.85,
-    help="UP差动力偶相对于胶囊自重mg的倍率；水平时每端最大为其一半，胃部确认值为0.85。",
+    help="UP在实际相机端半球球心施加的世界向上力相对于胶囊自重mg的倍率；胃部确认值为0.85。",
 )
 parser.add_argument("--output_directory", type=Path, default=Path("/tmp/task008-stomach-inspection"))
 parser.add_argument("--scripted_actions", default="", help="逗号分隔的动作名或 0..5；用于无键盘启动检查。")

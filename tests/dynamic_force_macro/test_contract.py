@@ -5,6 +5,7 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers
     DynamicForceMacroActionId,
     DynamicForceMacroConfig,
     NumericalContractError,
+    camera_sphere_centers_local,
     equivalent_com_wrench,
     lateral_direction_world,
     phase_for_substep,
@@ -45,16 +46,28 @@ def test_up_is_active_on_final_substep():
 
 
 @pytest.mark.parametrize(
-    "camera,other",
+    "camera_offset,expected_camera,expected_other",
     [
-        ([-0.006, 0.0, 0.0], [0.006, 0.0, 0.0]),
-        ([-0.004, 0.0, 0.004], [0.004, 0.0, -0.004]),
-        ([0.003, -0.004, -0.002], [-0.003, 0.004, 0.002]),
+        ([0.0, 0.0, -0.0127], [0.0, 0.0, -0.006], [0.0, 0.0, 0.006]),
+        ([0.0, 0.0, 0.0127], [0.0, 0.0, 0.006], [0.0, 0.0, -0.006]),
     ],
 )
-def test_up_is_camera_lift_other_end_down_pure_couple(camera, other):
-    camera = np.asarray(camera, dtype=np.float64)
-    other = np.asarray(other, dtype=np.float64)
+def test_camera_sphere_center_is_selected_from_actual_camera_mount(
+    camera_offset, expected_camera, expected_other
+):
+    camera, other = camera_sphere_centers_local(camera_offset, 0.012)
+    np.testing.assert_allclose(camera, expected_camera)
+    np.testing.assert_allclose(other, expected_other)
+
+
+def test_camera_sphere_center_rejects_ambiguous_mount():
+    with pytest.raises(NumericalContractError):
+        camera_sphere_centers_local([0.0, 0.0, 0.0], 0.012)
+
+
+def test_up_is_one_world_up_force_at_exact_camera_center():
+    camera = np.array([0.11, -0.22, 0.33], dtype=np.float64)
+    other = np.array([0.11, -0.22, 0.342], dtype=np.float64)
     points = point_forces_for_action(
         DynamicForceMacroActionId.UP,
         mass_kg=0.005735,
@@ -63,28 +76,10 @@ def test_up_is_camera_lift_other_end_down_pure_couple(camera, other):
         other_center_world=other,
         config=DynamicForceMacroConfig(up_force_ratio=0.85),
     )
-    assert [point.endpoint for point in points] == ["camera", "other"]
-    np.testing.assert_allclose(points[0].force_world, -points[1].force_world)
-    assert points[0].force_world[2] >= 0.0
-    assert points[1].force_world[2] <= 0.0
-    force, torque = equivalent_com_wrench(points, 0.5 * (camera + other))
-    np.testing.assert_allclose(force, np.zeros(3), atol=1.0e-12)
-    camera_axis = (camera - other) / np.linalg.norm(camera - other)
-    camera_vertical_acceleration_sign = float(np.dot(np.cross(torque, camera_axis), np.array([0.0, 0.0, 1.0])))
-    assert camera_vertical_acceleration_sign >= 0.0
-
-
-def test_up_camera_down_uses_deterministic_nonzero_tipping_couple():
-    points = point_forces_for_action(
-        DynamicForceMacroActionId.UP,
-        mass_kg=0.005735,
-        lateral_direction_world=np.array([0.0, 1.0, 0.0]),
-        camera_center_world=np.array([0.0, 0.0, -0.006]),
-        other_center_world=np.array([0.0, 0.0, 0.006]),
-        config=DynamicForceMacroConfig(up_force_ratio=0.85),
-    )
-    assert np.linalg.norm(points[0].force_world) > 0.0
-    np.testing.assert_allclose(points[0].force_world, -points[1].force_world)
+    assert len(points) == 1
+    assert points[0].endpoint == "camera"
+    np.testing.assert_allclose(points[0].position_world, camera)
+    np.testing.assert_allclose(points[0].force_world, [0.0, 0.0, 0.85 * 0.005735 * 9.81])
 
 
 def test_lateral_direction_rejects_vertical_axis():

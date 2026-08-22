@@ -98,6 +98,29 @@ def lateral_direction_world(camera_axis_world, *, positive: bool = True) -> np.n
     return direction if positive else -direction
 
 
+def camera_sphere_centers_local(
+    camera_offset_local: np.ndarray,
+    cylinder_height_m: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Select the physical hemisphere center nearest the mounted camera.
+
+    The capsule rigid body has two hemisphere centers at +/- half the straight
+    cylinder height.  Camera-side identity is derived from the actual CameraCfg
+    local offset instead of assuming a fixed local-axis sign.
+    """
+    camera_offset = np.asarray(camera_offset_local, dtype=np.float64).reshape(3)
+    height = float(cylinder_height_m)
+    if not np.isfinite(camera_offset).all() or not math.isfinite(height) or height <= 0.0:
+        raise NumericalContractError("camera offset and cylinder height must be finite")
+    half = 0.5 * height
+    candidates = np.asarray([[0.0, 0.0, -half], [0.0, 0.0, half]], dtype=np.float64)
+    distances = np.linalg.norm(candidates - camera_offset[None, :], axis=1)
+    if abs(float(distances[0] - distances[1])) <= 1.0e-12:
+        raise NumericalContractError("camera is equidistant from both capsule hemisphere centers")
+    camera_index = int(np.argmin(distances))
+    return candidates[camera_index].copy(), candidates[1 - camera_index].copy()
+
+
 def point_forces_for_action(
     action: DynamicForceMacroActionId | int,
     *,
@@ -127,29 +150,11 @@ def point_forces_for_action(
             direction = -direction
         force = config.view_force_ratio * mass * GRAVITY_M_S2 * direction
         return (PointForce("camera", camera, force),)
-    # UP is a pure endpoint couple, not a net upward body force.  The previous
-    # camera-only vertical force produced the desired moment but also lifted the
-    # COM; on a changing stomach-wall contact patch, the resulting contact
-    # reaction could pivot the capsule about the camera end and visibly raise
-    # the wrong end.  Resolve the same orientation moment into equal/opposite
-    # endpoint forces: the camera end is driven toward world +Z while the other
-    # end is explicitly driven into the support surface.
-    camera_axis = _unit(camera - other, name="camera endpoint axis")
-    camera_lift = WORLD_UP - float(np.dot(WORLD_UP, camera_axis)) * camera_axis
-    if float(np.linalg.norm(camera_lift)) <= 1.0e-12:
-        # At exactly camera-down the shortest rise plane is geometrically
-        # ambiguous.  Use the already deterministic lateral direction to tip
-        # away from that unstable pole.  Camera-up needs no further moment.
-        camera_lift = (
-            _unit(lateral_direction_world, name="camera-down lift direction")
-            if float(np.dot(WORLD_UP, camera_axis)) < 0.0
-            else np.zeros(3, dtype=np.float64)
-        )
-    force = 0.5 * config.up_force_ratio * mass * GRAVITY_M_S2 * camera_lift
-    return (
-        PointForce("camera", camera, force),
-        PointForce("other", other, -force),
-    )
+    # UP is the original single world-up force at the physical camera-side
+    # hemisphere center.  Camera-side selection is performed from the live
+    # camera mounting config by ``camera_sphere_centers_local``.
+    force = config.up_force_ratio * mass * GRAVITY_M_S2 * WORLD_UP
+    return (PointForce("camera", camera, force),)
 
 
 def equivalent_com_wrench(point_forces: tuple[PointForce, ...], com_world) -> tuple[np.ndarray, np.ndarray]:
@@ -178,8 +183,7 @@ def resolved_force_levels_n(mass_kg: float, config: DynamicForceMacroConfig) -> 
         "view_force_ratio": config.view_force_ratio,
         "view_camera_endpoint_force_n": config.view_force_ratio * weight,
         "up_force_ratio": config.up_force_ratio,
-        "up_couple_force_ratio": config.up_force_ratio,
-        "up_force_per_endpoint_max_n": 0.5 * config.up_force_ratio * weight,
+        "up_camera_endpoint_force_n": config.up_force_ratio * weight,
     }
 
 

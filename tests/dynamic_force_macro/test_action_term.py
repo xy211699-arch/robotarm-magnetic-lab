@@ -12,12 +12,17 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.mdp.dynamic
 def test_action_term_contract_and_no_state_writers():
     cfg = DynamicForceMacroActionTermCfg()
     assert cfg.move_force_ratio == cfg.view_force_ratio == cfg.up_force_ratio == 0.9
+    assert cfg.camera_sensor_name == "capsule_camera"
     source = Path(__file__).resolve().parents[2] / "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/dynamic_force_macro_action.py"
     text = source.read_text(encoding="utf-8")
     for forbidden in ("write_root_pose", "write_root_velocity", "set_transforms", "set_velocities"):
         assert forbidden not in text
     assert "equivalent_com_wrench" in text
-    assert "positions=None" in text
+    assert "camera_sphere_centers_local" in text
+    assert "positions=position_tensor" in text
+    assert "torques=torque_tensor" in text
+    assert "torque_tensor = None" in text
+    assert "application_position = np.asarray(points[0].position_world" in text
     assert "CreateEnableCCDAttr" in text
     assert "ccd_attr.Set(True)" in text
 
@@ -31,5 +36,4 @@ def test_resolved_force_levels_report_total_and_endpoint_newtons():
     assert levels["move_total_force_n"] == pytest.approx(0.2 * levels["weight_n"])
     assert levels["move_force_per_endpoint_n"] == pytest.approx(0.5 * levels["move_total_force_n"])
     assert levels["view_camera_endpoint_force_n"] == pytest.approx(0.5 * levels["weight_n"])
-    assert levels["up_couple_force_ratio"] == pytest.approx(1.05)
-    assert levels["up_force_per_endpoint_max_n"] == pytest.approx(0.5 * 1.05 * levels["weight_n"])
+    assert levels["up_camera_endpoint_force_n"] == pytest.approx(1.05 * levels["weight_n"])

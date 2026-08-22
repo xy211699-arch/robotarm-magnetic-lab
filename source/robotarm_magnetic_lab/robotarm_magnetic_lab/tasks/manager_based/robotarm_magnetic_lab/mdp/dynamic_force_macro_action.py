@@ -17,6 +17,7 @@ from isaaclab.utils.configclass import configclass
 from ..controllers.dynamic_force_macro import (
     DynamicForceMacroActionId,
     DynamicForceMacroConfig,
+    camera_sphere_centers_local,
     equivalent_com_wrench,
     lateral_direction_world,
     phase_for_substep,
@@ -37,6 +38,7 @@ class MacroTelemetry:
     other_center_world: tuple[float, float, float]
     camera_axis_world: tuple[float, float, float]
     lateral_direction_world: tuple[float, float, float]
+    force_application_position_world: tuple[float, float, float] | None
 
 
 class DynamicForceMacroAction(ActionTerm):
@@ -49,6 +51,7 @@ class DynamicForceMacroAction(ActionTerm):
         if env.num_envs != 1:
             raise ValueError("TASK-008 supports exactly one environment")
         self.capsule = env.scene[cfg.asset_name]
+        self.camera_sensor = env.scene[cfg.camera_sensor_name]
         self.config = DynamicForceMacroConfig(
             move_force_ratio=cfg.move_force_ratio,
             view_force_ratio=cfg.view_force_ratio,
@@ -58,6 +61,10 @@ class DynamicForceMacroAction(ActionTerm):
         )
         self._raw_actions = torch.zeros((1, 1), device=env.device)
         self._processed_actions = torch.zeros((1, 1), device=env.device)
+        self.camera_center_local, self.other_center_local = camera_sphere_centers_local(
+            np.asarray(self.camera_sensor.cfg.offset.pos, dtype=np.float64),
+            self.config.cylinder_height_m,
+        )
         self.lifecycle = "idle"
         self.current_action: DynamicForceMacroActionId | None = None
         self.substep = 0
@@ -105,19 +112,15 @@ class DynamicForceMacroAction(ActionTerm):
         com = self.capsule.data.root_com_pos_w.torch[0].detach().cpu().numpy().astype(np.float64)
         # Isaac Lab rigid-body state is wxyz; SciPy explicitly consumes xyzw.
         rotation = Rotation.from_quat(link_quat[[1, 2, 3, 0]]).as_matrix()
-        half = 0.5 * self.config.cylinder_height_m
-        camera_local = np.array([0.0, 0.0, -half])
-        other_local = np.array([0.0, 0.0, half])
-        camera = link_pos + rotation @ camera_local
-        other = link_pos + rotation @ other_local
+        camera = link_pos + rotation @ self.camera_center_local
+        other = link_pos + rotation @ self.other_center_local
         axis = (camera - other) / np.linalg.norm(camera - other)
         try:
             lateral = lateral_direction_world(axis)
         except ValueError:
             # A vertical long axis has no world-horizontal cross-product.
-            # Preserve a deterministic camera-image direction from local +X;
-            # this is also the tie-break direction for an exactly camera-down
-            # UP request.
+            # Preserve a deterministic camera-image direction from local +X
+            # for MOVE/VIEW actions at that singular orientation.
             lateral = rotation[:, 0] - np.dot(rotation[:, 0], axis) * axis
             lateral /= np.linalg.norm(lateral)
         return com, camera, other, axis, lateral
@@ -142,20 +145,40 @@ class DynamicForceMacroAction(ActionTerm):
                 other_center_world=other,
                 config=self.config,
             )
-        force, torque = equivalent_com_wrench(points, com)
+        force, effective_torque = equivalent_com_wrench(points, com)
+        submitted_torque = effective_torque
+        application_position = None
+        if self.current_action == DynamicForceMacroActionId.UP and points:
+            # Submit one force at the resolved camera-side hemisphere center.
+            # Do not submit a controller torque; PhysX obtains the natural
+            # moment solely from the off-CoM force application position.
+            force = np.asarray(points[0].force_world, dtype=np.float64)
+            submitted_torque = np.zeros(3, dtype=np.float64)
+            application_position = np.asarray(points[0].position_world, dtype=np.float64)
         force_tensor = torch.as_tensor(force, device=self._env.device, dtype=torch.float32).reshape(1, 1, 3)
-        torque_tensor = torch.as_tensor(torque, device=self._env.device, dtype=torch.float32).reshape(1, 1, 3)
+        torque_tensor = None
+        if self.current_action != DynamicForceMacroActionId.UP:
+            torque_tensor = torch.as_tensor(
+                submitted_torque, device=self._env.device, dtype=torch.float32
+            ).reshape(1, 1, 3)
+        position_tensor = None
+        if application_position is not None:
+            position_tensor = torch.as_tensor(
+                application_position, device=self._env.device, dtype=torch.float32
+            ).reshape(1, 1, 3)
         self.capsule.permanent_wrench_composer.set_forces_and_torques_index(
             forces=force_tensor,
             torques=torque_tensor,
-            positions=None,
+            positions=position_tensor,
             body_ids=None,
             env_ids=None,
             is_global=True,
         )
         item = MacroTelemetry(
             int(self.current_action), self.substep, phase.name, phase.force_active,
-            tuple(force), tuple(torque), tuple(com), tuple(camera), tuple(other), tuple(axis), tuple(commanded_lateral),
+            tuple(force), tuple(submitted_torque), tuple(com), tuple(camera), tuple(other), tuple(axis),
+            tuple(commanded_lateral),
+            None if application_position is None else tuple(application_position),
         )
         self.trace.append(item)
         self.last_telemetry = item
@@ -212,6 +235,7 @@ class DynamicForceMacroAction(ActionTerm):
 class DynamicForceMacroActionTermCfg(ActionTermCfg):
     class_type: type[ActionTerm] = DynamicForceMacroAction
     asset_name: str = "capsule"
+    camera_sensor_name: str = "capsule_camera"
     move_force_ratio: float = 0.9
     view_force_ratio: float = 0.9
     up_force_ratio: float = 0.9

@@ -46,7 +46,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--up_force_ratio", type=force_ratio, default=2.197265625,
-    help="UP差动力偶相对于胶囊自重mg的倍率；水平时每端最大为其一半。",
+    help="UP施加在实际相机端半球球心的世界向上力相对于胶囊自重mg的倍率。",
 )
 parser.add_argument("--output_directory", type=Path, default=Path("/tmp/task008-table-visual-inspection"))
 parser.add_argument("--scripted_actions", default="", help="逗号分隔的动作名或 0..5。")
@@ -134,7 +134,7 @@ class StatusPanel:
                     f"合力：MOVE={forces['move_total_force_n']:.6f} N "
                     f"(每端{forces['move_force_per_endpoint_n']:.6f} N)  "
                     f"VIEW={forces['view_camera_endpoint_force_n']:.6f} N  "
-                    f"UP(each endpoint max)={forces['up_force_per_endpoint_max_n']:.6f} N"
+                    f"UP={forces['up_camera_endpoint_force_n']:.6f} N"
                 )
                 self.result = omni.ui.Label("结果：尚未执行")
 
