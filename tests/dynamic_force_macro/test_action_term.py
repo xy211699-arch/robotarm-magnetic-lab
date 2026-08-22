@@ -12,3 +12,5 @@ def test_action_term_contract_and_no_state_writers():
         assert forbidden not in text
     assert "equivalent_com_wrench" in text
     assert "positions=None" in text
+    assert "CreateEnableCCDAttr" in text
+    assert "ccd_attr.Set(True)" in text

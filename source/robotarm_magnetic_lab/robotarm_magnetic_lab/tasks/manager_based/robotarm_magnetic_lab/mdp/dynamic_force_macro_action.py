@@ -63,6 +63,7 @@ class DynamicForceMacroAction(ActionTerm):
         self.substep = 0
         self.trace: list[MacroTelemetry] = []
         self.last_telemetry: MacroTelemetry | None = None
+        self._verify_dynamic_body_and_enable_ccd()
         mass = self.capsule.data.body_mass.torch.detach()
         self.mass_kg = float(mass.reshape(-1)[0].item())
         if not np.isfinite(self.mass_kg) or self.mass_kg <= 0.0:
@@ -169,6 +170,34 @@ class DynamicForceMacroAction(ActionTerm):
         self.trace.clear()
         self.last_telemetry = None
         self.capsule.permanent_wrench_composer.reset(env_ids=env_ids)
+
+    def _verify_dynamic_body_and_enable_ccd(self) -> None:
+        """Preserve the TASK-003 dynamic/gravity contract and task-local body CCD."""
+        import omni.usd
+        from pxr import PhysxSchema, UsdPhysics
+
+        prim_path = self.capsule.root_view.prim_paths[0]
+        prim = omni.usd.get_context().get_stage().GetPrimAtPath(prim_path)
+        if not prim.IsValid():
+            raise RuntimeError(f"capsule rigid-body prim is unavailable: {prim_path}")
+        rigid_api = UsdPhysics.RigidBodyAPI(prim)
+        if not rigid_api:
+            raise RuntimeError(f"capsule has no UsdPhysics.RigidBodyAPI: {prim_path}")
+        kinematic_attr = rigid_api.GetKinematicEnabledAttr()
+        if kinematic_attr and bool(kinematic_attr.Get()):
+            raise RuntimeError("TASK-008 capsule must be non-kinematic")
+        physx_api = PhysxSchema.PhysxRigidBodyAPI(prim)
+        if not physx_api:
+            physx_api = PhysxSchema.PhysxRigidBodyAPI.Apply(prim)
+        gravity_attr = physx_api.GetDisableGravityAttr()
+        if gravity_attr and bool(gravity_attr.Get()):
+            raise RuntimeError("TASK-008 capsule gravity must remain enabled")
+        ccd_attr = physx_api.GetEnableCCDAttr()
+        if not ccd_attr:
+            ccd_attr = physx_api.CreateEnableCCDAttr()
+        ccd_attr.Set(True)
+        if not bool(ccd_attr.Get()):
+            raise RuntimeError("failed to enable TASK-008 capsule body CCD")
 
 
 @configclass
