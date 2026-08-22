@@ -10,11 +10,12 @@ def test_stomach_launcher_contains_required_three_views_and_normal_gate():
     assert "simulation_app.update()" in source
 
 
-def test_stomach_launcher_uses_selected_profile_without_tuning():
+def test_stomach_launcher_uses_confirmed_migrated_force_values_without_tuning():
     source = (Path(__file__).resolve().parents[2] / "scripts/dynamic_force_macro/teleop_stomach.py").read_text()
-    assert "selected_profile.json" in source
-    assert "move_force_ratio" in source
-    assert "view_force_ratio" in source
-    assert "up_force_ratio" in source
+    assert 'default=0.40' in source
+    assert 'default=0.30' in source
+    assert 'default=0.80' in source
+    assert "TASK008_COVERAGE_VIEW_READY" in source
+    assert "coverage.update_view()" in source
     assert "search_group" not in source
     assert "coarse_candidates" not in source

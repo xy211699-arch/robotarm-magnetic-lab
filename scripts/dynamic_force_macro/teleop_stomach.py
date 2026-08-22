@@ -6,11 +6,12 @@ from __future__ import annotations
 import argparse
 from collections import deque
 from datetime import datetime, timezone
-import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import sys
+import time
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,7 +27,27 @@ from isaaclab.app import AppLauncher
 TASK_ID = "Template-Robotarm-Magnetic-Dynamic-Force-Macro-Stomach-Lab-v0"
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--task", default=TASK_ID)
-parser.add_argument("--profile", type=Path, default=Path("/tmp/task008-dynamic-force-calibration/selected_profile.json"))
+
+
+def force_ratio(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed) or not 0.0 < parsed <= 3.0:
+        raise argparse.ArgumentTypeError("力度倍率必须是 (0, 3.0] 内的有限数")
+    return parsed
+
+
+parser.add_argument(
+    "--move_force_ratio", type=force_ratio, default=0.40,
+    help="MOVE两端点合力相对于胶囊自重mg的倍率；胃部迁移确认值为0.40。",
+)
+parser.add_argument(
+    "--view_force_ratio", type=force_ratio, default=0.30,
+    help="VIEW相机侧端点力相对于胶囊自重mg的倍率；胃部迁移确认值为0.30。",
+)
+parser.add_argument(
+    "--up_force_ratio", type=force_ratio, default=0.80,
+    help="UP相机侧端点力相对于胶囊自重mg的倍率；胃部迁移确认值为0.80。",
+)
 parser.add_argument("--output_directory", type=Path, default=Path("/tmp/task008-stomach-inspection"))
 parser.add_argument("--scripted_actions", default="", help="逗号分隔的动作名或 0..5；用于无键盘启动检查。")
 parser.add_argument("--max_actions", type=int, default=0)
@@ -54,18 +75,13 @@ from robotarm_magnetic_lab.coverage.simulator_runtime import P0CoverageRuntime
 from robotarm_magnetic_lab.runtime import SynchronousMacroRunner
 from robotarm_magnetic_lab.teleop import CommandKind, DynamicForceMacroKeyboard
 from robotarm_magnetic_lab.ui import attach_capsule_camera_policy_view, configure_capsule_camera_view
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.dynamic_force_macro import (
+    resolved_force_levels_n,
+)
 
 
 ACTION_NAMES = {0: "HOLD", 1: "MOVE_POS", 2: "MOVE_NEG", 3: "VIEW_POS", 4: "VIEW_NEG", 5: "UP"}
 NAME_TO_ACTION = {name: action for action, name in ACTION_NAMES.items()}
-
-
-def load_profile(path: Path) -> tuple[dict, str]:
-    payload = json.loads(path.expanduser().read_text(encoding="utf-8"))
-    required = ("move_force_ratio", "view_force_ratio", "up_force_ratio")
-    if payload.get("schema") != "task008_force_profile_v1" or any(payload.get(key) is None for key in required):
-        raise ValueError(f"无效 TASK-008 标定配置：{path}")
-    return payload, hashlib.sha256(path.expanduser().read_bytes()).hexdigest()
 
 
 def parse_actions(value: str) -> deque[int]:
@@ -105,14 +121,18 @@ class KitKeyboardSource:
 
 
 class StatusPanel:
-    def __init__(self) -> None:
-        self.window = omni.ui.Window("TASK-008 动态力动作状态", width=430, height=150)
+    def __init__(self, forces: dict[str, float]) -> None:
+        self.window = omni.ui.Window("TASK-008 动态力动作状态", width=520, height=190)
         with self.window.frame:
             with omni.ui.VStack(spacing=5):
                 self.action = omni.ui.Label("动作：IDLE")
                 self.phase = omni.ui.Label("阶段：PAUSED")
                 self.time = omni.ui.Label("仿真时间：0.000 s")
                 self.coverage = omni.ui.Label("累计覆盖率：0.000%")
+                omni.ui.Label(
+                    f"力度：MOVE={forces['move_force_ratio']:g}mg  "
+                    f"VIEW={forces['view_force_ratio']:g}mg  UP={forces['up_force_ratio']:g}mg"
+                )
 
     def update(self, action: str, phase: str, sim_time: float, fraction: float) -> None:
         self.action.text = f"动作：{action}"
@@ -136,14 +156,13 @@ def save_boundary_rgb(output: Path, index: int, rgb) -> Path:
 
 
 def main() -> int:
-    profile, profile_sha = load_profile(args_cli.profile)
     scripted = parse_actions(args_cli.scripted_actions)
     output = args_cli.output_directory / datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%fZ")
     cfg = parse_env_cfg(args_cli.task, device="cpu", num_envs=1, use_fabric=True)
     cfg.sim.device = "cpu"
-    cfg.actions.dynamic_force_macro.move_force_ratio = float(profile["move_force_ratio"])
-    cfg.actions.dynamic_force_macro.view_force_ratio = float(profile["view_force_ratio"])
-    cfg.actions.dynamic_force_macro.up_force_ratio = float(profile["up_force_ratio"])
+    cfg.actions.dynamic_force_macro.move_force_ratio = args_cli.move_force_ratio
+    cfg.actions.dynamic_force_macro.view_force_ratio = args_cli.view_force_ratio
+    cfg.actions.dynamic_force_macro.up_force_ratio = args_cli.up_force_ratio
     if not HEADLESS:
         configure_capsule_camera_view(cfg)
     env = keyboard = camera_view = panel = coverage = None
@@ -153,6 +172,8 @@ def main() -> int:
         try:
             env = gym.make(args_cli.task, cfg=cfg)
             env.reset()
+            term = env.unwrapped.action_manager.get_term("dynamic_force_macro")
+            forces = resolved_force_levels_n(term.mass_kg, term.config)
             coverage = P0CoverageRuntime(
                 env,
                 output,
@@ -164,11 +185,17 @@ def main() -> int:
                 require_camera_facing_normal=True,
                 raycast_device="cuda:0",
             )
+            # Materialize and refresh the independent red/green coverage
+            # viewport immediately.  It is separate from both the external
+            # Kit viewport and the capsule RGB viewport.
+            coverage.update_view()
             runner = SynchronousMacroRunner(env, coverage)
             if not HEADLESS:
                 keyboard = KitKeyboardSource()
                 camera_view = attach_capsule_camera_policy_view(env)
-                panel = StatusPanel()
+                panel = StatusPanel(forces)
+                print("TASK008_COVERAGE_VIEW_READY window='P0 Stomach Coverage' refresh_hz=30", flush=True)
+            print(f"TASK008_STOMACH_FORCE_CONFIG {json.dumps(forces, sort_keys=True)}", flush=True)
             print(
                 "TASK008_STOMACH_READY Space=HOLD D/A=MOVE+/- E/Q=VIEW+/- W=UP "
                 "Backspace=重置 F12=快照 Esc=退出",
@@ -176,6 +203,7 @@ def main() -> int:
             )
             action_count = 0
             reason = "exit"
+            coverage_display_last = 0.0
             while simulation_app.is_running():
                 command = None
                 if scripted:
@@ -186,6 +214,10 @@ def main() -> int:
                     if HEADLESS:
                         break
                     simulation_app.update()
+                    now_wall = time.monotonic()
+                    if coverage.view is not None and now_wall - coverage_display_last >= 1.0 / 30.0:
+                        coverage.update_view()
+                        coverage_display_last = now_wall
                     if panel is not None:
                         fraction = float(coverage.accumulator.mask.mean())
                         panel.update("IDLE", "PAUSED", coverage.total_sim_time_s, fraction)
@@ -229,7 +261,12 @@ def main() -> int:
                 if args_cli.max_actions and action_count >= args_cli.max_actions:
                     reason = "max_actions"
                     break
-            summary = {"reason": reason, "profile": str(args_cli.profile), "profile_sha256": profile_sha, "actions": len(records), "output": str(output)}
+            summary = {
+                "reason": reason,
+                "actions": len(records),
+                "output": str(output),
+                "force_configuration": forces,
+            }
             (coverage.partial_directory / "task008_stomach_summary.json").write_text(
                 json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )

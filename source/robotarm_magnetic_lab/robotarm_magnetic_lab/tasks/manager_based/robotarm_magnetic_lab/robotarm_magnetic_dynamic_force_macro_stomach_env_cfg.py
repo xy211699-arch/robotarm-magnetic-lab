@@ -1,4 +1,4 @@
-"""TASK-008 stomach viewer using the unchanged table-selected profile."""
+"""TASK-008 direct-force macros migrated into the flipped stomach scene."""
 
 from isaaclab.utils.configclass import configclass
 
@@ -12,6 +12,14 @@ from .robotarm_magnetic_dynamic_force_macro_table_env_cfg import (
 from .robotarm_magnetic_dynamic_force_stomach_env_cfg import RobotarmMagneticDynamicForceStomachTeleopLabEnvCfg
 
 
+# Manually accepted flat-table force levels migrated unchanged into the
+# flipped-stomach task.  These are force-to-weight ratios, not magnetic-field
+# gains: MOVE is the two-endpoint resultant; VIEW and UP act at the camera end.
+TASK008_STOMACH_MOVE_FORCE_RATIO = 0.40
+TASK008_STOMACH_VIEW_FORCE_RATIO = 0.30
+TASK008_STOMACH_UP_FORCE_RATIO = 0.80
+
+
 @configclass
 class RobotarmMagneticDynamicForceMacroStomachLabEnvCfg(RobotarmMagneticDynamicForceStomachTeleopLabEnvCfg):
     actions: DynamicForceMacroActionsCfg = DynamicForceMacroActionsCfg()
@@ -22,6 +30,9 @@ class RobotarmMagneticDynamicForceMacroStomachLabEnvCfg(RobotarmMagneticDynamicF
 
     def __post_init__(self):
         super().__post_init__()
+        self.actions.dynamic_force_macro.move_force_ratio = TASK008_STOMACH_MOVE_FORCE_RATIO
+        self.actions.dynamic_force_macro.view_force_ratio = TASK008_STOMACH_VIEW_FORCE_RATIO
+        self.actions.dynamic_force_macro.up_force_ratio = TASK008_STOMACH_UP_FORCE_RATIO
         self.decimation = 4
         self.sim.dt = 1.0 / 240.0
         self.sim.render_interval = 4
