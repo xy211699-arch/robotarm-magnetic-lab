@@ -41,12 +41,12 @@ parser.add_argument(
     help="MOVE两端点合力相对于胶囊自重mg的倍率；胃部迁移确认值为0.40。",
 )
 parser.add_argument(
-    "--view_force_ratio", type=force_ratio, default=0.30,
-    help="VIEW相机侧端点力相对于胶囊自重mg的倍率；胃部迁移确认值为0.30。",
+    "--view_force_ratio", type=force_ratio, default=0.25,
+    help="VIEW相机侧端点力相对于胶囊自重mg的倍率；胃部确认值为0.25。",
 )
 parser.add_argument(
-    "--up_force_ratio", type=force_ratio, default=0.80,
-    help="UP相机侧端点力相对于胶囊自重mg的倍率；胃部迁移确认值为0.80。",
+    "--up_force_ratio", type=force_ratio, default=0.85,
+    help="UP相机侧端点力相对于胶囊自重mg的倍率；胃部确认值为0.85。",
 )
 parser.add_argument("--output_directory", type=Path, default=Path("/tmp/task008-stomach-inspection"))
 parser.add_argument("--scripted_actions", default="", help="逗号分隔的动作名或 0..5；用于无键盘启动检查。")
@@ -121,18 +121,14 @@ class KitKeyboardSource:
 
 
 class StatusPanel:
-    def __init__(self, forces: dict[str, float]) -> None:
-        self.window = omni.ui.Window("TASK-008 动态力动作状态", width=520, height=190)
+    def __init__(self) -> None:
+        self.window = omni.ui.Window("TASK-008 动态力动作状态", width=430, height=150)
         with self.window.frame:
             with omni.ui.VStack(spacing=5):
                 self.action = omni.ui.Label("动作：IDLE")
                 self.phase = omni.ui.Label("阶段：PAUSED")
                 self.time = omni.ui.Label("仿真时间：0.000 s")
                 self.coverage = omni.ui.Label("累计覆盖率：0.000%")
-                omni.ui.Label(
-                    f"力度：MOVE={forces['move_force_ratio']:g}mg  "
-                    f"VIEW={forces['view_force_ratio']:g}mg  UP={forces['up_force_ratio']:g}mg"
-                )
 
     def update(self, action: str, phase: str, sim_time: float, fraction: float) -> None:
         self.action.text = f"动作：{action}"
@@ -193,7 +189,7 @@ def main() -> int:
             if not HEADLESS:
                 keyboard = KitKeyboardSource()
                 camera_view = attach_capsule_camera_policy_view(env)
-                panel = StatusPanel(forces)
+                panel = StatusPanel()
                 print("TASK008_COVERAGE_VIEW_READY window='P0 Stomach Coverage' refresh_hz=30", flush=True)
             print(f"TASK008_STOMACH_FORCE_CONFIG {json.dumps(forces, sort_keys=True)}", flush=True)
             print(

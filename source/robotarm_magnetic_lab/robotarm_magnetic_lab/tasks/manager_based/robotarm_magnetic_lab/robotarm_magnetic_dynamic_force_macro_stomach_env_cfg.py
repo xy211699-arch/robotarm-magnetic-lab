@@ -16,8 +16,8 @@ from .robotarm_magnetic_dynamic_force_stomach_env_cfg import RobotarmMagneticDyn
 # flipped-stomach task.  These are force-to-weight ratios, not magnetic-field
 # gains: MOVE is the two-endpoint resultant; VIEW and UP act at the camera end.
 TASK008_STOMACH_MOVE_FORCE_RATIO = 0.40
-TASK008_STOMACH_VIEW_FORCE_RATIO = 0.30
-TASK008_STOMACH_UP_FORCE_RATIO = 0.80
+TASK008_STOMACH_VIEW_FORCE_RATIO = 0.25
+TASK008_STOMACH_UP_FORCE_RATIO = 0.85
 
 
 @configclass

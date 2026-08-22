@@ -13,8 +13,9 @@ def test_stomach_launcher_contains_required_three_views_and_normal_gate():
 def test_stomach_launcher_uses_confirmed_migrated_force_values_without_tuning():
     source = (Path(__file__).resolve().parents[2] / "scripts/dynamic_force_macro/teleop_stomach.py").read_text()
     assert 'default=0.40' in source
-    assert 'default=0.30' in source
-    assert 'default=0.80' in source
+    assert 'default=0.25' in source
+    assert 'default=0.85' in source
+    assert 'f"力度：MOVE=' not in source
     assert "TASK008_COVERAGE_VIEW_READY" in source
     assert "coverage.update_view()" in source
     assert "search_group" not in source
