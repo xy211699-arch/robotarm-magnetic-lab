@@ -22,12 +22,14 @@ TASK008_STOMACH_UP_FORCE_RATIO = 0.85
 # TASK-008-only reset at the opposite (Y-max-side) longitudinal quarter.
 # The point was sampled from the flipped stomach's lower visual/collision
 # surface at Y=Y_min+0.75*(Y_max-Y_min). Its lumen normal has Z=0.9984; the
-# center includes the exact 13 x 25 mm capsule support distance plus 0.2 mm
-# clearance while retaining the validated side-lying quaternion.
+# X/Y retain the accepted opposite-quarter location. A 201-point clearance
+# scan over the complete 12 mm capsule centerline found that local curvature
+# intersected the +axis end; lifting only world Z by 7.5 mm gives 0.573 mm
+# minimum whole-capsule clearance while retaining the side-lying quaternion.
 TASK008_CAPSULE_RIGHT_QUARTER_POS = (
     1.078678615084,
     0.177197008592,
-    0.004293035807,
+    0.011793035807,
 )
 
 

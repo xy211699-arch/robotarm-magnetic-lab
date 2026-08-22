@@ -38,12 +38,13 @@ def test_stomach_uses_confirmed_migrated_force_ratios():
 def test_task008_starts_at_opposite_longitudinal_quarter_without_changing_task003():
     cfg = RobotarmMagneticDynamicForceMacroStomachLabEnvCfg()
     assert cfg.scene.capsule.init_state.pos == pytest.approx(
-        (1.078678615084, 0.177197008592, 0.004293035807)
+        (1.078678615084, 0.177197008592, 0.011793035807)
     )
     y_min = -0.010734736771726316
     y_max = 0.24037395987787247
     expected_right_quarter_y = y_min + 0.75 * (y_max - y_min)
     assert abs(cfg.scene.capsule.init_state.pos[1] - expected_right_quarter_y) < 0.001
+    assert cfg.scene.capsule.init_state.pos[2] > 0.01
 
     task003_cfg = RobotarmMagneticDynamicForceStomachTeleopLabEnvCfg()
     assert task003_cfg.scene.capsule.init_state.pos == pytest.approx(
