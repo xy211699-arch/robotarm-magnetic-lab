@@ -4,6 +4,7 @@ import pytest
 import robotarm_magnetic_lab.tasks  # noqa: F401
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_dynamic_force_macro_table_env_cfg import RobotarmMagneticDynamicForceMacroTableLabEnvCfg
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_dynamic_force_macro_stomach_env_cfg import RobotarmMagneticDynamicForceMacroStomachLabEnvCfg
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_dynamic_force_stomach_env_cfg import RobotarmMagneticDynamicForceStomachTeleopLabEnvCfg
 
 
 @pytest.mark.parametrize("task", [
@@ -32,6 +33,22 @@ def test_stomach_uses_confirmed_migrated_force_ratios():
     assert term.move_force_ratio == pytest.approx(0.40)
     assert term.view_force_ratio == pytest.approx(0.25)
     assert term.up_force_ratio == pytest.approx(0.85)
+
+
+def test_task008_starts_at_opposite_longitudinal_quarter_without_changing_task003():
+    cfg = RobotarmMagneticDynamicForceMacroStomachLabEnvCfg()
+    assert cfg.scene.capsule.init_state.pos == pytest.approx(
+        (1.078678615084, 0.177197008592, 0.004293035807)
+    )
+    y_min = -0.010734736771726316
+    y_max = 0.24037395987787247
+    expected_right_quarter_y = y_min + 0.75 * (y_max - y_min)
+    assert abs(cfg.scene.capsule.init_state.pos[1] - expected_right_quarter_y) < 0.001
+
+    task003_cfg = RobotarmMagneticDynamicForceStomachTeleopLabEnvCfg()
+    assert task003_cfg.scene.capsule.init_state.pos == pytest.approx(
+        (1.04643745, 0.05368121, 0.00190115)
+    )
 
 
 def test_stomach_close_range_lighting_is_low_glare():

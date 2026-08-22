@@ -99,6 +99,10 @@ cd /mnt/isaac-linux/robotarm_magnetic_lab
 
 ## 5. 胃部三视图验收
 
+TASK-008胶囊从翻转胃部靠近世界Y最大端的纵向四分之一处复位，中心为
+`(1.078678615084, 0.177197008592, 0.004293035807) m`，保持既有侧躺姿态。该点由实际下壁
+网格采样，并按13×25 mm胶囊支撑距离保留0.2 mm初始净空；TASK-003基线复位点不变。
+
 ```bash
 ./run_isaaclab.sh -p scripts/dynamic_force_macro/teleop_stomach.py \
   --task Template-Robotarm-Magnetic-Dynamic-Force-Macro-Stomach-Lab-v0 \
