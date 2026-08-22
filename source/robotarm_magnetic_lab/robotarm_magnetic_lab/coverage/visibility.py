@@ -16,8 +16,16 @@ HIT_DISTANCE_TOLERANCE_M = 1.0e-4
 NORMAL_DOT_TOLERANCE = 1.0e-10
 
 
-def triangle_normals(reference: ReferenceMesh) -> np.ndarray:
-    """Return unit world-space normals after USD orientation correction."""
+def triangle_normals(reference: ReferenceMesh, normal_sign: int = 1) -> np.ndarray:
+    """Return signed unit world-space normals after USD winding correction.
+
+    USD ``orientation`` defines winding handedness, but it does not declare
+    which side of a thin anatomical shell is the lumen.  ``normal_sign`` is
+    therefore an explicit, asset-calibrated lumen-side convention.
+    """
+    sign = int(normal_sign)
+    if sign not in (-1, 1):
+        raise ValueError("normal_sign must be -1 or +1")
     vertices = np.asarray(reference.vertices_world, dtype=np.float64)
     triangles = np.asarray(reference.triangles, dtype=np.int64)
     edges_a = vertices[triangles[:, 1]] - vertices[triangles[:, 0]]
@@ -26,7 +34,7 @@ def triangle_normals(reference: ReferenceMesh) -> np.ndarray:
     norms = np.linalg.norm(normals, axis=1)
     if np.any(~np.isfinite(norms)) or np.any(norms <= np.finfo(np.float64).eps):
         raise ValueError("reference mesh contains a non-finite or degenerate face normal")
-    return normals / norms[:, None]
+    return sign * normals / norms[:, None]
 
 
 def camera_facing_first_hits(
@@ -35,6 +43,7 @@ def camera_facing_first_hits(
     hit_face_ids: np.ndarray,
     reference: ReferenceMesh,
     tolerance: float = NORMAL_DOT_TOLERANCE,
+    normal_sign: int = 1,
 ) -> np.ndarray:
     """Accept hits whose oriented face normal points strictly toward the camera."""
     origin = np.asarray(origin_world, dtype=np.float64).reshape(3)
@@ -55,7 +64,7 @@ def camera_facing_first_hits(
     if not np.any(valid):
         return result
     rays = directions[valid] / norms[valid, None]
-    normals = triangle_normals(reference)[face_ids[valid]]
+    normals = triangle_normals(reference, normal_sign=normal_sign)[face_ids[valid]]
     result[valid] = np.einsum("ij,ij->i", normals, rays) < -abs(float(tolerance))
     return result
 

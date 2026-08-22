@@ -1,11 +1,12 @@
 from pathlib import Path
 
 
-def test_stomach_launcher_contains_required_three_views_and_normal_gate():
+def test_stomach_launcher_contains_required_three_views_and_lumen_normal_gate():
     source = (Path(__file__).resolve().parents[2] / "scripts/dynamic_force_macro/teleop_stomach.py").read_text()
     assert "configure_capsule_camera_view" in source
     assert "enable_view=not HEADLESS" in source
     assert "require_camera_facing_normal=True" in source
+    assert "camera_facing_normal_sign=-1" in source
     assert "StatusPanel" not in source
     assert "omni.ui.Window" not in source
     assert "TASK008_STOMACH_FORCE_CONFIG" not in source

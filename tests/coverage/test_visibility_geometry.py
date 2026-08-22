@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
+import pytest
 
 from robotarm_magnetic_lab.coverage.reference_mesh import MeshInput, preprocess_reference_mesh
 from robotarm_magnetic_lab.coverage.visibility import (
@@ -95,6 +96,19 @@ def test_camera_facing_normal_gate_and_winding_correction():
     assert triangle_normals(back)[0, 2] > 0.0
     assert camera_facing_first_hits(origin, target, np.asarray([0]), back).tolist() == [False]
     assert camera_facing_first_hits(origin, target, np.asarray([0]), front).tolist() == [True]
+    assert camera_facing_first_hits(
+        origin, target, np.asarray([0]), back, normal_sign=-1
+    ).tolist() == [True]
+
+
+def test_normal_sign_must_be_binary():
+    vertices = np.asarray([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+    mesh = MeshInput(
+        "/Face", vertices, np.asarray([3]), np.asarray([0, 1, 2]), np.eye(4)
+    )
+    reference = preprocess_reference_mesh([mesh], ["/Face"])
+    with pytest.raises(ValueError, match="normal_sign"):
+        triangle_normals(reference, normal_sign=0)
 
 
 def test_camera_facing_rejects_grazing_with_tolerance():

@@ -158,6 +158,9 @@ def main() -> int:
                 branch="feature/TASK-008-six-action-dynamic-force-controller",
                 enable_view=not HEADLESS,
                 require_camera_facing_normal=True,
+                # This thin stomach mesh is authored with tissue-outward
+                # winding.  The validated lumen-facing convention is -1.
+                camera_facing_normal_sign=-1,
                 raycast_device="cuda:0",
             )
             # Materialize and refresh the independent red/green coverage

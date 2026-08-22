@@ -92,6 +92,7 @@ class P0CoverageRuntime:
         branch: str,
         enable_view: bool = False,
         require_camera_facing_normal: bool = False,
+        camera_facing_normal_sign: int = 1,
         raycast_device: str | None = None,
         surface_prim_path: str = DEFAULT_INNER_SURFACE_PATH,
     ) -> None:
@@ -100,6 +101,9 @@ class P0CoverageRuntime:
         self.capsule = self.env.scene["capsule"]
         self.reference = reference_from_stage(surface_prim_path)
         self.require_camera_facing_normal = bool(require_camera_facing_normal)
+        self.camera_facing_normal_sign = int(camera_facing_normal_sign)
+        if self.camera_facing_normal_sign not in (-1, 1):
+            raise ValueError("camera_facing_normal_sign must be -1 or +1")
         self.raycast_device = str(raycast_device or self.env.device)
         self.raycaster = WarpFirstHitRaycaster(self.reference, device=self.raycast_device)
         self.accumulator = CoverageAccumulator(len(self.reference.vertices_world))
@@ -136,6 +140,7 @@ class P0CoverageRuntime:
                 "ray_backend": "isaaclab.utils.warp.ops.raycast_mesh CUDA first hit",
                 "raycast_device": self.raycast_device,
                 "require_camera_facing_normal": self.require_camera_facing_normal,
+                "camera_facing_normal_sign": self.camera_facing_normal_sign,
                 "synchronization": (
                     "Each timing ends after CUDA hit distances and face IDs are copied to CPU; "
                     "the copy synchronizes the query before the elapsed time is recorded."
@@ -194,20 +199,25 @@ class P0CoverageRuntime:
         hit_distances, hit_faces = self.raycaster.query(
             center, self.reference.vertices_world[candidates]
         )
-        visible = visible_from_first_hits(
+        first_hit_visible = visible_from_first_hits(
             candidates,
             target_distances,
             hit_distances,
             hit_faces,
             self.reference.incident_triangles,
         )
+        visible = first_hit_visible.copy()
+        normal_facing_count = None
         if self.require_camera_facing_normal:
-            visible &= camera_facing_first_hits(
+            normal_facing = camera_facing_first_hits(
                 center,
                 self.reference.vertices_world[candidates],
                 hit_faces,
                 self.reference,
+                normal_sign=self.camera_facing_normal_sign,
             )
+            visible &= normal_facing
+            normal_facing_count = int(np.count_nonzero(normal_facing))
         update = self.accumulator.update(frame_id, candidates[visible])
         elapsed = time.perf_counter() - started
         capsule_position = self.capsule_position()
@@ -223,6 +233,8 @@ class P0CoverageRuntime:
             "capsule_position_world_m": capsule_position.tolist(),
             "candidate_count": int(len(candidates)),
             "ray_count": int(len(candidates)),
+            "first_hit_visible_count": int(np.count_nonzero(first_hit_visible)),
+            "normal_facing_count": normal_facing_count,
             "visible_count": int(update.visible_count),
             "newly_covered_count": int(update.newly_covered_count),
             "cumulative_count": int(update.cumulative_count),
