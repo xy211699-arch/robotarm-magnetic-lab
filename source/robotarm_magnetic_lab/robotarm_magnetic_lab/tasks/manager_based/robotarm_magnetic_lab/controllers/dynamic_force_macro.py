@@ -141,6 +141,26 @@ def equivalent_com_wrench(point_forces: tuple[PointForce, ...], com_world) -> tu
     return force, torque
 
 
+def resolved_force_levels_n(mass_kg: float, config: DynamicForceMacroConfig) -> dict[str, float]:
+    """Resolve the three CLI force ratios to auditable Newton values."""
+    mass = float(mass_kg)
+    if not math.isfinite(mass) or mass <= 0.0:
+        raise ValueError("mass_kg must be finite and positive")
+    weight = mass * GRAVITY_M_S2
+    move_total = config.move_force_ratio * weight
+    return {
+        "mass_kg": mass,
+        "weight_n": weight,
+        "move_force_ratio": config.move_force_ratio,
+        "move_total_force_n": move_total,
+        "move_force_per_endpoint_n": 0.5 * move_total,
+        "view_force_ratio": config.view_force_ratio,
+        "view_camera_endpoint_force_n": config.view_force_ratio * weight,
+        "up_force_ratio": config.up_force_ratio,
+        "up_camera_endpoint_force_n": config.up_force_ratio * weight,
+    }
+
+
 def move_projected_displacement_m(position_onset, position_end, direction_onset) -> float:
     return float(np.dot(np.asarray(position_end) - np.asarray(position_onset), _unit(direction_onset, name="onset direction")))
 

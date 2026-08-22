@@ -1,5 +1,11 @@
 from pathlib import Path
 
+import pytest
+
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.dynamic_force_macro import (
+    DynamicForceMacroConfig,
+    resolved_force_levels_n,
+)
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.mdp.dynamic_force_macro_action import DynamicForceMacroActionTermCfg
 
 
@@ -14,3 +20,15 @@ def test_action_term_contract_and_no_state_writers():
     assert "positions=None" in text
     assert "CreateEnableCCDAttr" in text
     assert "ccd_attr.Set(True)" in text
+
+
+def test_resolved_force_levels_report_total_and_endpoint_newtons():
+    levels = resolved_force_levels_n(
+        0.005735,
+        DynamicForceMacroConfig(move_force_ratio=0.2, view_force_ratio=0.5, up_force_ratio=1.05),
+    )
+    assert levels["weight_n"] == pytest.approx(0.005735 * 9.81)
+    assert levels["move_total_force_n"] == pytest.approx(0.2 * levels["weight_n"])
+    assert levels["move_force_per_endpoint_n"] == pytest.approx(0.5 * levels["move_total_force_n"])
+    assert levels["view_camera_endpoint_force_n"] == pytest.approx(0.5 * levels["weight_n"])
+    assert levels["up_camera_endpoint_force_n"] == pytest.approx(1.05 * levels["weight_n"])

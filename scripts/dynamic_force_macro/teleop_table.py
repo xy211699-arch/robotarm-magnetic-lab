@@ -7,6 +7,7 @@ import argparse
 from collections import deque
 from datetime import datetime, timezone
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -23,11 +24,30 @@ from isaaclab.app import AppLauncher
 
 
 TASK_ID = "Template-Robotarm-Magnetic-Dynamic-Force-Macro-Table-Lab-v0"
+
+
+def force_ratio(value: str) -> float:
+    """Parse one positive, finite force-to-weight ratio within the TASK-008 limit."""
+    parsed = float(value)
+    if not math.isfinite(parsed) or not 0.0 < parsed <= 3.0:
+        raise argparse.ArgumentTypeError("力度倍率必须是 (0, 3.0] 内的有限数")
+    return parsed
+
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--task", default=TASK_ID)
-parser.add_argument("--move_force_ratio", type=float, default=0.9)
-parser.add_argument("--view_force_ratio", type=float, default=3.0)
-parser.add_argument("--up_force_ratio", type=float, default=2.197265625)
+parser.add_argument(
+    "--move_force_ratio", type=force_ratio, default=0.9,
+    help="MOVE两端点合力相对于胶囊自重mg的倍率；两端各承担一半。",
+)
+parser.add_argument(
+    "--view_force_ratio", type=force_ratio, default=3.0,
+    help="VIEW施加在相机侧端点的力相对于胶囊自重mg的倍率。",
+)
+parser.add_argument(
+    "--up_force_ratio", type=force_ratio, default=2.197265625,
+    help="UP施加在相机侧端点的力相对于胶囊自重mg的倍率。",
+)
 parser.add_argument("--output_directory", type=Path, default=Path("/tmp/task008-table-visual-inspection"))
 parser.add_argument("--scripted_actions", default="", help="逗号分隔的动作名或 0..5。")
 parser.add_argument("--max_actions", type=int, default=0)
@@ -54,6 +74,9 @@ from isaaclab_tasks.utils import parse_env_cfg
 from robotarm_magnetic_lab.runtime import SynchronousMacroRunner
 from robotarm_magnetic_lab.teleop import CommandKind, DynamicForceMacroKeyboard
 from robotarm_magnetic_lab.ui import attach_capsule_camera_policy_view, configure_capsule_camera_view
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.dynamic_force_macro import (
+    resolved_force_levels_n,
+)
 
 
 ACTION_NAMES = {0: "HOLD", 1: "MOVE_POS", 2: "MOVE_NEG", 3: "VIEW_POS", 4: "VIEW_NEG", 5: "UP"}
@@ -97,14 +120,21 @@ class KitKeyboardSource:
 
 
 class StatusPanel:
-    def __init__(self) -> None:
+    def __init__(self, forces: dict[str, float]) -> None:
         self.window = omni.ui.Window("TASK-008 桌面动作诊断", width=520, height=170)
         with self.window.frame:
             with omni.ui.VStack(spacing=5):
                 self.action = omni.ui.Label("动作：IDLE")
                 self.phase = omni.ui.Label("阶段：等待按键")
                 self.ratios = omni.ui.Label(
-                    f"比例：MOVE={args_cli.move_force_ratio:g}  VIEW={args_cli.view_force_ratio:g}  UP={args_cli.up_force_ratio:g}"
+                    f"倍率：MOVE={forces['move_force_ratio']:g}  VIEW={forces['view_force_ratio']:g}  "
+                    f"UP={forces['up_force_ratio']:g}"
+                )
+                self.newtons = omni.ui.Label(
+                    f"合力：MOVE={forces['move_total_force_n']:.6f} N "
+                    f"(每端{forces['move_force_per_endpoint_n']:.6f} N)  "
+                    f"VIEW={forces['view_camera_endpoint_force_n']:.6f} N  "
+                    f"UP={forces['up_camera_endpoint_force_n']:.6f} N"
                 )
                 self.result = omni.ui.Label("结果：尚未执行")
 
@@ -163,10 +193,15 @@ def main() -> int:
             env.reset()
             runner = SynchronousMacroRunner(env)
             term = env.unwrapped.action_manager.get_term("dynamic_force_macro")
+            forces = resolved_force_levels_n(term.mass_kg, term.config)
+            (output / "force_configuration.json").write_text(
+                json.dumps(forces, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            )
             if not HEADLESS:
                 keyboard = KitKeyboardSource()
                 camera_view = attach_capsule_camera_policy_view(env)
-                panel = StatusPanel()
+                panel = StatusPanel(forces)
+            print(f"TASK008_TABLE_FORCE_CONFIG {json.dumps(forces, sort_keys=True)}", flush=True)
             print(
                 "TASK008_TABLE_READY Space=HOLD D/A=MOVE+/- E/Q=VIEW+/- W=UP "
                 "Backspace=重置 Esc=退出",
@@ -213,6 +248,7 @@ def main() -> int:
                     "duration_s": transition.simulated_duration_s,
                     "trace_sha256": transition.trace_digest,
                     "boundary_rgb": str(rgb_path),
+                    "force_configuration": forces,
                 }
                 records.append(row)
                 with (output / "macro_actions.jsonl").open("a", encoding="utf-8") as stream:
@@ -227,11 +263,7 @@ def main() -> int:
             summary = {
                 "reason": reason,
                 "actions": len(records),
-                "ratios": {
-                    "move": args_cli.move_force_ratio,
-                    "view": args_cli.view_force_ratio,
-                    "up": args_cli.up_force_ratio,
-                },
+                "force_configuration": forces,
                 "output": str(output),
             }
             (output / "task008_table_summary.json").write_text(
