@@ -704,3 +704,10 @@
 - 全仓库回归163/163、旧动作层纯验证18/18通过；NVIDIA内核模块595.71.05与用户库
   595.84不一致，RTX/CUDA Warp无法初始化，故live前置检查、平面标定、冻结profile与
   胃部三视图未验收，按合同返回`partial`，未伪造候选或留出结果。详见TASK-008报告。
+
+## 2026-08-22 — TASK-008 NVIDIA启动阻塞复核
+
+- 再次执行`nvidia-smi`仍返回`Driver/library version mismatch`：当前内核模块为
+  `595.71.05`，用户态NVML为`595.84`。
+- Isaac Lab并非所有功能都无法启动：CPU PhysX可进入场景初始化，但RTX相机、CUDA Warp
+  与Kit可视化设备无法建立，导致TASK-008 live前置检查、标定和三视图启动卡住或退出。
