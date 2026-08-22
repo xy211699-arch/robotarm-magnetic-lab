@@ -14,10 +14,14 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers
 
 
 def test_action_ids_are_frozen():
-    assert [int(value) for value in DynamicForceMacroActionId] == list(range(6))
+    assert [int(value) for value in DynamicForceMacroActionId] == list(range(14))
+    assert {
+        name: int(getattr(DynamicForceMacroActionId, name))
+        for name in ("HOLD", "MOVE_POS", "MOVE_NEG", "VIEW_POS", "VIEW_NEG", "UP")
+    } == {"HOLD": 0, "MOVE_POS": 1, "MOVE_NEG": 2, "VIEW_POS": 3, "VIEW_NEG": 4, "UP": 5}
 
 
-def test_move_total_force_is_nine_tenths_weight_split_equally():
+def test_move_low_total_force_is_four_tenths_weight_split_equally():
     points = point_forces_for_action(
         DynamicForceMacroActionId.MOVE_POS,
         mass_kg=0.005735,
@@ -27,11 +31,44 @@ def test_move_total_force_is_nine_tenths_weight_split_equally():
         config=DynamicForceMacroConfig(),
     )
     assert len(points) == 2
-    np.testing.assert_allclose(np.linalg.norm(points[0].force_world), 0.45 * 0.005735 * 9.81)
-    np.testing.assert_allclose(np.linalg.norm(points[1].force_world), 0.45 * 0.005735 * 9.81)
+    np.testing.assert_allclose(np.linalg.norm(points[0].force_world), 0.20 * 0.005735 * 9.81)
+    np.testing.assert_allclose(np.linalg.norm(points[1].force_world), 0.20 * 0.005735 * 9.81)
     force, torque = equivalent_com_wrench(points, np.zeros(3))
     np.testing.assert_allclose(force, sum((p.force_world for p in points), np.zeros(3)))
     np.testing.assert_allclose(torque, sum((np.cross(p.position_world, p.force_world) for p in points), np.zeros(3)))
+
+
+@pytest.mark.parametrize(
+    "action,ratio,point_count,sign",
+    [
+        (DynamicForceMacroActionId.MOVE_POS, 0.40, 2, 1.0),
+        (DynamicForceMacroActionId.MOVE_NEG, 0.40, 2, -1.0),
+        (DynamicForceMacroActionId.MOVE_POS_MEDIUM, 0.50, 2, 1.0),
+        (DynamicForceMacroActionId.MOVE_NEG_MEDIUM, 0.50, 2, -1.0),
+        (DynamicForceMacroActionId.MOVE_POS_HIGH, 0.60, 2, 1.0),
+        (DynamicForceMacroActionId.MOVE_NEG_HIGH, 0.60, 2, -1.0),
+        (DynamicForceMacroActionId.VIEW_POS, 0.25, 1, 1.0),
+        (DynamicForceMacroActionId.VIEW_NEG, 0.25, 1, -1.0),
+        (DynamicForceMacroActionId.VIEW_POS_MEDIUM, 0.35, 1, 1.0),
+        (DynamicForceMacroActionId.VIEW_NEG_MEDIUM, 0.35, 1, -1.0),
+        (DynamicForceMacroActionId.VIEW_POS_HIGH, 0.45, 1, 1.0),
+        (DynamicForceMacroActionId.VIEW_NEG_HIGH, 0.45, 1, -1.0),
+    ],
+)
+def test_move_and_view_action_ids_encode_three_force_levels(action, ratio, point_count, sign):
+    mass = 0.005735
+    points = point_forces_for_action(
+        action,
+        mass_kg=mass,
+        lateral_direction_world=np.array([0.0, 1.0, 0.0]),
+        camera_center_world=np.array([0.0, 0.0, -0.006]),
+        other_center_world=np.array([0.0, 0.0, 0.006]),
+        config=DynamicForceMacroConfig(),
+    )
+    assert len(points) == point_count
+    expected_per_point = ratio * mass * 9.81 / point_count
+    for point in points:
+        np.testing.assert_allclose(point.force_world, [0.0, sign * expected_per_point, 0.0])
 
 
 def test_move_and_view_phase_boundaries_are_exact():

@@ -37,19 +37,35 @@ def force_ratio(value: str) -> float:
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--task", default=TASK_ID)
 parser.add_argument(
-    "--move_force_ratio", type=force_ratio, default=0.9,
-    help="MOVE两端点合力相对于胶囊自重mg的倍率；两端各承担一半。",
+    "--move_force_ratio", type=force_ratio, default=0.40,
+    help="MOVE低档两端点合力相对于胶囊自重mg的倍率；两端各承担一半。",
 )
 parser.add_argument(
-    "--view_force_ratio", type=force_ratio, default=3.0,
-    help="VIEW施加在相机侧端点的力相对于胶囊自重mg的倍率。",
+    "--move_force_ratio_medium", type=force_ratio, default=0.50,
+    help="MOVE中档合力相对于胶囊自重mg的倍率。",
 )
 parser.add_argument(
-    "--up_force_ratio", type=force_ratio, default=2.197265625,
+    "--move_force_ratio_high", type=force_ratio, default=0.60,
+    help="MOVE高档合力相对于胶囊自重mg的倍率。",
+)
+parser.add_argument(
+    "--view_force_ratio", type=force_ratio, default=0.25,
+    help="VIEW低档施加在相机侧端点的力相对于胶囊自重mg的倍率。",
+)
+parser.add_argument(
+    "--view_force_ratio_medium", type=force_ratio, default=0.35,
+    help="VIEW中档施加在相机侧端点的力相对于胶囊自重mg的倍率。",
+)
+parser.add_argument(
+    "--view_force_ratio_high", type=force_ratio, default=0.45,
+    help="VIEW高档施加在相机侧端点的力相对于胶囊自重mg的倍率。",
+)
+parser.add_argument(
+    "--up_force_ratio", type=force_ratio, default=0.85,
     help="UP施加在实际相机端半球球心的世界向上力相对于胶囊自重mg的倍率。",
 )
 parser.add_argument("--output_directory", type=Path, default=Path("/tmp/task008-table-visual-inspection"))
-parser.add_argument("--scripted_actions", default="", help="逗号分隔的动作名或 0..5。")
+parser.add_argument("--scripted_actions", default="", help="逗号分隔的动作名或 0..13。")
 parser.add_argument("--max_actions", type=int, default=0)
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(visualizer=[] if HEADLESS else ["kit"])
@@ -75,11 +91,12 @@ from robotarm_magnetic_lab.runtime import SynchronousMacroRunner
 from robotarm_magnetic_lab.teleop import CommandKind, DynamicForceMacroKeyboard
 from robotarm_magnetic_lab.ui import attach_capsule_camera_policy_view, configure_capsule_camera_view
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.dynamic_force_macro import (
+    DynamicForceMacroActionId,
     resolved_force_levels_n,
 )
 
 
-ACTION_NAMES = {0: "HOLD", 1: "MOVE_POS", 2: "MOVE_NEG", 3: "VIEW_POS", 4: "VIEW_NEG", 5: "UP"}
+ACTION_NAMES = {int(action): action.name for action in DynamicForceMacroActionId}
 NAME_TO_ACTION = {name: action for action, name in ACTION_NAMES.items()}
 
 
@@ -127,7 +144,9 @@ class StatusPanel:
                 self.action = omni.ui.Label("动作：IDLE")
                 self.phase = omni.ui.Label("阶段：等待按键")
                 self.ratios = omni.ui.Label(
-                    f"倍率：MOVE={forces['move_force_ratio']:g}  VIEW={forces['view_force_ratio']:g}  "
+                    f"倍率：MOVE={forces['move_force_ratio']:g}/{forces['move_force_ratio_medium']:g}/"
+                    f"{forces['move_force_ratio_high']:g}  VIEW={forces['view_force_ratio']:g}/"
+                    f"{forces['view_force_ratio_medium']:g}/{forces['view_force_ratio_high']:g}  "
                     f"UP={forces['up_force_ratio']:g}"
                 )
                 self.newtons = omni.ui.Label(
@@ -179,7 +198,11 @@ def main() -> int:
     cfg = parse_env_cfg(args_cli.task, device="cpu", num_envs=1, use_fabric=True)
     cfg.sim.device = "cpu"
     cfg.actions.dynamic_force_macro.move_force_ratio = args_cli.move_force_ratio
+    cfg.actions.dynamic_force_macro.move_force_ratio_medium = args_cli.move_force_ratio_medium
+    cfg.actions.dynamic_force_macro.move_force_ratio_high = args_cli.move_force_ratio_high
     cfg.actions.dynamic_force_macro.view_force_ratio = args_cli.view_force_ratio
+    cfg.actions.dynamic_force_macro.view_force_ratio_medium = args_cli.view_force_ratio_medium
+    cfg.actions.dynamic_force_macro.view_force_ratio_high = args_cli.view_force_ratio_high
     cfg.actions.dynamic_force_macro.up_force_ratio = args_cli.up_force_ratio
     if not HEADLESS:
         configure_capsule_camera_view(cfg)
@@ -203,7 +226,10 @@ def main() -> int:
                 panel = StatusPanel(forces)
             print(f"TASK008_TABLE_FORCE_CONFIG {json.dumps(forces, sort_keys=True)}", flush=True)
             print(
-                "TASK008_TABLE_READY Space=HOLD D/A=MOVE+/- E/Q=VIEW+/- W=UP "
+                f"TASK008_TABLE_READY Space=HOLD MOVE[{args_cli.move_force_ratio:g}:D/A "
+                f"{args_cli.move_force_ratio_medium:g}:L/J {args_cli.move_force_ratio_high:g}:O/U] "
+                f"VIEW[{args_cli.view_force_ratio:g}:E/Q {args_cli.view_force_ratio_medium:g}:K/H "
+                f"{args_cli.view_force_ratio_high:g}:I/Y] W=UP "
                 "Backspace=重置 Esc=退出",
                 flush=True,
             )

@@ -1,4 +1,4 @@
-"""Pure contracts for TASK-008 six-action force macros."""
+"""Pure contracts for TASK-008 fourteen-level force macros."""
 
 from __future__ import annotations
 
@@ -18,12 +18,53 @@ class NumericalContractError(ValueError):
 
 
 class DynamicForceMacroActionId(IntEnum):
+    # IDs 0..5 are retained exactly for dataset and log compatibility.
     HOLD = 0
     MOVE_POS = 1
     MOVE_NEG = 2
     VIEW_POS = 3
     VIEW_NEG = 4
     UP = 5
+    MOVE_POS_MEDIUM = 6
+    MOVE_NEG_MEDIUM = 7
+    MOVE_POS_HIGH = 8
+    MOVE_NEG_HIGH = 9
+    VIEW_POS_MEDIUM = 10
+    VIEW_NEG_MEDIUM = 11
+    VIEW_POS_HIGH = 12
+    VIEW_NEG_HIGH = 13
+
+
+MOVE_ACTION_IDS = frozenset(
+    {
+        DynamicForceMacroActionId.MOVE_POS,
+        DynamicForceMacroActionId.MOVE_NEG,
+        DynamicForceMacroActionId.MOVE_POS_MEDIUM,
+        DynamicForceMacroActionId.MOVE_NEG_MEDIUM,
+        DynamicForceMacroActionId.MOVE_POS_HIGH,
+        DynamicForceMacroActionId.MOVE_NEG_HIGH,
+    }
+)
+VIEW_ACTION_IDS = frozenset(
+    {
+        DynamicForceMacroActionId.VIEW_POS,
+        DynamicForceMacroActionId.VIEW_NEG,
+        DynamicForceMacroActionId.VIEW_POS_MEDIUM,
+        DynamicForceMacroActionId.VIEW_NEG_MEDIUM,
+        DynamicForceMacroActionId.VIEW_POS_HIGH,
+        DynamicForceMacroActionId.VIEW_NEG_HIGH,
+    }
+)
+NEGATIVE_ACTION_IDS = frozenset(
+    {
+        DynamicForceMacroActionId.MOVE_NEG,
+        DynamicForceMacroActionId.MOVE_NEG_MEDIUM,
+        DynamicForceMacroActionId.MOVE_NEG_HIGH,
+        DynamicForceMacroActionId.VIEW_NEG,
+        DynamicForceMacroActionId.VIEW_NEG_MEDIUM,
+        DynamicForceMacroActionId.VIEW_NEG_HIGH,
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -32,9 +73,13 @@ class DynamicForceMacroConfig:
     environment_hz: int = 60
     camera_hz: int = 30
     actor_hz: int = 1
-    move_force_ratio: float = 0.9
-    view_force_ratio: float = 0.9
-    up_force_ratio: float = 0.9
+    move_force_ratio: float = 0.40
+    move_force_ratio_medium: float = 0.50
+    move_force_ratio_high: float = 0.60
+    view_force_ratio: float = 0.25
+    view_force_ratio_medium: float = 0.35
+    view_force_ratio_high: float = 0.45
+    up_force_ratio: float = 0.85
     max_force_ratio: float = 3.0
     camera_side_local_axis_sign: int = -1
     wait_substeps: int = 48
@@ -48,12 +93,40 @@ class DynamicForceMacroConfig:
             raise ValueError("TASK-008 clocks are frozen at 240/60/30/1 Hz")
         if self.camera_side_local_axis_sign != -1:
             raise ValueError("TASK-008 camera side is capsule local -Z")
-        for name in ("move_force_ratio", "view_force_ratio", "up_force_ratio"):
+        for name in (
+            "move_force_ratio",
+            "move_force_ratio_medium",
+            "move_force_ratio_high",
+            "view_force_ratio",
+            "view_force_ratio_medium",
+            "view_force_ratio_high",
+            "up_force_ratio",
+        ):
             value = float(getattr(self, name))
             if not math.isfinite(value) or not 0.0 < value <= self.max_force_ratio:
                 raise ValueError(f"{name} must be finite and in (0, {self.max_force_ratio}]")
         if (self.wait_substeps, self.force_substeps, self.action_substeps) != (48, 144, 240):
             raise ValueError("TASK-008 timing is frozen at 48/144/48 physics substeps")
+
+
+def action_force_ratio(action: DynamicForceMacroActionId | int, config: DynamicForceMacroConfig) -> float:
+    """Return the force-to-weight ratio encoded by one action ID."""
+    action = DynamicForceMacroActionId(int(action))
+    if action in (DynamicForceMacroActionId.MOVE_POS, DynamicForceMacroActionId.MOVE_NEG):
+        return config.move_force_ratio
+    if action in (DynamicForceMacroActionId.MOVE_POS_MEDIUM, DynamicForceMacroActionId.MOVE_NEG_MEDIUM):
+        return config.move_force_ratio_medium
+    if action in (DynamicForceMacroActionId.MOVE_POS_HIGH, DynamicForceMacroActionId.MOVE_NEG_HIGH):
+        return config.move_force_ratio_high
+    if action in (DynamicForceMacroActionId.VIEW_POS, DynamicForceMacroActionId.VIEW_NEG):
+        return config.view_force_ratio
+    if action in (DynamicForceMacroActionId.VIEW_POS_MEDIUM, DynamicForceMacroActionId.VIEW_NEG_MEDIUM):
+        return config.view_force_ratio_medium
+    if action in (DynamicForceMacroActionId.VIEW_POS_HIGH, DynamicForceMacroActionId.VIEW_NEG_HIGH):
+        return config.view_force_ratio_high
+    if action == DynamicForceMacroActionId.UP:
+        return config.up_force_ratio
+    return 0.0
 
 
 @dataclass(frozen=True)
@@ -138,23 +211,25 @@ def point_forces_for_action(
     other = np.asarray(other_center_world, dtype=np.float64).reshape(3)
     if action == DynamicForceMacroActionId.HOLD:
         return ()
-    if action in (DynamicForceMacroActionId.MOVE_POS, DynamicForceMacroActionId.MOVE_NEG):
+    if action in MOVE_ACTION_IDS:
         direction = _unit(lateral_direction_world, name="lateral direction")
-        if action == DynamicForceMacroActionId.MOVE_NEG:
+        if action in NEGATIVE_ACTION_IDS:
             direction = -direction
-        force = 0.5 * config.move_force_ratio * mass * GRAVITY_M_S2 * direction
+        force = 0.5 * action_force_ratio(action, config) * mass * GRAVITY_M_S2 * direction
         return (PointForce("camera", camera, force), PointForce("other", other, force.copy()))
-    if action in (DynamicForceMacroActionId.VIEW_POS, DynamicForceMacroActionId.VIEW_NEG):
+    if action in VIEW_ACTION_IDS:
         direction = _unit(lateral_direction_world, name="lateral direction")
-        if action == DynamicForceMacroActionId.VIEW_NEG:
+        if action in NEGATIVE_ACTION_IDS:
             direction = -direction
-        force = config.view_force_ratio * mass * GRAVITY_M_S2 * direction
+        force = action_force_ratio(action, config) * mass * GRAVITY_M_S2 * direction
         return (PointForce("camera", camera, force),)
     # UP is the original single world-up force at the physical camera-side
     # hemisphere center.  Camera-side selection is performed from the live
     # camera mounting config by ``camera_sphere_centers_local``.
-    force = config.up_force_ratio * mass * GRAVITY_M_S2 * WORLD_UP
-    return (PointForce("camera", camera, force),)
+    if action == DynamicForceMacroActionId.UP:
+        force = config.up_force_ratio * mass * GRAVITY_M_S2 * WORLD_UP
+        return (PointForce("camera", camera, force),)
+    raise AssertionError(f"unhandled force macro action: {action}")
 
 
 def equivalent_com_wrench(point_forces: tuple[PointForce, ...], com_world) -> tuple[np.ndarray, np.ndarray]:
@@ -168,7 +243,7 @@ def equivalent_com_wrench(point_forces: tuple[PointForce, ...], com_world) -> tu
 
 
 def resolved_force_levels_n(mass_kg: float, config: DynamicForceMacroConfig) -> dict[str, float]:
-    """Resolve the three CLI force ratios to auditable Newton values."""
+    """Resolve all MOVE/VIEW tiers and UP to auditable Newton values."""
     mass = float(mass_kg)
     if not math.isfinite(mass) or mass <= 0.0:
         raise ValueError("mass_kg must be finite and positive")
@@ -180,8 +255,16 @@ def resolved_force_levels_n(mass_kg: float, config: DynamicForceMacroConfig) -> 
         "move_force_ratio": config.move_force_ratio,
         "move_total_force_n": move_total,
         "move_force_per_endpoint_n": 0.5 * move_total,
+        "move_force_ratio_medium": config.move_force_ratio_medium,
+        "move_medium_total_force_n": config.move_force_ratio_medium * weight,
+        "move_force_ratio_high": config.move_force_ratio_high,
+        "move_high_total_force_n": config.move_force_ratio_high * weight,
         "view_force_ratio": config.view_force_ratio,
         "view_camera_endpoint_force_n": config.view_force_ratio * weight,
+        "view_force_ratio_medium": config.view_force_ratio_medium,
+        "view_medium_camera_endpoint_force_n": config.view_force_ratio_medium * weight,
+        "view_force_ratio_high": config.view_force_ratio_high,
+        "view_high_camera_endpoint_force_n": config.view_force_ratio_high * weight,
         "up_force_ratio": config.up_force_ratio,
         "up_camera_endpoint_force_n": config.up_force_ratio * weight,
     }

@@ -1,4 +1,4 @@
-# TASK-008 六动作动态力控制器
+# TASK-008 十四档动态力控制器
 
 ## 1. 适用范围
 
@@ -19,6 +19,17 @@ RGB；胶囊真值、力、轨迹和覆盖率仅供标定与评估使用。
 | 3 | `VIEW_POS` | 只在相机端施加 `+d` 力，产生相机光轴正向偏转力矩 |
 | 4 | `VIEW_NEG` | 只在相机端施加 `-d` 力，产生反向偏转力矩 |
 | 5 | `UP` | 在实际相机端半球球心施加世界 `+Z` 单点力，使相机端自然抬升 |
+| 6 | `MOVE_POS_MEDIUM` | `+d`方向MOVE中档，合力为`0.50mg` |
+| 7 | `MOVE_NEG_MEDIUM` | `-d`方向MOVE中档，合力为`0.50mg` |
+| 8 | `MOVE_POS_HIGH` | `+d`方向MOVE高档，合力为`0.60mg` |
+| 9 | `MOVE_NEG_HIGH` | `-d`方向MOVE高档，合力为`0.60mg` |
+| 10 | `VIEW_POS_MEDIUM` | `+d`方向VIEW中档，相机端力为`0.35mg` |
+| 11 | `VIEW_NEG_MEDIUM` | `-d`方向VIEW中档，相机端力为`0.35mg` |
+| 12 | `VIEW_POS_HIGH` | `+d`方向VIEW高档，相机端力为`0.45mg` |
+| 13 | `VIEW_NEG_HIGH` | `-d`方向VIEW高档，相机端力为`0.45mg` |
+
+ID 1--4仍分别表示原有MOVE/VIEW低档：MOVE为`0.40mg`，VIEW为`0.25mg`。ID 0--5没有
+重新编号，旧日志与已有数据协议保持兼容。完整动作空间为`1 HOLD + 6 MOVE + 6 VIEW + 1 UP`。
 
 胶囊半径为 `0.0065 m`，圆柱段高度为 `0.012 m`，总长为 `0.025 m`。两个半球中心由
 圆柱段半高得到：局部 `z=-0.006 m` 和 `z=+0.006 m`。运行时读取实际
@@ -34,7 +45,7 @@ d = normalize(z_w × u_cam)
 
 若该叉积不可归一化，控制器直接报告数值契约错误，不猜测替代方向。
 
-对于质量 `m`、重力加速度 `g` 和比例 `r`：
+对于质量 `m`、重力加速度 `g` 和动作ID编码的比例 `r`：
 
 - MOVE：两端分别为 `0.5*r_move*m*g*d`；
 - VIEW：相机端为 `r_view*m*g*d`；
@@ -107,26 +118,31 @@ TASK-008胶囊从翻转胃部靠近世界Y最大端的纵向四分之一处复�
 ```bash
 ./run_isaaclab.sh -p scripts/dynamic_force_macro/teleop_stomach.py \
   --task Template-Robotarm-Magnetic-Dynamic-Force-Macro-Stomach-Lab-v0 \
-  --move_force_ratio 0.40 --view_force_ratio 0.25 --up_force_ratio 0.85 \
   --viz kit
 ```
 
-按键：`Space=HOLD`、`D/A=MOVE_POS/MOVE_NEG`、`E/Q=VIEW_POS/VIEW_NEG`、`W=UP`、
-`Backspace=胶囊与覆盖率一起复位`、`F12=快照`、`Esc=退出`。按键按下沿只触发一次动作，
-操作系统按键重复不会重启宏动作。动作结束后暂停物理，只刷新 Kit 界面，直到下一次按键。
+按键如下；每对按键均按“正向/负向”排列：
+
+- `Space`：HOLD；`W`：UP；
+- MOVE低/中/高档：`D/A`（0.40）、`L/J`（0.50）、`O/U`（0.60）；
+- VIEW低/中/高档：`E/Q`（0.25）、`K/H`（0.35）、`I/Y`（0.45）；
+- `Backspace`：胶囊与覆盖率一起复位；`F12`：快照；`Esc`：退出。
+
+按键按下沿只触发一次动作，操作系统按键重复不会重启宏动作。动作结束后暂停物理，只刷新
+Kit界面，直到下一次按键。六个力度也可用对应CLI参数覆盖，但默认值就是上述验收档位。
 
 界面显示默认外部视口、30 Hz 胶囊 RGB和独立累计覆盖窗口；不再创建中文动作/力度状态
 窗口。覆盖率使用 120°圆形 FOV、50 mm 距离、首次命中遮挡和相机朝向三角面法线
 门控。胃壁是薄壳且 authored winding 指向组织外侧，因此 TASK-008 使用已标定的胃腔法线
 符号 `-1`；旧覆盖率及其他任务默认符号仍为 `+1`。
 
-脚本化六动作冒烟：
+脚本化十四档冒烟：
 
 ```bash
 ./run_isaaclab.sh -p scripts/dynamic_force_macro/teleop_stomach.py \
   --task Template-Robotarm-Magnetic-Dynamic-Force-Macro-Stomach-Lab-v0 \
-  --move_force_ratio 0.40 --view_force_ratio 0.25 --up_force_ratio 0.85 \
-  --scripted_actions 0,1,2,3,4,5 --max_actions 6 --viz kit
+  --scripted_actions 0,1,2,3,4,5,6,7,8,9,10,11,12,13 \
+  --max_actions 14 --viz kit
 ```
 
 ## 6. 输出和限制

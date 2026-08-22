@@ -17,6 +17,7 @@ from isaaclab.utils.configclass import configclass
 from ..controllers.dynamic_force_macro import (
     DynamicForceMacroActionId,
     DynamicForceMacroConfig,
+    NEGATIVE_ACTION_IDS,
     camera_sphere_centers_local,
     equivalent_com_wrench,
     lateral_direction_world,
@@ -42,7 +43,7 @@ class MacroTelemetry:
 
 
 class DynamicForceMacroAction(ActionTerm):
-    """Apply one six-ID macro without runtime pose or velocity writes."""
+    """Apply one fourteen-ID macro without runtime pose or velocity writes."""
 
     cfg: "DynamicForceMacroActionTermCfg"
 
@@ -54,7 +55,11 @@ class DynamicForceMacroAction(ActionTerm):
         self.camera_sensor = env.scene[cfg.camera_sensor_name]
         self.config = DynamicForceMacroConfig(
             move_force_ratio=cfg.move_force_ratio,
+            move_force_ratio_medium=cfg.move_force_ratio_medium,
+            move_force_ratio_high=cfg.move_force_ratio_high,
             view_force_ratio=cfg.view_force_ratio,
+            view_force_ratio_medium=cfg.view_force_ratio_medium,
+            view_force_ratio_high=cfg.view_force_ratio_high,
             up_force_ratio=cfg.up_force_ratio,
             capsule_radius_m=cfg.capsule_radius_m,
             cylinder_height_m=cfg.cylinder_height_m,
@@ -97,8 +102,8 @@ class DynamicForceMacroAction(ActionTerm):
         self._raw_actions[:] = actions
         value = float(actions.reshape(-1)[0].item())
         rounded = round(value)
-        if not np.isfinite(value) or abs(value - rounded) > 1.0e-6 or not 0 <= rounded <= 5:
-            raise ValueError("TASK-008 action must be one integral scalar ID in [0, 5]")
+        if not np.isfinite(value) or abs(value - rounded) > 1.0e-6 or not 0 <= rounded <= 13:
+            raise ValueError("TASK-008 action must be one integral scalar ID in [0, 13]")
         self._processed_actions[:] = float(rounded)
         if self.lifecycle == "idle":
             self.current_action = DynamicForceMacroActionId(rounded)
@@ -132,7 +137,7 @@ class DynamicForceMacroAction(ActionTerm):
         com, camera, other, axis, lateral = self._geometry()
         commanded_lateral = (
             -lateral
-            if self.current_action in (DynamicForceMacroActionId.MOVE_NEG, DynamicForceMacroActionId.VIEW_NEG)
+            if self.current_action in NEGATIVE_ACTION_IDS
             else lateral
         )
         points = ()
@@ -236,16 +241,24 @@ class DynamicForceMacroActionTermCfg(ActionTermCfg):
     class_type: type[ActionTerm] = DynamicForceMacroAction
     asset_name: str = "capsule"
     camera_sensor_name: str = "capsule_camera"
-    move_force_ratio: float = 0.9
-    view_force_ratio: float = 0.9
-    up_force_ratio: float = 0.9
+    move_force_ratio: float = 0.40
+    move_force_ratio_medium: float = 0.50
+    move_force_ratio_high: float = 0.60
+    view_force_ratio: float = 0.25
+    view_force_ratio_medium: float = 0.35
+    view_force_ratio_high: float = 0.45
+    up_force_ratio: float = 0.85
     capsule_radius_m: float = 0.0065
     cylinder_height_m: float = 0.012
 
     def __post_init__(self) -> None:
         DynamicForceMacroConfig(
             move_force_ratio=self.move_force_ratio,
+            move_force_ratio_medium=self.move_force_ratio_medium,
+            move_force_ratio_high=self.move_force_ratio_high,
             view_force_ratio=self.view_force_ratio,
+            view_force_ratio_medium=self.view_force_ratio_medium,
+            view_force_ratio_high=self.view_force_ratio_high,
             up_force_ratio=self.up_force_ratio,
             capsule_radius_m=self.capsule_radius_m,
             cylinder_height_m=self.cylinder_height_m,

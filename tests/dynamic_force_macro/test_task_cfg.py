@@ -31,7 +31,11 @@ def test_stomach_uses_confirmed_migrated_force_ratios():
     cfg = RobotarmMagneticDynamicForceMacroStomachLabEnvCfg()
     term = cfg.actions.dynamic_force_macro
     assert term.move_force_ratio == pytest.approx(0.40)
+    assert term.move_force_ratio_medium == pytest.approx(0.50)
+    assert term.move_force_ratio_high == pytest.approx(0.60)
     assert term.view_force_ratio == pytest.approx(0.25)
+    assert term.view_force_ratio_medium == pytest.approx(0.35)
+    assert term.view_force_ratio_high == pytest.approx(0.45)
     assert term.up_force_ratio == pytest.approx(0.85)
 
 

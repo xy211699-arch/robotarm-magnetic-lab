@@ -16,7 +16,11 @@ from .robotarm_magnetic_dynamic_force_stomach_env_cfg import RobotarmMagneticDyn
 # flipped-stomach task.  These are force-to-weight ratios, not magnetic-field
 # gains: MOVE is the two-endpoint resultant; VIEW and UP act at the camera end.
 TASK008_STOMACH_MOVE_FORCE_RATIO = 0.40
+TASK008_STOMACH_MOVE_FORCE_RATIO_MEDIUM = 0.50
+TASK008_STOMACH_MOVE_FORCE_RATIO_HIGH = 0.60
 TASK008_STOMACH_VIEW_FORCE_RATIO = 0.25
+TASK008_STOMACH_VIEW_FORCE_RATIO_MEDIUM = 0.35
+TASK008_STOMACH_VIEW_FORCE_RATIO_HIGH = 0.45
 TASK008_STOMACH_UP_FORCE_RATIO = 0.85
 
 # TASK-008-only reset at the opposite (Y-max-side) longitudinal quarter.
@@ -44,7 +48,11 @@ class RobotarmMagneticDynamicForceMacroStomachLabEnvCfg(RobotarmMagneticDynamicF
     def __post_init__(self):
         super().__post_init__()
         self.actions.dynamic_force_macro.move_force_ratio = TASK008_STOMACH_MOVE_FORCE_RATIO
+        self.actions.dynamic_force_macro.move_force_ratio_medium = TASK008_STOMACH_MOVE_FORCE_RATIO_MEDIUM
+        self.actions.dynamic_force_macro.move_force_ratio_high = TASK008_STOMACH_MOVE_FORCE_RATIO_HIGH
         self.actions.dynamic_force_macro.view_force_ratio = TASK008_STOMACH_VIEW_FORCE_RATIO
+        self.actions.dynamic_force_macro.view_force_ratio_medium = TASK008_STOMACH_VIEW_FORCE_RATIO_MEDIUM
+        self.actions.dynamic_force_macro.view_force_ratio_high = TASK008_STOMACH_VIEW_FORCE_RATIO_HIGH
         self.actions.dynamic_force_macro.up_force_ratio = TASK008_STOMACH_UP_FORCE_RATIO
         self.scene.capsule.init_state.pos = TASK008_CAPSULE_RIGHT_QUARTER_POS
         self.decimation = 4

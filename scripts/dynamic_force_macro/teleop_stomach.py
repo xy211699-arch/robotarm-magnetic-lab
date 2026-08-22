@@ -38,18 +38,34 @@ def force_ratio(value: str) -> float:
 
 parser.add_argument(
     "--move_force_ratio", type=force_ratio, default=0.40,
-    help="MOVE两端点合力相对于胶囊自重mg的倍率；胃部迁移确认值为0.40。",
+    help="MOVE低档两端点合力相对于胶囊自重mg的倍率；默认0.40。",
+)
+parser.add_argument(
+    "--move_force_ratio_medium", type=force_ratio, default=0.50,
+    help="MOVE中档合力相对于自重mg的倍率；默认0.50。",
+)
+parser.add_argument(
+    "--move_force_ratio_high", type=force_ratio, default=0.60,
+    help="MOVE高档合力相对于自重mg的倍率；默认0.60。",
 )
 parser.add_argument(
     "--view_force_ratio", type=force_ratio, default=0.25,
-    help="VIEW相机侧端点力相对于胶囊自重mg的倍率；胃部确认值为0.25。",
+    help="VIEW低档相机侧端点力相对于胶囊自重mg的倍率；默认0.25。",
+)
+parser.add_argument(
+    "--view_force_ratio_medium", type=force_ratio, default=0.35,
+    help="VIEW中档相机侧端点力相对于自重mg的倍率；默认0.35。",
+)
+parser.add_argument(
+    "--view_force_ratio_high", type=force_ratio, default=0.45,
+    help="VIEW高档相机侧端点力相对于自重mg的倍率；默认0.45。",
 )
 parser.add_argument(
     "--up_force_ratio", type=force_ratio, default=0.85,
     help="UP在实际相机端半球球心施加的世界向上力相对于胶囊自重mg的倍率；胃部确认值为0.85。",
 )
 parser.add_argument("--output_directory", type=Path, default=Path("/tmp/task008-stomach-inspection"))
-parser.add_argument("--scripted_actions", default="", help="逗号分隔的动作名或 0..5；用于无键盘启动检查。")
+parser.add_argument("--scripted_actions", default="", help="逗号分隔的动作名或 0..13；用于无键盘启动检查。")
 parser.add_argument("--max_actions", type=int, default=0)
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(visualizer=[] if HEADLESS else ["kit"])
@@ -75,11 +91,12 @@ from robotarm_magnetic_lab.runtime import SynchronousMacroRunner
 from robotarm_magnetic_lab.teleop import CommandKind, DynamicForceMacroKeyboard
 from robotarm_magnetic_lab.ui import attach_capsule_camera_policy_view, configure_capsule_camera_view
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.dynamic_force_macro import (
+    DynamicForceMacroActionId,
     resolved_force_levels_n,
 )
 
 
-ACTION_NAMES = {0: "HOLD", 1: "MOVE_POS", 2: "MOVE_NEG", 3: "VIEW_POS", 4: "VIEW_NEG", 5: "UP"}
+ACTION_NAMES = {int(action): action.name for action in DynamicForceMacroActionId}
 NAME_TO_ACTION = {name: action for action, name in ACTION_NAMES.items()}
 
 
@@ -136,7 +153,11 @@ def main() -> int:
     cfg = parse_env_cfg(args_cli.task, device="cpu", num_envs=1, use_fabric=True)
     cfg.sim.device = "cpu"
     cfg.actions.dynamic_force_macro.move_force_ratio = args_cli.move_force_ratio
+    cfg.actions.dynamic_force_macro.move_force_ratio_medium = args_cli.move_force_ratio_medium
+    cfg.actions.dynamic_force_macro.move_force_ratio_high = args_cli.move_force_ratio_high
     cfg.actions.dynamic_force_macro.view_force_ratio = args_cli.view_force_ratio
+    cfg.actions.dynamic_force_macro.view_force_ratio_medium = args_cli.view_force_ratio_medium
+    cfg.actions.dynamic_force_macro.view_force_ratio_high = args_cli.view_force_ratio_high
     cfg.actions.dynamic_force_macro.up_force_ratio = args_cli.up_force_ratio
     if not HEADLESS:
         configure_capsule_camera_view(cfg)
@@ -173,7 +194,10 @@ def main() -> int:
                 camera_view = attach_capsule_camera_policy_view(env)
                 print("TASK008_COVERAGE_VIEW_READY window='P0 Stomach Coverage' refresh_hz=30", flush=True)
             print(
-                "TASK008_STOMACH_READY Space=HOLD D/A=MOVE+/- E/Q=VIEW+/- W=UP "
+                f"TASK008_STOMACH_READY Space=HOLD MOVE[{args_cli.move_force_ratio:g}:D/A "
+                f"{args_cli.move_force_ratio_medium:g}:L/J {args_cli.move_force_ratio_high:g}:O/U] "
+                f"VIEW[{args_cli.view_force_ratio:g}:E/Q {args_cli.view_force_ratio_medium:g}:K/H "
+                f"{args_cli.view_force_ratio_high:g}:I/Y] W=UP "
                 "Backspace=重置 F12=快照 Esc=退出",
                 flush=True,
             )

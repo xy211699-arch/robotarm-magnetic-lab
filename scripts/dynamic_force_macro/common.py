@@ -11,6 +11,8 @@ import numpy as np
 
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.dynamic_force_macro import (
     DynamicForceMacroActionId,
+    MOVE_ACTION_IDS,
+    VIEW_ACTION_IDS,
     move_projected_displacement_m,
     up_elevation_and_crossing,
     view_signed_angle_deg,
@@ -91,10 +93,10 @@ def evaluate_trace(action_id: int, trace) -> tuple[bool, dict]:
         return False, {"reason": "wrong_substep_count"}
     onset = trace[48] if action != DynamicForceMacroActionId.UP else trace[0]
     end = trace[-1]
-    if action in (DynamicForceMacroActionId.MOVE_POS, DynamicForceMacroActionId.MOVE_NEG):
+    if action in MOVE_ACTION_IDS:
         value = move_projected_displacement_m(onset.com_world, end.com_world, onset.lateral_direction_world)
         return value >= 0.005, {"projected_displacement_m": value}
-    if action in (DynamicForceMacroActionId.VIEW_POS, DynamicForceMacroActionId.VIEW_NEG):
+    if action in VIEW_ACTION_IDS:
         direction = np.asarray(onset.lateral_direction_world)
         value = view_signed_angle_deg(onset.camera_axis_world, end.camera_axis_world, direction)
         return value >= 15.0, {"signed_view_angle_deg": value}

@@ -3,7 +3,22 @@ from robotarm_magnetic_lab.teleop import CommandKind, DynamicForceMacroKeyboard
 
 def test_exact_action_mapping_and_repeat_suppression():
     keyboard = DynamicForceMacroKeyboard()
-    expected = {"SPACE": 0, "D": 1, "A": 2, "E": 3, "Q": 4, "W": 5}
+    expected = {
+        "SPACE": 0,
+        "D": 1,
+        "A": 2,
+        "E": 3,
+        "Q": 4,
+        "W": 5,
+        "L": 6,
+        "J": 7,
+        "O": 8,
+        "U": 9,
+        "K": 10,
+        "H": 11,
+        "I": 12,
+        "Y": 13,
+    }
     for key, action_id in expected.items():
         command = keyboard.key_event(key, True)
         assert command.kind is CommandKind.ACTION

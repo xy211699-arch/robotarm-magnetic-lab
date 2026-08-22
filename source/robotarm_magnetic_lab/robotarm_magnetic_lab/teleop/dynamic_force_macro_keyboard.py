@@ -12,6 +12,15 @@ ACTION_KEYS = {
     "E": 3,
     "Q": 4,
     "W": 5,
+    # Additional levels append new IDs without changing the accepted 0..5 map.
+    "L": 6,
+    "J": 7,
+    "O": 8,
+    "U": 9,
+    "K": 10,
+    "H": 11,
+    "I": 12,
+    "Y": 13,
 }
 
 

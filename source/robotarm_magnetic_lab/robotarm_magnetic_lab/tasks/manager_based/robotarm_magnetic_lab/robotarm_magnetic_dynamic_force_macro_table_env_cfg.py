@@ -1,4 +1,4 @@
-"""TASK-008 isolated flat-table six-action force task."""
+"""TASK-008 isolated flat-table fourteen-level force task."""
 
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import ObservationGroupCfg as ObsGroup
