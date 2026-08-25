@@ -142,6 +142,13 @@ class CalibrationPanel:
 class EntranceDebugGeometry:
     ROOT = "/World/TASK009BEntranceCalibration"
 
+    @staticmethod
+    def _set_primvar_interpolation(gprim, name: str, interpolation) -> None:
+        primvar = UsdGeom.PrimvarsAPI(gprim.GetPrim()).GetPrimvar(name)
+        if not primvar or not primvar.IsDefined():
+            raise RuntimeError(f"USD primvar was not created: {gprim.GetPath()}.{name}")
+        primvar.SetInterpolation(interpolation)
+
     def __init__(self, vertices_world: np.ndarray) -> None:
         stage = omni.usd.get_context().get_stage()
         root = UsdGeom.Xform.Define(stage, self.ROOT)
@@ -150,6 +157,12 @@ class EntranceDebugGeometry:
         )
         self.vertices = np.asarray(vertices_world, dtype=np.float64)
         self.box = UsdGeom.Mesh.Define(stage, self.ROOT + "/Box")
+        # Author a valid points buffer before topology. Hydra can evaluate the
+        # stage between individual Set calls and rejects a transient mesh whose
+        # indices reference an empty points array.
+        self.box.CreatePointsAttr(
+            Vt.Vec3fArray.FromNumpy(np.zeros((8, 3), dtype=np.float32))
+        )
         self.box.CreateFaceVertexCountsAttr([4] * 6)
         self.box.CreateFaceVertexIndicesAttr(
             [
@@ -159,24 +172,40 @@ class EntranceDebugGeometry:
         )
         self.box.CreateDisplayColorAttr([Gf.Vec3f(0.0, 0.65, 1.0)])
         self.box.CreateDisplayOpacityAttr([0.18])
-        self.box.SetDisplayColorInterpolation(UsdGeom.Tokens.constant)
-        self.box.SetDisplayOpacityInterpolation(UsdGeom.Tokens.constant)
+        self._set_primvar_interpolation(
+            self.box, "displayColor", UsdGeom.Tokens.constant
+        )
+        self._set_primvar_interpolation(
+            self.box, "displayOpacity", UsdGeom.Tokens.constant
+        )
         self.box.CreateDoubleSidedAttr(True)
 
         self.highlight = UsdGeom.Mesh.Define(stage, self.ROOT + "/SelectedTriangles")
+        self.highlight.CreatePointsAttr([])
+        self.highlight.CreateFaceVertexCountsAttr([])
+        self.highlight.CreateFaceVertexIndicesAttr([])
         self.highlight.CreateDisplayColorAttr([Gf.Vec3f(1.0, 0.16, 0.0)])
         self.highlight.CreateDisplayOpacityAttr([0.82])
-        self.highlight.SetDisplayColorInterpolation(UsdGeom.Tokens.constant)
-        self.highlight.SetDisplayOpacityInterpolation(UsdGeom.Tokens.constant)
+        self._set_primvar_interpolation(
+            self.highlight, "displayColor", UsdGeom.Tokens.constant
+        )
+        self._set_primvar_interpolation(
+            self.highlight, "displayOpacity", UsdGeom.Tokens.constant
+        )
         self.highlight.CreateDoubleSidedAttr(True)
 
         self.axes = UsdGeom.BasisCurves.Define(stage, self.ROOT + "/WorldAxes")
         self.axes.CreateTypeAttr(UsdGeom.Tokens.linear)
+        self.axes.CreatePointsAttr(
+            Vt.Vec3fArray.FromNumpy(np.zeros((6, 3), dtype=np.float32))
+        )
         self.axes.CreateCurveVertexCountsAttr([2, 2, 2])
         self.axes.CreateDisplayColorAttr(
             [Gf.Vec3f(1, 0, 0), Gf.Vec3f(0, 1, 0), Gf.Vec3f(0, 0.45, 1)]
         )
-        self.axes.SetDisplayColorInterpolation(UsdGeom.Tokens.uniform)
+        self._set_primvar_interpolation(
+            self.axes, "displayColor", UsdGeom.Tokens.uniform
+        )
         self.axes.CreateWidthsAttr([0.0015])
         self.axes.SetWidthsInterpolation(UsdGeom.Tokens.constant)
 
