@@ -129,3 +129,15 @@ gym.register(
         ),
     },
 )
+
+gym.register(
+    id="Template-Robotarm-Magnetic-Parameterized-Force-Stomach-Coverage-Lab-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": (
+            f"{__name__}.robotarm_magnetic_parameterized_force_stomach_env_cfg:"
+            "RobotarmMagneticParameterizedForceStomachCoverageLabEnvCfg"
+        ),
+    },
+)
