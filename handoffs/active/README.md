@@ -1,9 +1,9 @@
 # Active task contracts
 
-The currently authorized Linux implementation task is `TASK-008-six-action-dynamic-force-controller.md`.
+The currently authorized Linux task is `TASK-009A-stage1-controller-baseline-audit.md` on Windows planning branch `workflow/TASK-009A-stage1-controller-baseline-audit`.
 
-Linux must fetch the Windows planning branch `workflow/TASK-008-six-action-dynamic-force`, record its exact head, create `feature/TASK-008-six-action-dynamic-force-controller` from that planning head, execute the two referenced design documents manually, and return `handoffs/reports/TASK-008-six-action-dynamic-force-controller-report.md` with reproducible evidence.
+TASK-009A publishes and audits the already completed Linux-side 10 Hz parameterized six-mode force controller. It does not authorize Linux to reconstruct that controller from the older TASK-008 one-second macro branch, and it does not yet authorize area-coverage changes, VLM, GRU, PPO, rewards, or random-policy experiments.
 
-TASK-008 starts from the final TASK-003 dynamic-force implementation and replaces all later eleven-action, latch, virtual-magnet, and pose-control plans as execution authority. TASK-003 remains the physical implementation baseline and historical evidence; TASK-005 through TASK-007-R1 are not authorized implementation routes for this task.
+Linux must fetch the Windows planning branch, record its exact head, read the active contract and `docs/design/2026-08-25-vlm-gastric-coverage-research-contract-v1.md`, then create `feature/TASK-009A-stage1-controller-baseline-audit` from the exact current high-frequency controller commit in the Linux workspace. The required return report is `handoffs/reports/TASK-009A-stage1-controller-baseline-audit-report.md`.
 
-TASK-008 contains six one-second force macros, synchronous 1 Hz Actor boundaries, flat-table calibration and held-out acceptance, and an unchanged-parameter stomach keyboard viewer with external, capsule-RGB, and coverage displays. It does not authorize VLM/Actor/Critic training, expert-data generation, magnetic control, direct runtime pose correction, or asset modification.
+The older TASK-008 contract and report remain historical evidence only. Its 1 Hz one-second macros, 50 mm vertex coverage, wait-force-wait timing, and double-ended UP couple are not the current research contract.
