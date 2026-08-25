@@ -5,6 +5,7 @@ import robotarm_magnetic_lab.tasks  # noqa: F401
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_dynamic_force_macro_table_env_cfg import RobotarmMagneticDynamicForceMacroTableLabEnvCfg
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_dynamic_force_macro_stomach_env_cfg import RobotarmMagneticDynamicForceMacroStomachLabEnvCfg
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_dynamic_force_stomach_env_cfg import RobotarmMagneticDynamicForceStomachTeleopLabEnvCfg
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_parameterized_force_table_env_cfg import RobotarmMagneticParameterizedForceTableLabEnvCfg
 
 
 @pytest.mark.parametrize("task", [
@@ -13,6 +14,20 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_ma
 ])
 def test_task_registered(task):
     assert gym.spec(task) is not None
+
+
+def test_parameterized_10hz_task_registered_and_clocked():
+    task = "Template-Robotarm-Magnetic-Parameterized-Force-Table-Lab-v0"
+    assert gym.spec(task) is not None
+    cfg = RobotarmMagneticParameterizedForceTableLabEnvCfg()
+    assert cfg.sim.dt == pytest.approx(1.0 / 240.0)
+    assert cfg.decimation == 24
+    assert cfg.sim.render_interval == 2
+    assert cfg.scene.capsule_camera.update_period == pytest.approx(1.0 / 30.0)
+    assert list(name for name in vars(cfg.actions) if not name.startswith("_")) == ["parameterized_force"]
+    assert cfg.observations.policy.rgb is not None
+    for forbidden in ("pose", "velocity", "contact", "normal", "coverage", "mask", "privileged"):
+        assert not hasattr(cfg.observations.policy, forbidden)
 
 
 @pytest.mark.parametrize("cfg_type", [RobotarmMagneticDynamicForceMacroTableLabEnvCfg, RobotarmMagneticDynamicForceMacroStomachLabEnvCfg])

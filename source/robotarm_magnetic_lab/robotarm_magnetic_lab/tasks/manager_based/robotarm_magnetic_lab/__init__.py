@@ -117,3 +117,15 @@ gym.register(
         "env_cfg_entry_point": f"{__name__}.robotarm_magnetic_dynamic_force_macro_stomach_env_cfg:RobotarmMagneticDynamicForceMacroStomachLabEnvCfg",
     },
 )
+
+gym.register(
+    id="Template-Robotarm-Magnetic-Parameterized-Force-Table-Lab-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": (
+            f"{__name__}.robotarm_magnetic_parameterized_force_table_env_cfg:"
+            "RobotarmMagneticParameterizedForceTableLabEnvCfg"
+        ),
+    },
+)

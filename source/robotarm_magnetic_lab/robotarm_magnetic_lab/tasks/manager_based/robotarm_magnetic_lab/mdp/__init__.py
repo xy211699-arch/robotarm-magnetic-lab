@@ -34,3 +34,8 @@ from .dynamic_force_macro_action import (  # noqa: F401
     DynamicForceMacroAction,
     DynamicForceMacroActionTermCfg,
 )
+from .parameterized_force_action import (  # noqa: F401
+    ParameterizedForceAction,
+    ParameterizedForceActionTermCfg,
+    ParameterizedForceTelemetry,
+)

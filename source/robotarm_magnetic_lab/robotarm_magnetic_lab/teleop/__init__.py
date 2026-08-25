@@ -9,6 +9,11 @@ from .dynamic_force_keyboard import (
     DynamicForceKeyboard,
 )
 from .dynamic_force_macro_keyboard import DynamicForceMacroKeyboard
+from .parameterized_force_keyboard import (
+    ParameterizedForceKeyboard,
+    ParameterizedKeyboardEvent,
+    ParameterizedKeyboardEventKind,
+)
 
 __all__ = [
     "AtomicKeyboard",
@@ -19,6 +24,9 @@ __all__ = [
     "DynamicForceCommandKind",
     "DynamicForceKeyboard",
     "DynamicForceMacroKeyboard",
+    "ParameterizedForceKeyboard",
+    "ParameterizedKeyboardEvent",
+    "ParameterizedKeyboardEventKind",
     "RequestOutcome",
     "SessionController",
     "SessionRecord",

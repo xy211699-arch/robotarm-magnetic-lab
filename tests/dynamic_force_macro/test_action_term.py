@@ -1,7 +1,14 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 
+from robotarm_magnetic_lab.runtime.quaternion_conventions import (
+    ISAAC_QUATERNION_ORDER,
+    rotation_matrix_from_xyzw,
+    wxyz_to_xyzw,
+    xyzw_to_wxyz,
+)
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.dynamic_force_macro import (
     DynamicForceMacroConfig,
     resolved_force_levels_n,
@@ -27,6 +34,43 @@ def test_action_term_contract_and_no_state_writers():
     assert "application_position = np.asarray(points[0].position_world" in text
     assert "CreateEnableCCDAttr" in text
     assert "ccd_attr.Set(True)" in text
+def test_parameterized_action_uses_xyzw_and_has_no_state_writer():
+    source = Path(__file__).resolve().parents[2] / "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/parameterized_force_action.py"
+    text = source.read_text(encoding="utf-8")
+    assert "rotation_matrix_from_xyzw(link_quat)" in text
+    assert "link_quat[[1, 2, 3, 0]]" not in text
+    for forbidden in ("write_root_pose", "write_root_velocity", "set_transforms", "set_velocities"):
+        assert forbidden not in text
+    assert "positions=position_tensor" in text
+    assert "self.physics_step_in_cycle += 1" in text
+    assert "self.current_cycle_trace.append(self.last_telemetry)" in text
+    assert text.count("set_forces_and_torques_index(") == 1
+    assert "torque_tensor = None" in text
+    assert "application_position = camera" in text
+
+
+def test_isaac_quaternion_boundary_is_xyzw_and_rotates_local_axes_correctly():
+    assert ISAAC_QUATERNION_ORDER == "xyzw"
+    half_angle = np.sqrt(0.5)
+    rotation = rotation_matrix_from_xyzw([0.0, 0.0, half_angle, half_angle])
+    assert rotation @ np.array([1.0, 0.0, 0.0]) == pytest.approx([0.0, 1.0, 0.0], abs=1.0e-12)
+    assert rotation @ np.array([0.0, 1.0, 0.0]) == pytest.approx([-1.0, 0.0, 0.0], abs=1.0e-12)
+
+
+def test_explicit_legacy_wxyz_conversion_round_trip():
+    quaternion_xyzw = np.asarray([0.1, -0.2, 0.3, 0.9], dtype=np.float64)
+    quaternion_xyzw /= np.linalg.norm(quaternion_xyzw)
+    quaternion_wxyz = xyzw_to_wxyz(quaternion_xyzw)
+    assert quaternion_wxyz == pytest.approx(
+        [quaternion_xyzw[3], quaternion_xyzw[0], quaternion_xyzw[1], quaternion_xyzw[2]]
+    )
+    assert wxyz_to_xyzw(quaternion_wxyz) == pytest.approx(quaternion_xyzw)
+
+
+@pytest.mark.parametrize("invalid", ([0.0, 0.0, 0.0, 0.0], [np.nan, 0.0, 0.0, 1.0]))
+def test_invalid_isaac_quaternion_is_rejected(invalid):
+    with pytest.raises(ValueError):
+        rotation_matrix_from_xyzw(invalid)
 
 
 def test_resolved_force_levels_report_total_and_endpoint_newtons():

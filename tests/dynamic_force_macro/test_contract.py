@@ -11,6 +11,13 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers
     phase_for_substep,
     point_forces_for_action,
 )
+from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers.parameterized_force import (
+    PHYSICS_STEPS_PER_CONTROL,
+    ParameterizedForceConfig,
+    ParameterizedForceMode,
+    parameterized_endpoint_forces,
+    parameterized_force_ratio,
+)
 
 
 def test_action_ids_are_frozen():
@@ -80,6 +87,34 @@ def test_move_and_view_phase_boundaries_are_exact():
 
 def test_up_is_active_on_final_substep():
     assert phase_for_substep(DynamicForceMacroActionId.UP, 239).force_active
+
+
+def test_parameterized_force_contract_is_exactly_240_over_10_hz():
+    assert PHYSICS_STEPS_PER_CONTROL == 24
+    cfg = ParameterizedForceConfig()
+    assert [parameterized_force_ratio(ParameterizedForceMode.MOVE_POS, alpha, cfg) for alpha in (0, 0.5, 1)] == pytest.approx([0.70, 0.95, 1.20])
+    assert [parameterized_force_ratio(ParameterizedForceMode.VIEW_POS, alpha, cfg) for alpha in (0, 0.5, 1)] == pytest.approx([0.30, 0.60, 0.90])
+    assert [parameterized_force_ratio(ParameterizedForceMode.UP, alpha, cfg) for alpha in (0, 0.5, 1)] == pytest.approx([0.70, 0.85, 1.00])
+
+
+def test_parameterized_endpoint_distribution_matches_contract():
+    mass = 0.005735
+    axis = np.asarray([1.0, 0.0, 0.0])
+    move = parameterized_endpoint_forces(
+        ParameterizedForceMode.MOVE_POS, 0.5, mass_kg=mass, camera_axis_world=axis
+    )
+    assert np.linalg.norm(move.camera_force_world) == pytest.approx(0.5 * 0.95 * mass * 9.81)
+    np.testing.assert_allclose(move.camera_force_world, move.other_force_world)
+    view = parameterized_endpoint_forces(
+        ParameterizedForceMode.VIEW_POS, 0.5, mass_kg=mass, camera_axis_world=axis
+    )
+    assert np.linalg.norm(view.camera_force_world) == pytest.approx(0.60 * mass * 9.81)
+    np.testing.assert_allclose(view.other_force_world, np.zeros(3))
+    up = parameterized_endpoint_forces(
+        ParameterizedForceMode.UP, 0.5, mass_kg=mass, camera_axis_world=axis
+    )
+    np.testing.assert_allclose(up.camera_force_world, [0.0, 0.0, 0.85 * mass * 9.81])
+    np.testing.assert_allclose(up.other_force_world, np.zeros(3))
 
 
 @pytest.mark.parametrize(
