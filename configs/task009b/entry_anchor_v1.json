@@ -1,0 +1,53 @@
+{
+  "capsule_asset_identifier": "/mnt/isaac-linux/robotarm_magnetic_lab/assets/robotarm_magnetic_stomach_training.usda#/World/MagneticDemo/target_magnet",
+  "config_sha256": "0166638c32e7023995f9de2ad041afe464ecf65a99cac91959dba8709323b6fc",
+  "default_pose_world_xyzw": [
+    1.0786786079406738,
+    0.17719700932502747,
+    0.011793036013841629,
+    0.7313764095306396,
+    0.0727417916059494,
+    0.673466145992279,
+    0.07899674028158188
+  ],
+  "operator_confirmation": "confirmed_by_Y_key",
+  "release_pose_world_xyzw": [
+    1.056249737739563,
+    0.179613396525383,
+    0.006891169585287571,
+    0.0382813885807991,
+    -0.7432464361190796,
+    -0.6272132992744446,
+    0.22961470484733582
+  ],
+  "saved_utc": "2026-08-26T03:35:15.315629+00:00",
+  "schema": "robotarm_magnetic_lab.task009b_entry_anchor",
+  "settled_pose_world_xyzw": [
+    1.056249737739563,
+    0.179613396525383,
+    0.006891169585287571,
+    0.0382813885807991,
+    -0.7432464361190796,
+    -0.6272132992744446,
+    0.22961470484733582
+  ],
+  "stable_detection": {
+    "angular_speed_limit_rad_s": 0.08726646259971647,
+    "control_hz": 10,
+    "final_angular_speed_rad_s": 0.0,
+    "final_linear_speed_m_s": 0.0,
+    "linear_speed_limit_m_s": 0.002,
+    "maximum_wait_s": 2.0,
+    "observed_continuous_duration_s": 0.3,
+    "physics_hz": 240,
+    "physics_steps_per_control": 24,
+    "positioning_controller": "parameterized_force_10hz",
+    "release_elapsed_s": 0.3,
+    "release_start_simulation_time_s": 0.0,
+    "required_continuous_duration_s": 0.25,
+    "result": "stable",
+    "settled_simulation_time_s": 0.0
+  },
+  "stomach_geometry_sha256": "17ae0bc81e6c9b10d5846998206cafcfae37375ba62708aefd958e99539e9c1b",
+  "version": 1
+}
