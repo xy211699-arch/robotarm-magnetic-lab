@@ -27,6 +27,18 @@ parser.add_argument(
 parser.add_argument(
     "--log_root", type=Path, default=ROOT / "logs" / "task009b_entry_calibration"
 )
+parser.add_argument(
+    "--resume_anchor",
+    action="store_true",
+    help="Load the confirmed anchor and open region selection without repeating the drop.",
+)
+parser.add_argument(
+    "--initial_radius_mm",
+    type=int,
+    choices=(10, 15, 20, 25, 30, 60),
+    default=None,
+    help="Initial geodesic preview radius; useful with --resume_anchor.",
+)
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(visualizer=["kit"])
 args_cli = parser.parse_args()
@@ -50,9 +62,11 @@ import robotarm_magnetic_lab.tasks  # noqa: F401
 from isaaclab.app import launch_simulation
 from isaaclab_tasks.utils import parse_env_cfg
 from robotarm_magnetic_lab.coverage.entry_surface_region import (
+    ANCHOR_SCHEMA,
     ENTRY_RADII_M,
     anchor_record,
     geodesic_face_distances,
+    load_and_validate,
     nearest_surface_point,
     region_record,
     save_and_reload,
@@ -291,7 +305,17 @@ def main() -> int:
             settled_pose = None
             anchor = None
             closest = distances = region = None
+            requested_radius_m = (
+                None
+                if args_cli.initial_radius_mm is None
+                else float(args_cli.initial_radius_mm) / 1000.0
+            )
             radius_index = 2
+            if requested_radius_m is not None:
+                radius_index = min(
+                    range(len(ENTRY_RADII_M)),
+                    key=lambda index: abs(ENTRY_RADII_M[index] - requested_radius_m),
+                )
             geometry = RegionDebugGeometry()
             keyboard = Keyboard()
             panel = Panel()
@@ -307,13 +331,56 @@ def main() -> int:
             release_start_sim_time = None
             last_wall = time.monotonic()
             last_status_wall = 0.0
-            session.emit(
-                "ENTRY_POSITION_READY",
-                default_pose_world_xyzw=default_pose.tolist(),
-                physics_paused=True,
-                simulation_time_s=paused_sim_time,
-                controls=CONTROLS,
-            )
+            if args_cli.resume_anchor:
+                anchor = load_and_validate(anchor_path, ANCHOR_SCHEMA)
+                if anchor["stomach_geometry_sha256"] != reference.geometry_sha256:
+                    raise RuntimeError(
+                        "saved anchor is invalid for the current stomach geometry: "
+                        f"{anchor['stomach_geometry_sha256']} != {reference.geometry_sha256}"
+                    )
+                default_pose = np.asarray(
+                    anchor["default_pose_world_xyzw"], dtype=np.float64
+                )
+                release_pose = np.asarray(
+                    anchor["release_pose_world_xyzw"], dtype=np.float64
+                )
+                settled_pose = np.asarray(
+                    anchor["settled_pose_world_xyzw"], dtype=np.float64
+                )
+                candidate_pose = settled_pose.copy()
+                _write_state(capsule, settled_pose, base.device)
+                sim.forward()
+                base.scene.update(0.0)
+                closest = nearest_surface_point(reference, settled_pose[:3])
+                distances = geodesic_face_distances(
+                    shared_edge_adjacency(reference), closest.triangle_index
+                )
+                region = surface_region_from_distances(
+                    reference, distances, ENTRY_RADII_M[radius_index]
+                )
+                geometry.update(reference, closest, region)
+                panel.update_region(closest, region)
+                panel.status.text = "Confirmed anchor restored. Select radius and press Enter."
+                phase = "GEODESIC_REGION"
+                session.emit(
+                    "ENTRY_ANCHOR_RESUMED",
+                    path=str(anchor_path.resolve()),
+                    config_sha256=anchor["config_sha256"],
+                    settled_pose_world_xyzw=settled_pose.tolist(),
+                    seed_triangle_index=closest.triangle_index,
+                    radius_m=region.radius_m,
+                    physics_paused=True,
+                    simulation_time_s=paused_sim_time,
+                    reload_validated=True,
+                )
+            else:
+                session.emit(
+                    "ENTRY_POSITION_READY",
+                    default_pose_world_xyzw=default_pose.tolist(),
+                    physics_paused=True,
+                    simulation_time_s=paused_sim_time,
+                    controls=CONTROLS,
+                )
 
             def restore_release(reason: str) -> None:
                 nonlocal phase, candidate_pose, fall_steps, stable_steps, paused_sim_time

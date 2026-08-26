@@ -42,3 +42,5 @@ def test_calibrator_uses_true_surface_and_connected_geodesic_artifacts():
     assert '"entry_anchor_v1.json"' in source
     assert '"entry_region_v1.json"' in source
     assert "region.connected_components != 1" in source
+    assert '"--resume_anchor"' in source
+    assert '"--initial_radius_mm"' in source

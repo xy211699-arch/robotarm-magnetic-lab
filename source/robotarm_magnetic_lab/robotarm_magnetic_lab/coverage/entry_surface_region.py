@@ -19,7 +19,7 @@ from .reference_mesh import ReferenceMesh
 ANCHOR_SCHEMA = "robotarm_magnetic_lab.task009b_entry_anchor"
 REGION_SCHEMA = "robotarm_magnetic_lab.task009b_entry_region"
 CONFIG_VERSION = 1
-ENTRY_RADII_M = (0.010, 0.015, 0.020, 0.025, 0.030)
+ENTRY_RADII_M = (0.010, 0.015, 0.020, 0.025, 0.030, 0.060)
 
 
 @dataclass(frozen=True)
@@ -251,3 +251,26 @@ def save_and_reload(path: Path, record: dict[str, Any]) -> dict[str, Any]:
     if loaded != record:
         raise RuntimeError(f"saved configuration failed exact reload validation: {output}")
     return loaded
+
+
+def load_and_validate(path: Path, expected_schema: str) -> dict[str, Any]:
+    """Load a saved configuration and verify its schema and deterministic hash."""
+    source = Path(path)
+    record = json.loads(source.read_text(encoding="utf-8"))
+    if record.get("schema") != expected_schema:
+        raise ValueError(
+            f"configuration schema mismatch: expected {expected_schema!r}, "
+            f"got {record.get('schema')!r}"
+        )
+    expected_hash = str(record.get("config_sha256", ""))
+    hash_payload = {
+        key: value
+        for key, value in record.items()
+        if key not in ("config_sha256", "saved_utc", "operator_confirmation")
+    }
+    actual_hash = _hash(hash_payload)
+    if actual_hash != expected_hash:
+        raise ValueError(
+            f"configuration hash mismatch for {source}: {expected_hash} != {actual_hash}"
+        )
+    return record

@@ -47,7 +47,7 @@ cd /tmp/robotarm-task009b
 接受锚点后，绿色点显示胶囊质心在胃壁上的真实最近表面点，橙红色区域显示从种子三角面
 沿共享边邻接图扩展的测地区域。
 
-- `[`、`]`：在10、15、20、25、30 mm五档半径间切换；
+- `[`、`]`：在10、15、20、25、30、60 mm六档半径间切换；
 - `Enter`：确认并保存当前区域；
 - `Esc`：退出程序。
 
@@ -63,3 +63,22 @@ cd /tmp/robotarm-task009b
 精确重新加载。请把`TASK009B_ENTRY_ANCHOR_SAVED`和`TASK009B_ENTRY_REGION_SAVED`两行
 完整输出交给执行端继续Gate 3。
 
+## 使用已确认锚点重新选择半径
+
+如果锚点已经通过自然下落并确认，只需要扩大或缩小测地区域，不要手工修改JSON中的
+`radius_m`。面片、顶点、面积和配置哈希都依赖半径，必须由程序重新计算。
+
+例如直接从已确认锚点预览60 mm区域：
+
+```bash
+cd /tmp/robotarm-task009b
+
+./run_isaaclab.sh -p scripts/stomach_coverage/calibrate_entry_anchor_region.py \
+  --device cuda:0 \
+  --viz kit \
+  --resume_anchor \
+  --initial_radius_mm 60
+```
+
+程序会校验锚点哈希和胃壁几何哈希，恢复稳定后位姿并直接进入测地区域界面。确认高亮区域
+合理后按`Enter`，程序将重新计算并覆盖`entry_region_v1.json`；锚点文件保持不变。

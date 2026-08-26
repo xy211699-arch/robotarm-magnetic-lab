@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
+import pytest
 
 from robotarm_magnetic_lab.coverage.entry_surface_region import (
+    ANCHOR_SCHEMA,
     anchor_record,
     closest_point_on_triangle,
     geodesic_face_distances,
+    load_and_validate,
     nearest_surface_point,
     region_record,
     shared_edge_adjacency,
@@ -83,3 +88,23 @@ def test_anchor_and_region_hashes_change_with_geometry_inputs():
     )
     assert first["config_sha256"] != second["config_sha256"]
 
+
+def test_saved_anchor_reloads_with_hash_validation(tmp_path):
+    reference = _reference()
+    pose = np.asarray([0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 1.0])
+    record = anchor_record(
+        default_pose_xyzw=pose,
+        release_pose_xyzw=pose,
+        settled_pose_xyzw=pose,
+        stable_detection={"result": "stable"},
+        stomach_geometry_sha256=reference.geometry_sha256,
+        capsule_asset_identifier="scene.usda#target_magnet",
+    )
+    path = tmp_path / "anchor.json"
+    path.write_text(json.dumps(record), encoding="utf-8")
+    assert load_and_validate(path, ANCHOR_SCHEMA) == record
+    corrupted = dict(record)
+    corrupted["settled_pose_world_xyzw"] = [1.0] * 7
+    path.write_text(json.dumps(corrupted), encoding="utf-8")
+    with pytest.raises(ValueError, match="hash mismatch"):
+        load_and_validate(path, ANCHOR_SCHEMA)
