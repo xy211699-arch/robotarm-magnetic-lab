@@ -15,6 +15,7 @@ def test_calibrator_preserves_dynamic_body_and_pauses_physics_for_positioning():
     assert "kinematic capsule is forbidden" in source
     assert "CreateStatic" not in source
     assert "CreateKinematicEnabledAttr" not in source
+    assert 'getattr(raw_input, "name", raw_input)' in source
 
 
 def test_calibrator_freezes_motion_and_stability_contract():
@@ -41,4 +42,3 @@ def test_calibrator_uses_true_surface_and_connected_geodesic_artifacts():
     assert '"entry_anchor_v1.json"' in source
     assert '"entry_region_v1.json"' in source
     assert "region.connected_components != 1" in source
-

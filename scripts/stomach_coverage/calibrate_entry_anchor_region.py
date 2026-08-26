@@ -112,7 +112,10 @@ class Keyboard:
         )
 
     def _on_event(self, event, *_args):
-        key = normalize_key(event.input.name)
+        # Kit 110 emits both carb.input.Input objects and plain strings here,
+        # depending on the physical key/backend. Normalize both forms.
+        raw_input = event.input
+        key = normalize_key(getattr(raw_input, "name", raw_input))
         if event.type == carb.input.KeyboardEventType.KEY_PRESS:
             if key not in self.down:
                 self.presses.append(key)
@@ -564,4 +567,3 @@ if __name__ == "__main__":
         raise SystemExit(main())
     finally:
         simulation_app.close()
-
