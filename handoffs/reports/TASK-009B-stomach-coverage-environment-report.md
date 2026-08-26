@@ -2,7 +2,7 @@
 
 状态：`partial`
 
-当前门禁：Gate 2已通过；Gate 3有效初始位姿库尚未启动。
+当前门禁：Gate 3已通过；Gate 4七十毫米面积加权覆盖计算正在实施。
 
 ## 基线与实现
 
@@ -13,6 +13,7 @@
 - Gate 1 提交：`3de692e`
 - Gate 2 替代方案提交：`3fa7405ccb7d528a4f5b96d50154a32961e75abf`
 - Gate 2 动力学定位提交：`ccbbef7`
+- Gate 2 最终配置提交：`52e7383`
 - 已取消的包围盒历史提交：`c2205c5cd73ee766c6ce32735cbf2c762fdf1dae`
 
 ## Gate 1：环境集成
@@ -99,10 +100,48 @@ cd /tmp/robotarm-task009b
 
 按键及验收方法见`docs/TASK009B_ENTRY_ANCHOR_REGION_CALIBRATION.md`。
 
+## Gate 3：有效初始位姿库
+
+状态：`pass`
+
+生成器从已确认入口区域按面片面积采样，随机化局部切向方位、相机端方向和完整滚转角。
+所有候选仅执行HOLD并在冻结门限下真实松弛，未用速度清零伪造稳定状态，也未放宽2秒、
+0.25秒、2 mm/s、5 deg/s、相机在胃腔内和长轴角不小于45度的条件。
+
+生成命令：
+
+```bash
+./run_isaaclab.sh -p scripts/stomach_coverage/generate_entry_pose_library.py \
+  --device cuda:0
+```
+
+生成结果：train/validation/test为1000/100/100，共1200条互不重复状态；实际尝试
+1031/101/105次，拒绝原因为30条未在2秒内稳定、6条相机不在胃腔、1条长轴角不足。
+
+固定回载命令：
+
+```bash
+./run_isaaclab.sh -p scripts/stomach_coverage/validate_entry_pose_library.py \
+  --device cuda:0
+```
+
+回载结果：三组各固定20条，共60条全部通过；位置、姿态、RGB和物理状态有限，无方向
+长轴角均不小于45度。独立结构审计确认1200个ID、候选种子和位姿指纹全唯一，分组互斥，
+清单与数据本体哈希一致。
+
+外部证据：
+
+- 位姿库：`/mnt/isaac-linux/robotarm_magnetic_lab_artifacts/task009b_pose_library/20260826_040250_292641Z/pose_library_v1.jsonl`
+- 位姿库：1935122字节，SHA-256 `7a7a20e175dcfade0c3f07ccc2a4dca377508485f726fc6999a0453cb7cea855`
+- 回载日志：`/mnt/isaac-linux/robotarm_magnetic_lab_artifacts/task009b_pose_library_validation/20260826_041331_486142Z/live_reload.jsonl`
+- 回载日志：37279字节，SHA-256 `b88fd775db7f49be65bf0dfaddb8c082a1a1aa8ea125b30bc02c08fe2b908d6b`
+- Git清单：`configs/task009b/pose_library_manifest_v1.json`，包含分组、接受种子、拒绝统计、
+  固定回载ID、外部绝对路径和哈希。
+
 ## 未执行门禁
 
-- Gate 3 有效初始位姿库：未执行；当前入口已确认，前置条件已满足。
-- Gate 4 七十毫米面积加权覆盖计算：未执行；依赖已验收位姿库。
+- Gate 4 七十毫米面积加权覆盖计算：正在实施；已确认旧实现仍是50 mm与顶点计数比例，
+  不会将其误报为符合冻结合同。
 - Gate 5 三视图现场验收：未执行；依赖覆盖计算通过。
 
-本报告未把未执行项描述为通过，也未创建默认入口配置或最终位姿库。
+本报告未把未执行项描述为通过；位姿库数据本体按合同仅保存在Linux外部工件目录。
