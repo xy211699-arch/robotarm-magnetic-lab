@@ -16,6 +16,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "source" / "robotarm_magnetic_lab"))
+sys.path.insert(0, str(ROOT / "scripts"))
 HEADLESS = "--headless" in sys.argv
 if HEADLESS:
     sys.argv.remove("--headless")
@@ -23,11 +24,11 @@ if HEADLESS:
 
 from isaaclab.app import AppLauncher
 
+from _artifact_paths import artifact_root
+
 
 TASK_ID = "Template-Robotarm-Magnetic-Parameterized-Force-Stomach-Coverage-Lab-v0"
-DEFAULT_ARTIFACT_ROOT = Path(
-    "/mnt/isaac-linux/robotarm_magnetic_lab_artifacts/task009b_three_view"
-)
+DEFAULT_ARTIFACT_ROOT = artifact_root(ROOT) / "task009b_three_view"
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--task", default=TASK_ID)

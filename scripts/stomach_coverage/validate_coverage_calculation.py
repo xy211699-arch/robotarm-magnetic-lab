@@ -13,6 +13,9 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "source" / "robotarm_magnetic_lab"))
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from _artifact_paths import artifact_root
 
 from isaaclab.app import AppLauncher
 
@@ -33,7 +36,7 @@ parser.add_argument(
 parser.add_argument(
     "--output_root",
     type=Path,
-    default=Path("/mnt/isaac-linux/robotarm_magnetic_lab_artifacts/task009b_coverage_validation"),
+    default=artifact_root(ROOT) / "task009b_coverage_validation",
 )
 parser.add_argument("--raycast_device", default="cuda:0")
 AppLauncher.add_app_launcher_args(parser)

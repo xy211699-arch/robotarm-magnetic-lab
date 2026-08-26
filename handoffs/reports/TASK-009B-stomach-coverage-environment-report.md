@@ -131,9 +131,9 @@ cd /tmp/robotarm-task009b
 
 外部证据：
 
-- 位姿库：`/mnt/isaac-linux/robotarm_magnetic_lab_artifacts/task009b_pose_library/20260826_040250_292641Z/pose_library_v1.jsonl`
+- 位姿库：`/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009b_pose_library/20260826_040250_292641Z/pose_library_v1.jsonl`
 - 位姿库：1935122字节，SHA-256 `7a7a20e175dcfade0c3f07ccc2a4dca377508485f726fc6999a0453cb7cea855`
-- 回载日志：`/mnt/isaac-linux/robotarm_magnetic_lab_artifacts/task009b_pose_library_validation/20260826_041331_486142Z/live_reload.jsonl`
+- 回载日志：`/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009b_pose_library_validation/20260826_041331_486142Z/live_reload.jsonl`
 - 回载日志：37279字节，SHA-256 `b88fd775db7f49be65bf0dfaddb8c082a1a1aa8ea125b30bc02c08fe2b908d6b`
 - Git清单：`configs/task009b/pose_library_manifest_v1.json`，包含分组、接受种子、拒绝统计、
   固定回载ID、外部绝对路径和哈希。
@@ -174,7 +174,7 @@ live从Gate 3固定20/20/20位姿加载。60个连续边界均产生非零当前
 
 外部证据：
 
-- 日志：`/mnt/isaac-linux/robotarm_magnetic_lab_artifacts/task009b_coverage_validation/20260826_042440_575139Z/coverage_boundaries.jsonl`
+- 日志：`/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009b_coverage_validation/20260826_042440_575139Z/coverage_boundaries.jsonl`
 - 日志：36309字节，SHA-256 `2758caf3b65655e7d560c635aecff6b0beeb52cb8be9fda6851a280571fdb856`
 - 摘要：同目录`summary.json`，1736字节，SHA-256
   `f4b26c8d15d2827aa2b42eb5fed0cc7c334a8f72eb96d5f9638eb1c8f5b47773`

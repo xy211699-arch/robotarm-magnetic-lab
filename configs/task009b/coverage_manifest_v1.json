@@ -1,7 +1,7 @@
 {
-  "config_sha256": "a9b20b50568a09ff36406c06963fbe8cb2be27c7d9ce46ff21389ff190a2e61d",
+  "config_sha256": "99c6ccdd07440d117e9b662c1ecb64bbfe90225b30bf9d22734c3b62ebb17df9",
   "generated_utc": "2026-08-26T04:24:49.012508+00:00",
-  "pose_manifest_config_sha256": "7740173f0c3b273a917fc0f405bb71eb09bec27779fe756a9a73b9b237c536d5",
+  "pose_manifest_config_sha256": "3c22d6951d7aae378d3b60b716392b2f784aaa2da2e6163989a10bd46686b9fc",
   "schema": "robotarm_magnetic_lab.task009b_coverage_manifest",
   "target": {
     "positive_weight_vertex_count": 24529,
@@ -24,12 +24,12 @@
     "first_hit_tolerance_m": 0.0001,
     "fov_half_angle_deg": 60.0,
     "frame_log_bytes": 36309,
-    "frame_log_path": "/mnt/isaac-linux/robotarm_magnetic_lab_artifacts/task009b_coverage_validation/20260826_042440_575139Z/coverage_boundaries.jsonl",
+    "frame_log_path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009b_coverage_validation/20260826_042440_575139Z/coverage_boundaries.jsonl",
     "frame_log_sha256": "2758caf3b65655e7d560c635aecff6b0beeb52cb8be9fda6851a280571fdb856",
     "maximum_coverage_fraction_before_reset": 0.534965347710799,
     "monotonic_union_pass": true,
     "normal_sign": -1,
-    "pose_manifest_config_sha256": "7740173f0c3b273a917fc0f405bb71eb09bec27779fe756a9a73b9b237c536d5",
+    "pose_manifest_config_sha256": "3c22d6951d7aae378d3b60b716392b2f784aaa2da2e6163989a10bd46686b9fc",
     "range_pass": true,
     "reset_check": {
       "after_reset_coverage_fraction": 0.0,
