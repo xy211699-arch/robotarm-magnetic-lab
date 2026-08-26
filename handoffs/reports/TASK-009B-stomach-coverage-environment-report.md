@@ -1,8 +1,8 @@
 # TASK-009B Linux 执行报告
 
-状态：`partial`
+状态：`needs_input`
 
-当前门禁：Gate 4已通过；Gate 5三视图等待现场人工验收。
+当前门禁：Gate 4已通过；Gate 5三视图实现及自动烟雾测试已通过，等待现场人工验收。
 
 ## 基线与实现
 
@@ -180,7 +180,24 @@ live从Gate 3固定20/20/20位姿加载。60个连续边界均产生非零当前
   `f4b26c8d15d2827aa2b42eb5fed0cc7c334a8f72eb96d5f9638eb1c8f5b47773`
 - Git清单：`configs/task009b/coverage_manifest_v1.json`。
 
-## 未执行门禁
+## Gate 5：同时间线三视图
+
+状态：`needs_input`
+
+新增`teleop_stomach_coverage.py`，从Gate 3冻结位姿启动，并在同一时间线上提供60 Hz外部
+主视口、严格复用策略记录传感器的10 Hz胶囊RGB窗口，以及10 Hz隔离覆盖窗口。未创建
+额外30 Hz预览相机。覆盖窗口以红/绿/蓝分别显示未覆盖、历史累计和当前可见区域，HUD为
+70 mm面积加权覆盖百分比；轨迹曲线只在至少两个点时创建有效拓扑。
+
+自动化回归59/59通过。3周期无界面live按HOLD、MOVE_POS、VIEW_POS运行，RGB帧1→4，
+面积覆盖率13.375%→15.307%→17.363%→17.669%，每个边界均为24个物理子步且状态有限。
+2周期Kit烟雾测试确认主窗口、`Capsule Camera | Recorded 10 Hz`和
+`P0 Stomach Coverage`均成功创建，记录传感器显示`extra_sensor=false`。
+
+现场命令、按键及验收项见`docs/TASK009B_THREE_VIEW_ACCEPTANCE.md`。合同要求的主观画面
+确认必须由用户完成，因此当前不能标记为`complete`。
+
+## 待人工验收门禁
 
 - Gate 5 三视图现场验收：等待用户运行可视化并确认画面。
 

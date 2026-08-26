@@ -10,6 +10,7 @@ import numpy as np
 from robotarm_magnetic_lab.ui.coverage_view import (
     CAPSULE_COLOR,
     COVERED_COLOR,
+    CURRENT_VISIBLE_COLOR,
     TRAJECTORY_COLOR,
     UNCOVERED_COLOR,
     ProjectionConfig,
@@ -25,6 +26,16 @@ def test_exact_color_mapping_and_counts():
     np.testing.assert_array_equal(colors[mask], np.tile(COVERED_COLOR, (2, 1)))
     assert CAPSULE_COLOR.tolist() == [40, 40, 40]
     assert TRAJECTORY_COLOR.tolist() == [0, 0, 0]
+
+
+def test_current_visible_vertices_override_cumulative_history_color():
+    cumulative = np.asarray([False, True, True, False])
+    current = np.asarray([False, False, True, True])
+    colors = coverage_colors(cumulative, current)
+    np.testing.assert_array_equal(colors[0], UNCOVERED_COLOR)
+    np.testing.assert_array_equal(colors[1], COVERED_COLOR)
+    np.testing.assert_array_equal(colors[2], CURRENT_VISIBLE_COLOR)
+    np.testing.assert_array_equal(colors[3], CURRENT_VISIBLE_COLOR)
 
 
 def test_projection_is_deterministic_and_records_orientation(tmp_path: Path):

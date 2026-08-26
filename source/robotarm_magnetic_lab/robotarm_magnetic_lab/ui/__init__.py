@@ -4,8 +4,10 @@ from .capsule_camera_view import (
     CapsuleCameraViewHandle,
     CapsulePoseViewHandle,
     attach_capsule_camera_policy_view,
+    attach_capsule_recorded_camera_view,
     attach_capsule_pose_view,
     configure_capsule_camera_view,
+    configure_capsule_recorded_camera_view,
     configure_capsule_pose_view,
 )
 from .coverage_view import (
@@ -19,8 +21,10 @@ __all__ = [
     "CapsuleCameraViewHandle",
     "CapsulePoseViewHandle",
     "attach_capsule_camera_policy_view",
+    "attach_capsule_recorded_camera_view",
     "attach_capsule_pose_view",
     "configure_capsule_camera_view",
+    "configure_capsule_recorded_camera_view",
     "configure_capsule_pose_view",
     "KitCoveragePointCloudView",
     "ProjectionConfig",

@@ -111,6 +111,8 @@ class P0CoverageRuntime:
         self.accumulator = CoverageAccumulator(
             len(self.reference.vertices_world), vertex_weights=self.vertex_weights
         )
+        self.current_visible_mask = np.zeros(len(self.reference.vertices_world), dtype=np.bool_)
+        self._last_camera_frame: int | None = None
         self.clock = RecordedFrameClock(float(self.camera.cfg.update_period))
         self.trajectory: list[np.ndarray] = []
         self.timings_s: list[float] = []
@@ -154,7 +156,12 @@ class P0CoverageRuntime:
                     "the copy synchronizes the query before the elapsed time is recorded."
                 ),
             },
-            "clocks_hz": {"physics": 240.0, "atomic": 20.0, "recorded": 1.0, "display": 30.0},
+            "clocks_hz": {
+                "physics": 1.0 / float(self.env.sim.get_physics_dt()),
+                "control": 1.0 / float(self.env.step_dt),
+                "recorded": 1.0 / float(self.camera.cfg.update_period),
+                "coverage_view": 1.0 / float(self.camera.cfg.update_period),
+            },
             "information_isolation": (
                 "Capsule truth, rays and coverage are consumed only by evaluator/telemetry/view code."
             ),
@@ -189,10 +196,27 @@ class P0CoverageRuntime:
         }
         self.writer.append_action(record)
 
-    def maybe_update(self) -> CoverageUpdate | None:
-        # Reading renderer output forces an outdated 1 Hz camera buffer to complete.
+    def maybe_update(self, *, force_boundary_capture: bool = False) -> CoverageUpdate | None:
+        # Reading renderer output completes the recorded policy-camera buffer.
         _ = self.camera.data.output["rgb"]
         frame_value = int(self.camera.frame.torch[0].item())
+        if (
+            force_boundary_capture
+            and self._last_camera_frame is not None
+            and frame_value <= self._last_camera_frame
+        ):
+            # Stored-pose and exact 0.1 s boundaries can miss the float32
+            # update-period comparison. Capture once without advancing physics.
+            self.camera._update_buffers_impl(self.camera._ALL_ENV_MASK)
+            _ = self.camera.data.output["rgb"]
+            frame_value = int(self.camera.frame.torch[0].item())
+        if (
+            force_boundary_capture
+            and self._last_camera_frame is not None
+            and frame_value <= self._last_camera_frame
+        ):
+            raise RuntimeError("10 Hz boundary RGB did not advance after required synchronization")
+        self._last_camera_frame = frame_value
         timestamp = frame_value * float(self.camera.cfg.update_period)
         frame_id = self.clock.observe(timestamp)
         if frame_id is None:
@@ -226,6 +250,8 @@ class P0CoverageRuntime:
             )
             visible &= normal_facing
             normal_facing_count = int(np.count_nonzero(normal_facing))
+        self.current_visible_mask.fill(False)
+        self.current_visible_mask[candidates[visible]] = True
         update = self.accumulator.update(frame_id, candidates[visible])
         elapsed = time.perf_counter() - started
         capsule_position = self.capsule_position()
@@ -271,6 +297,8 @@ class P0CoverageRuntime:
                 self.accumulator.mask,
                 self.capsule_position(),
                 np.asarray(self.trajectory, dtype=np.float64).reshape(-1, 3),
+                current_visible_mask=self.current_visible_mask,
+                coverage_fraction=self.accumulator.coverage_fraction,
             )
 
     def snapshot(self, reason: str) -> dict[str, Any]:
@@ -310,6 +338,8 @@ class P0CoverageRuntime:
         self.snapshot("reset")
         self.accumulator.reset()
         self.clock.reset()
+        self.current_visible_mask.fill(False)
+        self._last_camera_frame = None
         self.trajectory.clear()
         self.latest_record = None
         if self.view is not None:

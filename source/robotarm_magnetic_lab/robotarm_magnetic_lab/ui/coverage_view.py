@@ -11,6 +11,7 @@ import numpy as np
 
 UNCOVERED_COLOR = np.asarray([220, 35, 35], dtype=np.uint8)
 COVERED_COLOR = np.asarray([30, 190, 70], dtype=np.uint8)
+CURRENT_VISIBLE_COLOR = np.asarray([30, 145, 235], dtype=np.uint8)
 CAPSULE_COLOR = np.asarray([40, 40, 40], dtype=np.uint8)
 TRAJECTORY_COLOR = np.asarray([0, 0, 0], dtype=np.uint8)
 AXIS_NAMES = ("X", "Y", "Z")
@@ -21,10 +22,15 @@ AXIS_NAMES = ("X", "Y", "Z")
 _DEFERRED_KIT_VIEW_RESOURCES: list[tuple[Any, Any]] = []
 
 
-def coverage_colors(mask: np.ndarray) -> np.ndarray:
+def coverage_colors(mask: np.ndarray, current_visible_mask: np.ndarray | None = None) -> np.ndarray:
     values = np.asarray(mask, dtype=np.bool_).reshape(-1)
     colors = np.tile(UNCOVERED_COLOR, (len(values), 1))
     colors[values] = COVERED_COLOR
+    if current_visible_mask is not None:
+        current = np.asarray(current_visible_mask, dtype=np.bool_).reshape(-1)
+        if len(current) != len(values):
+            raise ValueError("current visible mask length must equal cumulative mask length")
+        colors[current] = CURRENT_VISIBLE_COLOR
     return colors
 
 
@@ -177,8 +183,8 @@ class KitCoveragePointCloudView:
         self._marker.GetWidthsAttr().Set([0.006])
         self._trajectory = UsdGeom.BasisCurves.Define(stage, root_path + "/Trajectory")
         self._trajectory.GetTypeAttr().Set(UsdGeom.Tokens.linear)
-        self._trajectory.GetBasisAttr().Set(UsdGeom.Tokens.bezier)
         self._trajectory.GetWidthsAttr().Set([0.001])
+        self._trajectory.SetWidthsInterpolation(UsdGeom.Tokens.constant)
         camera_path = root_path + "/Camera"
         camera = UsdGeom.Camera.Define(stage, camera_path)
         center = self._vertices.mean(axis=0)
@@ -200,7 +206,7 @@ class KitCoveragePointCloudView:
         with self._hud_frame:
             with omni.ui.VStack():
                 self._coverage_label = omni.ui.Label(
-                    "Coverage: 0.000% (0 / 0)",
+                    "Area coverage: 0.000% (0 / 0 vertices)",
                     width=340,
                     height=30,
                     alignment=omni.ui.Alignment.LEFT_CENTER,
@@ -211,6 +217,13 @@ class KitCoveragePointCloudView:
                         "margin": 6,
                     },
                 )
+                self._legend_label = omni.ui.Label(
+                    "red=uncovered  green=history  blue=current",
+                    width=430,
+                    height=24,
+                    alignment=omni.ui.Alignment.LEFT_CENTER,
+                    style={"background_color": 0xD0202020, "color": 0xFFFFFFFF, "font_size": 15},
+                )
                 omni.ui.Spacer()
         self.update(np.zeros(len(self._vertices), dtype=bool), center, np.empty((0, 3)))
         print(
@@ -218,22 +231,38 @@ class KitCoveragePointCloudView:
             flush=True,
         )
 
-    def update(self, mask: np.ndarray, capsule_position_world: np.ndarray, trajectory_world: np.ndarray) -> None:
+    def update(
+        self,
+        mask: np.ndarray,
+        capsule_position_world: np.ndarray,
+        trajectory_world: np.ndarray,
+        current_visible_mask: np.ndarray | None = None,
+        coverage_fraction: float | None = None,
+    ) -> None:
         values = np.asarray(mask, dtype=np.bool_).reshape(-1)
-        colors = coverage_colors(values).astype(np.float32) / 255.0
+        colors = coverage_colors(values, current_visible_mask).astype(np.float32) / 255.0
         self._points.GetDisplayColorAttr().Set(self._Vt.Vec3fArray.FromNumpy(colors))
         covered = int(values.sum())
         total = len(values)
-        fraction = covered / total if total else 0.0
-        self._coverage_label.text = f"Coverage: {100.0 * fraction:.3f}% ({covered} / {total})"
+        fraction = covered / total if coverage_fraction is None else float(coverage_fraction)
+        self._coverage_label.text = (
+            f"Area coverage: {100.0 * fraction:.3f}% ({covered} / {total} vertices)"
+        )
         marker = np.asarray(capsule_position_world, dtype=np.float32).reshape(1, 3)
         self._marker.GetPointsAttr().Set(self._Vt.Vec3fArray.FromNumpy(marker))
         self._marker.GetDisplayColorAttr().Set(
             self._Vt.Vec3fArray.FromNumpy((CAPSULE_COLOR[None, :] / 255.0).astype(np.float32))
         )
         trajectory = np.asarray(trajectory_world, dtype=np.float32).reshape(-1, 3)
-        self._trajectory.GetPointsAttr().Set(self._Vt.Vec3fArray.FromNumpy(trajectory))
-        self._trajectory.GetCurveVertexCountsAttr().Set([len(trajectory)] if len(trajectory) else [])
+        # A linear BasisCurves primitive needs at least two vertices. Keeping a
+        # one-point trajectory as an empty curve avoids invalid Hydra topology.
+        visible_trajectory = trajectory if len(trajectory) >= 2 else np.empty((0, 3), dtype=np.float32)
+        self._trajectory.GetPointsAttr().Set(
+            self._Vt.Vec3fArray.FromNumpy(visible_trajectory)
+        )
+        self._trajectory.GetCurveVertexCountsAttr().Set(
+            [len(visible_trajectory)] if len(visible_trajectory) else []
+        )
         self._trajectory.GetDisplayColorAttr().Set(
             self._Vt.Vec3fArray.FromNumpy((TRAJECTORY_COLOR[None, :] / 255.0).astype(np.float32))
         )

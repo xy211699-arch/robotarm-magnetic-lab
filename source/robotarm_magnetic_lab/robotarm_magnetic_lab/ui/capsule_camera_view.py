@@ -24,6 +24,9 @@ CAMERA_PREVIEW_CONFIG_PATH = (
 CAMERA_PREVIEW_SENSOR_PATH = (
     "/World/envs/env_.*/Scene/MagneticDemo/target_magnet/capsule_camera_preview"
 )
+CAPSULE_RECORDED_CAMERA_SENSOR_PATH = (
+    "/World/envs/env_.*/Scene/MagneticDemo/target_magnet/capsule_camera"
+)
 CAPSULE_POSE_CAMERA_CONFIG_PATH = "{ENV_REGEX_NS}/capsule_pose_observer"
 CAPSULE_POSE_CAMERA_SENSOR_PATH = "/World/envs/env_.*/capsule_pose_observer"
 PREVIEW_REFRESH_HZ = 30.0
@@ -67,6 +70,30 @@ def configure_capsule_camera_view(env_cfg: Any) -> None:
             tiled_cam_env_indices=[0],
             tiled_cam_prim_path=CAMERA_PREVIEW_SENSOR_PATH,
             viewport_name=window_title,
+            create_viewport=False,
+            dock_position="RIGHT",
+            window_width=960,
+            window_height=540,
+        ),
+    )
+
+
+def configure_capsule_recorded_camera_view(env_cfg: Any) -> None:
+    """Add a panel backed only by the task's recorded 10 Hz camera."""
+    from isaaclab_visualizers.kit import KitVisualizerCfg
+
+    camera = env_cfg.scene.capsule_camera
+    recorded_hz = 1.0 / float(camera.update_period)
+    _append_visualizer_cfg(
+        env_cfg,
+        KitVisualizerCfg(
+            eye=tuple(env_cfg.viewer.eye),
+            lookat=tuple(env_cfg.viewer.lookat),
+            tiled_cam_view=True,
+            tiled_cam_num=1,
+            tiled_cam_env_indices=[0],
+            tiled_cam_prim_path=CAPSULE_RECORDED_CAMERA_SENSOR_PATH,
+            viewport_name=f"Capsule Camera | Recorded {recorded_hz:g} Hz",
             create_viewport=False,
             dock_position="RIGHT",
             window_width=960,
@@ -209,6 +236,53 @@ def attach_capsule_camera_policy_view(env: Any) -> CapsuleCameraViewHandle:
         f"resolution={preview_camera.cfg.width}x{preview_camera.cfg.height} "
         f"preview_hz={preview_hz:.1f} recorded_sensor_hz={recorded_sensor_hz:.1f} "
         f"render_hz={render_hz:.1f} enters_observations=false",
+        flush=True,
+    )
+    return CapsuleCameraViewHandle(visualizer=visualizer, original_update=original_update)
+
+
+def attach_capsule_recorded_camera_view(env: Any) -> CapsuleCameraViewHandle:
+    """Display circular policy RGB only when the recorded sensor frame changes."""
+    import torch
+
+    from isaaclab.managers import SceneEntityCfg
+    from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.mdp.vision import capsule_rgb
+
+    base_env = env.unwrapped
+    camera = base_env.scene["capsule_camera"]
+    visualizer = next(
+        (
+            item
+            for item in base_env.sim.visualizers
+            if getattr(getattr(item, "cfg", None), "tiled_cam_prim_path", None)
+            == CAPSULE_RECORDED_CAMERA_SENSOR_PATH
+            and getattr(item, "_camera_image_provider", None) is not None
+        ),
+        None,
+    )
+    if visualizer is None:
+        raise RuntimeError("TASK-009B recorded capsule-camera panel was not created")
+    original_update = visualizer._update_camera_image_panel
+    last_frame = -1
+
+    def _update_recorded_image(self, dt: float) -> None:
+        nonlocal last_frame
+        _ = camera.data.output["rgb"]
+        frame = int(camera.frame.torch[0].item())
+        if frame == last_frame:
+            return
+        with torch.inference_mode():
+            policy_rgb = capsule_rgb(
+                base_env, sensor_cfg=SceneEntityCfg("capsule_camera")
+            )[0]
+            display_rgb = policy_rgb.mul(255.0).round().clamp(0.0, 255.0).to(torch.uint8).contiguous()
+        self._upload_camera_image_to_panel(display_rgb)
+        last_frame = frame
+
+    visualizer._update_camera_image_panel = MethodType(_update_recorded_image, visualizer)
+    print(
+        "TASK009B_VIEW_READY view=capsule_recorded "
+        f"sensor_hz={1.0 / float(camera.cfg.update_period):.1f} extra_sensor=false",
         flush=True,
     )
     return CapsuleCameraViewHandle(visualizer=visualizer, original_update=original_update)

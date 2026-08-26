@@ -60,3 +60,16 @@ def test_coverage_validator_is_bound_to_frozen_pose_library_and_70mm_area_contra
     assert "visible_from_first_hits" in source
     assert "camera_facing_first_hits" in source
     assert '"post_reset_initial_C0"' in source
+
+
+def test_gate5_uses_one_recorded_camera_and_exact_control_boundaries():
+    source = (
+        ROOT / "scripts/stomach_coverage/teleop_stomach_coverage.py"
+    ).read_text(encoding="utf-8")
+    assert "configure_capsule_recorded_camera_view(cfg)" in source
+    assert "attach_capsule_recorded_camera_view(env)" in source
+    assert "configure_capsule_camera_view" not in source
+    assert "force_boundary_capture=True" in source
+    assert "camera_facing_normal_sign=-1" in source
+    assert "PHYSICS_STEPS_PER_CONTROL" in source
+    assert "TASK009B_THREE_VIEW_READY" in source
