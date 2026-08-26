@@ -1,0 +1,66 @@
+{
+  "config_sha256": "a9b20b50568a09ff36406c06963fbe8cb2be27c7d9ce46ff21389ff190a2e61d",
+  "generated_utc": "2026-08-26T04:24:49.012508+00:00",
+  "pose_manifest_config_sha256": "7740173f0c3b273a917fc0f405bb71eb09bec27779fe756a9a73b9b237c536d5",
+  "schema": "robotarm_magnetic_lab.task009b_coverage_manifest",
+  "target": {
+    "positive_weight_vertex_count": 24529,
+    "source": "legacy P0 approved luminal target set",
+    "stomach_geometry_sha256": "17ae0bc81e6c9b10d5846998206cafcfae37375ba62708aefd958e99539e9c1b",
+    "surface_prim_path": "/World/envs/env_0/Stomach/ConvertedSource/Environment/Stomach/VisualMesh/Stomach",
+    "target_total_area_m2": 0.0644836229259155,
+    "target_triangle_count": 49047,
+    "target_vertex_count": 24529,
+    "vertex_weights_sha256": "11adc45c0bccc6a05c5d9ac1181138bd7f18a371380893a32fa0f9ffc79e9c92",
+    "weight_max_m2": 2.5570752140642514e-05,
+    "weight_min_positive_m2": 1.1931849211780393e-07
+  },
+  "task_id": "Template-Robotarm-Magnetic-Parameterized-Force-Stomach-Coverage-Lab-v0",
+  "validation": {
+    "all_finite": true,
+    "distance_limit_m": 0.07,
+    "elapsed_wall_s": 8.055525101022795,
+    "final_coverage_fraction_after_reset_C0": 0.019400115426864994,
+    "first_hit_tolerance_m": 0.0001,
+    "fov_half_angle_deg": 60.0,
+    "frame_log_bytes": 36309,
+    "frame_log_path": "/mnt/isaac-linux/robotarm_magnetic_lab_artifacts/task009b_coverage_validation/20260826_042440_575139Z/coverage_boundaries.jsonl",
+    "frame_log_sha256": "2758caf3b65655e7d560c635aecff6b0beeb52cb8be9fda6851a280571fdb856",
+    "maximum_coverage_fraction_before_reset": 0.534965347710799,
+    "monotonic_union_pass": true,
+    "normal_sign": -1,
+    "pose_manifest_config_sha256": "7740173f0c3b273a917fc0f405bb71eb09bec27779fe756a9a73b9b237c536d5",
+    "range_pass": true,
+    "reset_check": {
+      "after_reset_coverage_fraction": 0.0,
+      "after_reset_frame_count": 0,
+      "before_reset_coverage_fraction": 0.534965347710799,
+      "before_reset_frame_count": 60,
+      "initial_C0_coverage_fraction": 0.019400115426864994,
+      "pass": true
+    },
+    "status": "pass",
+    "target": {
+      "positive_weight_vertex_count": 24529,
+      "source": "legacy P0 approved luminal target set",
+      "stomach_geometry_sha256": "17ae0bc81e6c9b10d5846998206cafcfae37375ba62708aefd958e99539e9c1b",
+      "surface_prim_path": "/World/envs/env_0/Stomach/ConvertedSource/Environment/Stomach/VisualMesh/Stomach",
+      "target_total_area_m2": 0.0644836229259155,
+      "target_triangle_count": 49047,
+      "target_vertex_count": 24529,
+      "vertex_weights_sha256": "11adc45c0bccc6a05c5d9ac1181138bd7f18a371380893a32fa0f9ffc79e9c92",
+      "weight_max_m2": 2.5570752140642514e-05,
+      "weight_min_positive_m2": 1.1931849211780393e-07
+    },
+    "validated_boundaries_before_reset": 60,
+    "validated_boundaries_total": 61
+  },
+  "version": 1,
+  "visibility": {
+    "first_hit_tolerance_m": 0.0001,
+    "fov_full_angle_deg": 120.0,
+    "max_distance_m": 0.07,
+    "normal_sign": -1,
+    "ray_backend": "isaaclab.utils.warp.ops.raycast_mesh CUDA first hit"
+  }
+}

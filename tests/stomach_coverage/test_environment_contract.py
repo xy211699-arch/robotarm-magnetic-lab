@@ -46,3 +46,17 @@ def test_integration_validator_requires_six_mode_boundary_evidence():
     assert 'keys != ["policy.rgb"]' in source
     assert "end_frame - start_frame != 1" in source
 
+
+def test_coverage_validator_is_bound_to_frozen_pose_library_and_70mm_area_contract():
+    source = (
+        ROOT / "scripts/stomach_coverage/validate_coverage_calculation.py"
+    ).read_text(encoding="utf-8")
+    assert 'MAX_OBSERVATION_DISTANCE_M, 0.07' in source
+    assert 'pose_manifest.get("live_reload_validation", {}).get("status") != "pass"' in source
+    assert 'selected_ids = pose_manifest["fixed_live_reload_pose_ids"]' in source
+    assert "cfg.episode_length_s = 100.0" in source
+    assert "camera._update_buffers_impl(camera._ALL_ENV_MASK)" in source
+    assert "target_vertex_area_weights(reference)" in source
+    assert "visible_from_first_hits" in source
+    assert "camera_facing_first_hits" in source
+    assert '"post_reset_initial_C0"' in source

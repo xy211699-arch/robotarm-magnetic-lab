@@ -121,7 +121,13 @@ class CoverageRecordWriter:
             vertex_count = int(record["vertex_count"])
             if vertex_count <= 0:
                 raise ValueError("vertex_count must be positive")
-            expected = int(record["cumulative_count"]) / vertex_count
+            if "cumulative_area_m2" in record and "total_area_m2" in record:
+                total_area = float(record["total_area_m2"])
+                if not math.isfinite(total_area) or total_area <= 0.0:
+                    raise ValueError("total_area_m2 must be finite and positive")
+                expected = float(record["cumulative_area_m2"]) / total_area
+            else:
+                expected = int(record["cumulative_count"]) / vertex_count
             if not math.isclose(float(record["coverage_fraction"]), expected, abs_tol=1.0e-12):
                 raise ValueError("coverage_fraction is inconsistent with cumulative_count")
         self._frame_ids.add(frame_key)

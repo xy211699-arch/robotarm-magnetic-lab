@@ -21,10 +21,10 @@ def test_exact_distance_and_cone_boundaries_are_inclusive():
     angle = math.radians(60.0)
     vertices = np.asarray(
         [
-            [0.0, 0.0, 0.05],
-            [0.05 * math.sin(angle), 0.0, 0.05 * math.cos(angle)],
-            [0.0, 0.0, 0.050001],
-            [0.05 * math.sin(angle + 1.0e-4), 0.0, 0.05 * math.cos(angle + 1.0e-4)],
+            [0.0, 0.0, 0.07],
+            [0.07 * math.sin(angle), 0.0, 0.07 * math.cos(angle)],
+            [0.0, 0.0, 0.070001],
+            [0.07 * math.sin(angle + 1.0e-4), 0.0, 0.07 * math.cos(angle + 1.0e-4)],
         ]
     )
     indices, distances = candidate_vertices(
@@ -33,7 +33,7 @@ def test_exact_distance_and_cone_boundaries_are_inclusive():
         optical_axis_world=np.asarray([0.0, 0.0, 1.0]),
     )
     assert indices.tolist() == [0, 1]
-    np.testing.assert_allclose(distances, [0.05, 0.05], atol=1.0e-12)
+    np.testing.assert_allclose(distances, [0.07, 0.07], atol=1.0e-12)
 
 
 def test_incident_first_hit_and_distance_tolerance():

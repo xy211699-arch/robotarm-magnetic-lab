@@ -10,7 +10,7 @@ import numpy as np
 from .reference_mesh import ReferenceMesh
 
 
-MAX_OBSERVATION_DISTANCE_M = 0.05
+MAX_OBSERVATION_DISTANCE_M = 0.07
 FOV_HALF_ANGLE_DEG = 60.0
 HIT_DISTANCE_TOLERANCE_M = 1.0e-4
 NORMAL_DOT_TOLERANCE = 1.0e-10

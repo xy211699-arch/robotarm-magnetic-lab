@@ -2,7 +2,7 @@
 
 状态：`partial`
 
-当前门禁：Gate 3已通过；Gate 4七十毫米面积加权覆盖计算正在实施。
+当前门禁：Gate 4已通过；Gate 5三视图等待现场人工验收。
 
 ## 基线与实现
 
@@ -77,7 +77,7 @@ Kit键盘对部分按键返回裸字符串而非Input对象导致过一次回调
 0.0017662011374897796 m2、单连通分量，锚点哈希为
 `9b5b33fef14bd183133818b60beac2d5b660d49a330f4a208023c3c9fd57bcec`。随后基于该锚点预览
 扩大区域时发现高亮进入非目标胃壁，因此该锚点及其扩大方案已被用户否决，只作为历史证据
-保留。Gate 2现在等待通过MOVE/VIEW/UP重新定位后生成的新锚点和新区域。
+保留；随后已通过MOVE/VIEW/UP重新定位并生成下述最终锚点和区域。
 
 最终确认配置：
 
@@ -138,10 +138,50 @@ cd /tmp/robotarm-task009b
 - Git清单：`configs/task009b/pose_library_manifest_v1.json`，包含分组、接受种子、拒绝统计、
   固定回载ID、外部绝对路径和哈希。
 
+## Gate 4：七十毫米面积加权覆盖
+
+状态：`pass`
+
+旧覆盖代码的50 mm和顶点计数比例已替换为冻结合同要求的70 mm与面积权重。每个目标
+三角形面积的三分之一累加到三个顶点；当前和累计覆盖同时经过120度圆形FOV、70 mm距离、
+胃腔侧法向和CUDA第一命中遮挡。累计率、记录写入、一致性检查、快照与运行时均使用面积。
+
+自动化命令：
+
+```bash
+./run_isaaclab.sh -p -m pytest -q \
+  tests/coverage tests/stomach_coverage tests/parameterized_force tests/runtime
+```
+
+结果：`57 passed`，覆盖非均匀面积、距离和视场边界、法向、第一命中、累计并集、reset和
+单调性。
+
+live命令：
+
+```bash
+./run_isaaclab.sh -p scripts/stomach_coverage/validate_coverage_calculation.py \
+  --device cuda:0 --raycast_device cuda:0
+```
+
+live从Gate 3固定20/20/20位姿加载。60个连续边界均产生非零当前可见面积，累计率严格单调
+并达到53.4965347710799%；随后reset清为0，并在首个有效RGB边界得到
+`C0=1.9400115426864994%`。共61个边界的RGB与物理状态均有限。
+
+目标集合保持旧P0批准的胃腔内表面：24529顶点、49047三角面、总面积
+0.0644836229259155 m2；胃壁几何SHA-256为`17ae0bc...9c1b`，顶点权重SHA-256为
+`11adc45c...9c92`。0.1秒浮点调度有21个边界没有自动标记传感器outdated，验证器仅在这些
+已记录边界执行不推进物理和动作的必要采集。
+
+外部证据：
+
+- 日志：`/mnt/isaac-linux/robotarm_magnetic_lab_artifacts/task009b_coverage_validation/20260826_042440_575139Z/coverage_boundaries.jsonl`
+- 日志：36309字节，SHA-256 `2758caf3b65655e7d560c635aecff6b0beeb52cb8be9fda6851a280571fdb856`
+- 摘要：同目录`summary.json`，1736字节，SHA-256
+  `f4b26c8d15d2827aa2b42eb5fed0cc7c334a8f72eb96d5f9638eb1c8f5b47773`
+- Git清单：`configs/task009b/coverage_manifest_v1.json`。
+
 ## 未执行门禁
 
-- Gate 4 七十毫米面积加权覆盖计算：正在实施；已确认旧实现仍是50 mm与顶点计数比例，
-  不会将其误报为符合冻结合同。
-- Gate 5 三视图现场验收：未执行；依赖覆盖计算通过。
+- Gate 5 三视图现场验收：等待用户运行可视化并确认画面。
 
 本报告未把未执行项描述为通过；位姿库数据本体按合同仅保存在Linux外部工件目录。

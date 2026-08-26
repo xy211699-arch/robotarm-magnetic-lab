@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 
 from .accumulator import CoverageAccumulator, CoverageUpdate
+from .area_weights import target_vertex_area_weights, weights_sha256
 from .records import CoverageRecordWriter, artifact_inventory
 from .reference_mesh import MeshInput, preprocess_reference_mesh
 from .runtime import RecordedFrameClock, assert_coverage_consistency
@@ -106,7 +107,10 @@ class P0CoverageRuntime:
             raise ValueError("camera_facing_normal_sign must be -1 or +1")
         self.raycast_device = str(raycast_device or self.env.device)
         self.raycaster = WarpFirstHitRaycaster(self.reference, device=self.raycast_device)
-        self.accumulator = CoverageAccumulator(len(self.reference.vertices_world))
+        self.vertex_weights = target_vertex_area_weights(self.reference)
+        self.accumulator = CoverageAccumulator(
+            len(self.reference.vertices_world), vertex_weights=self.vertex_weights
+        )
         self.clock = RecordedFrameClock(float(self.camera.cfg.update_period))
         self.trajectory: list[np.ndarray] = []
         self.timings_s: list[float] = []
@@ -125,6 +129,10 @@ class P0CoverageRuntime:
             "weld_tolerance_m": self.reference.weld_tolerance_m,
             "vertex_count": len(self.reference.vertices_world),
             "triangle_count": len(self.reference.triangles),
+            "target_vertex_count": int(np.count_nonzero(self.vertex_weights > 0.0)),
+            "target_triangle_count": len(self.reference.triangles),
+            "target_total_area_m2": self.accumulator.total_area_m2,
+            "target_vertex_weights_sha256": weights_sha256(self.vertex_weights),
             "camera": {
                 "prim_path": self.camera.cfg.prim_path,
                 "width": int(self.camera.cfg.width),
@@ -239,6 +247,10 @@ class P0CoverageRuntime:
             "newly_covered_count": int(update.newly_covered_count),
             "cumulative_count": int(update.cumulative_count),
             "vertex_count": len(self.reference.vertices_world),
+            "visible_area_m2": float(update.visible_area_m2),
+            "newly_covered_area_m2": float(update.newly_covered_area_m2),
+            "cumulative_area_m2": float(update.cumulative_area_m2),
+            "total_area_m2": float(update.total_area_m2),
             "coverage_fraction": float(update.coverage_fraction),
             "coverage_update_s": float(elapsed),
         }
@@ -267,7 +279,7 @@ class P0CoverageRuntime:
         mask = self.accumulator.mask
         capsule_position = self.capsule_position()
         trajectory = np.asarray(self.trajectory, dtype=np.float64).reshape(-1, 3)
-        fraction = float(mask.mean())
+        fraction = self.accumulator.coverage_fraction
         png_path = self.partial_directory / f"{stem}.png"
         projection = export_coverage_projection(
             png_path,
@@ -289,7 +301,9 @@ class P0CoverageRuntime:
         metadata_path = self.partial_directory / f"{stem}.json"
         metadata_path.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         if self.latest_record is not None:
-            assert_coverage_consistency(mask, self.latest_record, projection)
+            assert_coverage_consistency(
+                mask, self.latest_record, projection, vertex_weights=self.vertex_weights
+            )
         return metadata
 
     def reset(self) -> None:
@@ -312,7 +326,7 @@ class P0CoverageRuntime:
         summary = {
             "reason": reason,
             "coverage_updates": len(self.timings_s),
-            "coverage_fraction": float(self.accumulator.mask.mean()),
+            "coverage_fraction": self.accumulator.coverage_fraction,
             "timing_s": {
                 "median": float(np.median(self.timings_s)) if self.timings_s else None,
                 "p95": float(np.percentile(self.timings_s, 95)) if self.timings_s else None,
