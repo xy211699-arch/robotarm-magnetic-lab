@@ -9,6 +9,7 @@ import pytest
 
 from robotarm_magnetic_lab.coverage.entry_surface_region import (
     ANCHOR_SCHEMA,
+    ENTRY_RADII_M,
     anchor_record,
     closest_point_on_triangle,
     geodesic_face_distances,
@@ -43,6 +44,10 @@ def test_closest_point_uses_triangle_interior_not_nearest_vertex():
     triangle = np.asarray([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     closest = closest_point_on_triangle(np.asarray([0.25, 0.25, 0.2]), triangle)
     assert np.allclose(closest, [0.25, 0.25, 0.0])
+
+
+def test_entry_radius_choices_cover_10_to_80_mm_in_5_mm_steps():
+    assert np.allclose(ENTRY_RADII_M, np.arange(10, 81, 5) / 1000.0)
 
 
 def test_nearest_surface_point_and_geodesic_region_do_not_jump_spatial_gap():

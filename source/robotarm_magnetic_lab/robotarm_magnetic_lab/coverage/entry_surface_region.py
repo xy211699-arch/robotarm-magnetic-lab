@@ -19,7 +19,7 @@ from .reference_mesh import ReferenceMesh
 ANCHOR_SCHEMA = "robotarm_magnetic_lab.task009b_entry_anchor"
 REGION_SCHEMA = "robotarm_magnetic_lab.task009b_entry_region"
 CONFIG_VERSION = 1
-ENTRY_RADII_M = (0.010, 0.015, 0.020, 0.025, 0.030, 0.060)
+ENTRY_RADII_M = tuple(float(radius_mm) / 1000.0 for radius_mm in range(10, 81, 5))
 
 
 @dataclass(frozen=True)
