@@ -201,6 +201,96 @@ live从Gate 3固定20/20/20位姿加载。60个连续边界均产生非零当前
 UP 0.80--1.05 mg。控制时钟、方向和作用点均未改变；详情及验证证据见
 `TASK-009B-parameterized-force-range-adjustment-report.md`。
 
+## 补充验收：正式训练边界同步与GPU执行
+
+状态：`pass`（自动项）；三视图人工项仍为`needs_input`。
+
+实现分支：`feature/TASK-009B-stomach-coverage-environment`。补充验收开始时基线完整提交为
+`0b5c36caedf63c15ce730520f94003523b551fa4`；本节实现完整40位提交为
+`a63c1eb414eec4d0b921a170cac4e951be3a8497`。最终报告/运行日志为独立文档提交，哈希以终端
+交付信息为准。
+
+实际修改文件：
+
+- `source/.../robotarm_magnetic_lab/mdp/vision.py`：在正式策略观测路径隔离并执行边界补采；
+- `source/.../task009b_training_env.py`：每次显式reset自动执行10个HOLD边界，并在返回Actor前
+  清零回合长度预算；
+- `source/.../robotarm_magnetic_parameterized_force_stomach_env_cfg.py`：删除CPU强制覆盖并启用
+  正式边界新帧合同；
+- `source/.../robotarm_magnetic_lab/__init__.py`：正式任务注册到上述环境类；
+- `source/.../coverage/simulator_runtime.py`：覆盖端校验Actor帧号并记录同一RGB摘要；
+- `scripts/stomach_coverage/validate_formal_training_runtime.py`：GPU 1000边界与100次reset验收；
+- `scripts/stomach_coverage/validate_gpu_pose_reload.py`：GPU固定20/20/20位姿回载；
+- `scripts/stomach_coverage/teleop_stomach_coverage.py`：GPU三视图同帧路径和Y/N人工确认；
+- `tests/stomach_coverage/test_environment_contract.py`：正式路径合同回归。
+
+自动化回归命令：
+
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./run_isaaclab.sh -p -m pytest -q \
+  tests/parameterized_force tests/stomach_coverage tests/coverage
+```
+
+结果：`53 passed`。
+
+正式GPU/RGB/覆盖同步命令：
+
+```bash
+./run_isaaclab.sh -p \
+  scripts/stomach_coverage/validate_formal_training_runtime.py \
+  --device cuda:0
+```
+
+结果：`pass`。正式环境、配置、PhysX SimulationView、相机张量及覆盖射线设备均为
+`cuda:0`。连续1000个混合六模式边界全部为24个物理子步和0.1秒；Actor帧ID共1000个且
+全部唯一、逐边界加一，覆盖帧与Actor帧相同，RGB有限，面积累计覆盖单调。浮点时间调度中
+415个边界需要正式观测路径调用一次`Camera._update_buffers_impl()`补采；这是私有接口，
+Isaac Lab升级时必须复审。100次reset各自产生10个连续新HOLD帧，共1000帧；稳定阶段后
+`episode_length_buf=0`，最后一帧同时初始化Actor观测和非零`C0`。
+
+同步证据：
+
+- `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009b_formal_runtime_validation/20260826_104941_589132Z/control_boundaries.jsonl`：513903字节，SHA-256 `6a58cbaae7bd654b4a512f9c4dfe7be11e6c81253d080ddc8cf31bc91a863176`；
+- 同目录`reset_stabilization.jsonl`：34190字节，SHA-256 `3b1dd86570c76a72f1a48c225a46b83405c01b1d77fc6eff36104d3c8ca9b990`；
+- 同目录`summary.json`：1869字节，SHA-256 `23a21ee757b76c603b407b88d9dc0bd84740ac6be181eb14e179c644b99e9de3`；
+- 同目录`coverage/frames.jsonl`：871295字节，SHA-256 `21e16beb2f0cc775e31a16a8108cab020ff3c5ab4d56697f2658c5d1110b9733`；
+- 同目录`coverage/metadata.json`：1732字节，SHA-256 `9e33ad34b3275fb469613de6fb79088ba05e2743d52797ff1e9d80de4c27f307`。
+
+第一次运行已完成1000边界，但错误地要求reset帧必须固定为1--10；实际初始化帧为1、十个
+HOLD帧为2--11。该非合同判据导致`reset 0`处中止。失败证据保留在
+`.../task009b_formal_runtime_validation/20260826_104610_312046Z/`；判据仅修正为“任意起点的
+十个连续递增帧”，正式环境实现未为通过测试而放宽。
+
+GPU位姿回载命令：
+
+```bash
+./run_isaaclab.sh -p \
+  scripts/stomach_coverage/validate_gpu_pose_reload.py \
+  --device cuda:0
+```
+
+结果：`pass`。固定训练/验证/测试各20条、共60条均在GPU PhysX恢复并HOLD 1秒；全部位置、
+姿态、速度与RGB有限，长轴无方向倾角不小于45度，相机端和另一端球心均保持胃腔侧，未出现
+不可恢复PhysX异常。日志
+`/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009b_gpu_pose_reload_validation/20260826_105520_778472Z/gpu_pose_reload.jsonl`
+为52489字节，SHA-256 `824f057b22b09df5da28fc30447b91b3c4fffe7c10ff445c220fb71c87e476d1`；
+同目录`summary.json`为548字节，SHA-256
+`44ab38c64f4efc50a8f3887a8dd92f44026dc5be37cea86bdbc01530a117fc42`。
+
+覆盖目标仍严格为24529个正权重顶点、49047个三角面、总面积
+0.0644836229259155 m2、70 mm距离和原胃壁哈希；未重算ROI、面积权重、入口区域或位姿库。
+历史53.50%仅是冻结位姿可见并集验证，不作为策略性能。
+
+现场三视图命令：
+
+```bash
+./run_isaaclab.sh -p scripts/stomach_coverage/teleop_stomach_coverage.py \
+  --device cuda:0
+```
+
+三个窗口已由本轮程序成功创建；按`Y`记录`confirmed`，按`N`记录`rejected`。未经用户按键
+确认，本报告总状态保持`needs_input`。
+
 ## 待人工验收门禁
 
 - Gate 5 三视图现场验收：等待用户运行可视化并确认画面。
