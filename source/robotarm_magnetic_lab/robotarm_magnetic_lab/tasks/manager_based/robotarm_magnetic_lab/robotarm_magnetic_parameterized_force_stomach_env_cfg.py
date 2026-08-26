@@ -44,6 +44,7 @@ class ParameterizedForceStomachObservationsCfg:
             params={
                 "sensor_cfg": SceneEntityCfg("capsule_camera"),
                 "field_of_view_deg": CAPSULE_CAMERA_CIRCULAR_FOV_DEG,
+                "require_new_control_boundary_frame": True,
             },
         )
 
@@ -106,7 +107,5 @@ class RobotarmMagneticParameterizedForceStomachCoverageLabEnvCfg(
         # 10 Hz environment boundary, independently of repeated UI display.
         self.sim.render_interval = 4
         self.scene.capsule_camera.update_period = 1.0 / 10.0
-        self.sim.device = "cpu"
         self.sim.physics = PhysxCfg(enable_ccd=True)
         self.episode_length_s = 1800.0
-

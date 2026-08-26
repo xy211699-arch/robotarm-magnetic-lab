@@ -101,6 +101,7 @@ class KitHeldKeyboard:
     def __init__(self, alpha: float) -> None:
         self.state = ParameterizedForceKeyboard(alpha)
         self.events = deque()
+        self.acceptance = None
         self._input = carb.input.acquire_input_interface()
         self._device = omni.appwindow.get_default_app_window().get_keyboard()
         self._subscription = self._input.subscribe_to_keyboard_events(
@@ -110,6 +111,13 @@ class KitHeldKeyboard:
     def _on_event(self, event, *_args):
         key = event.input.name if hasattr(event.input, "name") else str(event.input)
         if event.type == carb.input.KeyboardEventType.KEY_PRESS:
+            normalized = key.upper()
+            if normalized == "Y":
+                self.acceptance = "confirmed"
+                return True
+            if normalized == "N":
+                self.acceptance = "rejected"
+                return True
             update = self.state.key_event(key, True)
         elif event.type == carb.input.KeyboardEventType.KEY_RELEASE:
             update = self.state.key_event(key, False)
@@ -194,8 +202,7 @@ def main() -> int:
         "%Y%m%d_%H%M%S_%fZ"
     )
 
-    cfg = parse_env_cfg(args_cli.task, device="cpu", num_envs=1, use_fabric=True)
-    cfg.sim.device = "cpu"
+    cfg = parse_env_cfg(args_cli.task, device=args_cli.device, num_envs=1, use_fabric=True)
     cfg.sim.render_interval = PHYSICS_HZ // args_cli.render_fps
     if not HEADLESS:
         configure_capsule_recorded_camera_view(cfg)
@@ -210,6 +217,12 @@ def main() -> int:
             env.reset()
             base = env.unwrapped
             _write_pose(base, pose_record)
+            hold_after_pose = torch.tensor(
+                [[float(ParameterizedForceMode.HOLD), float(args_cli.initial_alpha)]],
+                device=base.device,
+                dtype=torch.float32,
+            )
+            env.step(hold_after_pose)
             evaluator = P0CoverageRuntime(
                 env,
                 output,
@@ -220,13 +233,16 @@ def main() -> int:
                 enable_view=not HEADLESS,
                 require_camera_facing_normal=True,
                 camera_facing_normal_sign=-1,
-                raycast_device="cuda:0",
+                raycast_device=str(args_cli.device),
             )
             if not HEADLESS:
                 keyboard = KitHeldKeyboard(args_cli.initial_alpha)
                 camera_view = attach_capsule_recorded_camera_view(env)
 
-            initial_update = evaluator.maybe_update(force_boundary_capture=True)
+            initial_sync = dict(base._task009b_policy_rgb_sync_latest)
+            initial_update = evaluator.maybe_update(
+                expected_camera_frame=int(initial_sync["frame"])
+            )
             evaluator.update_view()
             if initial_update is None:
                 raise RuntimeError("initial 10 Hz coverage boundary was not captured")
@@ -238,7 +254,8 @@ def main() -> int:
                 f"pose_manifest_sha256={pose_manifest_sha} "
                 "views='main viewport; Capsule Camera Recorded 10 Hz; P0 Stomach Coverage' "
                 "keys='hold A/D MOVE-/+; hold Q/E VIEW-/+; hold W UP; "
-                "Z/X/C alpha=0/0.5/1; SPACE HOLD; R reset; P snapshot; ESC exit'",
+                "Z/X/C alpha=0/0.5/1; SPACE HOLD; R reset; P snapshot; "
+                "Y confirm; N reject; ESC exit'",
                 flush=True,
             )
             reason = "simulation_closed"
@@ -250,6 +267,13 @@ def main() -> int:
                         reset_requested |= event.kind is ParameterizedKeyboardEventKind.RESET
                         snapshot_requested |= event.kind is ParameterizedKeyboardEventKind.SNAPSHOT
                         exit_requested |= event.kind is ParameterizedKeyboardEventKind.EXIT
+                    if keyboard.acceptance is not None:
+                        reason = f"human_{keyboard.acceptance}"
+                        print(
+                            "TASK009B_THREE_VIEW_ACCEPTANCE " + keyboard.acceptance,
+                            flush=True,
+                        )
+                        break
                     mode, alpha = keyboard.state.command
                 elif scripted:
                     mode, alpha = scripted.popleft()
@@ -264,9 +288,11 @@ def main() -> int:
                     evaluator.reset()
                     env.reset()
                     _write_pose(base, pose_record)
+                    env.step(hold_after_pose)
                     keyboard.state.release_all()
                     active_signature = None
-                    evaluator.maybe_update(force_boundary_capture=True)
+                    reset_sync = dict(base._task009b_policy_rgb_sync_latest)
+                    evaluator.maybe_update(expected_camera_frame=int(reset_sync["frame"]))
                     evaluator.update_view()
                     print("TASK009B_THREE_VIEW_RESET", flush=True)
                     continue
@@ -289,14 +315,15 @@ def main() -> int:
                 action = torch.tensor(
                     [[float(mode), float(alpha)]], device=base.device, dtype=torch.float32
                 )
-                env.step(action)
+                observation, *_ = env.step(action)
                 trace = base.action_manager.get_term("parameterized_force").current_cycle_trace
                 if len(trace) != PHYSICS_STEPS_PER_CONTROL:
                     raise RuntimeError(f"expected 24 physics substeps, got {len(trace)}")
                 pose = base.scene["capsule"].data.root_pose_w.torch[0].detach().cpu().numpy()
                 if not np.isfinite(pose).all():
                     raise RuntimeError("non-finite capsule state at 10 Hz boundary")
-                update = evaluator.maybe_update(force_boundary_capture=True)
+                sync = dict(base._task009b_policy_rgb_sync_latest)
+                update = evaluator.maybe_update(expected_camera_frame=int(sync["frame"]))
                 if update is None:
                     raise RuntimeError("coverage did not update at a 10 Hz action boundary")
                 evaluator.update_view()
@@ -326,6 +353,9 @@ def main() -> int:
                 "capsule_rgb_hz": CONTROL_HZ,
                 "coverage_view_hz": CONTROL_HZ,
                 "pose_id": pose_record["pose_id"],
+                "human_acceptance": (
+                    reason.removeprefix("human_") if reason.startswith("human_") else "needs_input"
+                ),
             }
             final = evaluator.finalize(reason)
             summary["artifact_directory"] = str(final)

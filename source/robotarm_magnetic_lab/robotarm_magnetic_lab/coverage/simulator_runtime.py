@@ -96,6 +96,7 @@ class P0CoverageRuntime:
         camera_facing_normal_sign: int = 1,
         raycast_device: str | None = None,
         surface_prim_path: str = DEFAULT_INNER_SURFACE_PATH,
+        print_updates: bool = True,
     ) -> None:
         self.env = env.unwrapped
         self.camera = self.env.scene["capsule_camera"]
@@ -106,6 +107,7 @@ class P0CoverageRuntime:
         if self.camera_facing_normal_sign not in (-1, 1):
             raise ValueError("camera_facing_normal_sign must be -1 or +1")
         self.raycast_device = str(raycast_device or self.env.device)
+        self.print_updates = bool(print_updates)
         self.raycaster = WarpFirstHitRaycaster(self.reference, device=self.raycast_device)
         self.vertex_weights = target_vertex_area_weights(self.reference)
         self.accumulator = CoverageAccumulator(
@@ -196,10 +198,22 @@ class P0CoverageRuntime:
         }
         self.writer.append_action(record)
 
-    def maybe_update(self, *, force_boundary_capture: bool = False) -> CoverageUpdate | None:
+    def maybe_update(
+        self,
+        *,
+        force_boundary_capture: bool = False,
+        expected_camera_frame: int | None = None,
+        rgb_content_sha256: str | None = None,
+        write_record: bool = True,
+    ) -> CoverageUpdate | None:
         # Reading renderer output completes the recorded policy-camera buffer.
         _ = self.camera.data.output["rgb"]
         frame_value = int(self.camera.frame.torch[0].item())
+        if expected_camera_frame is not None and frame_value != int(expected_camera_frame):
+            raise RuntimeError(
+                "coverage camera frame differs from Actor observation frame: "
+                f"actor={expected_camera_frame}, coverage={frame_value}"
+            )
         if (
             force_boundary_capture
             and self._last_camera_frame is not None
@@ -261,6 +275,11 @@ class P0CoverageRuntime:
         self.ray_counts.append(int(len(candidates)))
         record = {
             "frame_id": int(frame_id),
+            "camera_frame": int(frame_value),
+            "actor_rgb_frame": (
+                None if expected_camera_frame is None else int(expected_camera_frame)
+            ),
+            "rgb_content_sha256": rgb_content_sha256,
             "timestamp_s": float(timestamp),
             "camera_position_world_m": center.tolist(),
             "camera_quaternion_ros_xyzw": quaternion.tolist(),
@@ -280,15 +299,17 @@ class P0CoverageRuntime:
             "coverage_fraction": float(update.coverage_fraction),
             "coverage_update_s": float(elapsed),
         }
-        self.writer.append_frame(record)
+        if write_record:
+            self.writer.append_frame(record)
         self.latest_record = record
-        print(
-            "P0_COVERAGE "
-            f"frame={frame_id} covered={update.cumulative_count}/{len(self.reference.vertices_world)} "
-            f"percent={100.0 * update.coverage_fraction:.3f} "
-            f"new={update.newly_covered_count}",
-            flush=True,
-        )
+        if self.print_updates:
+            print(
+                "P0_COVERAGE "
+                f"frame={frame_id} covered={update.cumulative_count}/{len(self.reference.vertices_world)} "
+                f"percent={100.0 * update.coverage_fraction:.3f} "
+                f"new={update.newly_covered_count}",
+                flush=True,
+            )
         return update
 
     def update_view(self) -> None:
@@ -334,8 +355,9 @@ class P0CoverageRuntime:
             )
         return metadata
 
-    def reset(self) -> None:
-        self.snapshot("reset")
+    def reset(self, *, save_snapshot: bool = True) -> None:
+        if save_snapshot:
+            self.snapshot("reset")
         self.accumulator.reset()
         self.clock.reset()
         self.current_visible_mask.fill(False)

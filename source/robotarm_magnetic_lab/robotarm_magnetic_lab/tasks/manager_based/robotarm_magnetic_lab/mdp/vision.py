@@ -138,9 +138,12 @@ def capsule_rgb(
     sensor_cfg: SceneEntityCfg = SceneEntityCfg("capsule_camera"),
     field_of_view_deg: float = 120.0,
     circle_fill: float = 0.98,
+    require_new_control_boundary_frame: bool = False,
 ) -> torch.Tensor:
     """Return circular, wide-angle capsule RGB observations in NHWC layout."""
     camera: Camera = env.scene.sensors[sensor_cfg.name]
+    if require_new_control_boundary_frame:
+        _synchronize_policy_rgb_at_control_boundary(env, camera)
     return _sample_capsule_image(
         # RTX commonly exposes an alpha channel; the policy interface is true
         # RGB and must match the physical three-channel camera stream.
@@ -150,6 +153,47 @@ def capsule_rgb(
         circle_fill,
         is_depth=False,
     )
+
+
+def _synchronize_policy_rgb_at_control_boundary(env: ManagerBasedEnv, camera: Camera) -> None:
+    """Guarantee one and only one fresh camera frame per formal control boundary.
+
+    Isaac Lab schedules RTX sensors from floating-point simulation timestamps.
+    On an exact 0.1 s boundary that comparison can occasionally retain the
+    previous frame.  The formal TASK-009B observation path therefore performs
+    one internal buffer update only when the renderer has not advanced.  The
+    state is attached to the environment so repeated observation reads at the
+    same boundary never trigger an additional capture.
+
+    ``Camera._update_buffers_impl`` is an Isaac Lab private API.  Keeping the
+    compatibility-sensitive call isolated here makes version audits explicit.
+    """
+    _ = camera.data.output["rgb"]
+    boundary = int(env.common_step_counter)
+    frame = int(camera.frame.torch[0].item())
+    state = getattr(env, "_task009b_policy_rgb_sync", None)
+    if state is None:
+        state = {"boundary": boundary, "frame": frame, "forced_capture": False}
+    elif boundary == int(state["boundary"]):
+        # Observation managers and UI helpers may read the same policy term
+        # more than once.  The already-associated frame must be reused.
+        frame = int(state["frame"])
+    else:
+        previous_frame = int(state["frame"])
+        forced = False
+        if frame <= previous_frame:
+            camera._update_buffers_impl(camera._ALL_ENV_MASK)
+            _ = camera.data.output["rgb"]
+            frame = int(camera.frame.torch[0].item())
+            forced = True
+        if frame != previous_frame + 1:
+            raise RuntimeError(
+                "formal policy RGB must advance by exactly one frame per control boundary: "
+                f"previous={previous_frame}, current={frame}, boundary={boundary}"
+            )
+        state = {"boundary": boundary, "frame": frame, "forced_capture": forced}
+    env._task009b_policy_rgb_sync = state
+    env._task009b_policy_rgb_sync_latest = dict(state)
 
 
 def capsule_depth(

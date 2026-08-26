@@ -25,6 +25,8 @@ def test_stomach_environment_uses_audited_parameterized_force_term():
     assert 1.0 / (cfg.sim.dt * cfg.decimation) == CONTROL_HZ
     assert cfg.scene.capsule_camera.update_period == 1.0 / CONTROL_HZ
     assert cfg.sim.render_interval == PHYSICS_HZ // 60
+    assert cfg.sim.device != "cpu"
+    assert cfg.observations.policy.rgb.params["require_new_control_boundary_frame"] is True
 
 
 def test_stomach_environment_does_not_import_one_second_macro_controller():
@@ -69,7 +71,33 @@ def test_gate5_uses_one_recorded_camera_and_exact_control_boundaries():
     assert "configure_capsule_recorded_camera_view(cfg)" in source
     assert "attach_capsule_recorded_camera_view(env)" in source
     assert "configure_capsule_camera_view" not in source
-    assert "force_boundary_capture=True" in source
+    assert "expected_camera_frame=" in source
+    assert 'device=args_cli.device' in source
+    assert 'cfg.sim.device = "cpu"' not in source
     assert "camera_facing_normal_sign=-1" in source
     assert "PHYSICS_STEPS_PER_CONTROL" in source
     assert "TASK009B_THREE_VIEW_READY" in source
+
+
+def test_formal_runtime_validator_covers_gpu_sync_and_resets():
+    source = (
+        ROOT / "scripts/stomach_coverage/validate_formal_training_runtime.py"
+    ).read_text(encoding="utf-8")
+    assert "args_cli.cycles < 1000" in source
+    assert "args_cli.resets < 100" in source
+    assert "actor_coverage_same_frame" in source
+    assert "physics_sim_view_device" in source
+    assert "episode_length_after_stabilization" in source
+    assert "write_record=False" in source
+
+
+def test_gpu_pose_reload_uses_fixed_20_20_20_and_one_second_hold():
+    source = (
+        ROOT / "scripts/stomach_coverage/validate_gpu_pose_reload.py"
+    ).read_text(encoding="utf-8")
+    assert 'selected = manifest["fixed_live_reload_pose_ids"]' in source
+    assert "LIVE_RELOAD_COUNT_PER_SPLIT" in source
+    assert "for _ in range(10)" in source
+    assert "camera_inside_lumen" in source
+    assert "other_end_inside_lumen" in source
+    assert 'device=args_cli.device' in source
