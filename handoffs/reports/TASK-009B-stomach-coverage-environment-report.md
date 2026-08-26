@@ -197,6 +197,10 @@ live从Gate 3固定20/20/20位姿加载。60个连续边界均产生非零当前
 现场命令、按键及验收项见`docs/TASK009B_THREE_VIEW_ACCEPTANCE.md`。合同要求的主观画面
 确认必须由用户完成，因此当前不能标记为`complete`。
 
+用户后续依据实测将参数化力范围更新为MOVE 0.70--1.40 mg、VIEW 0.20--0.50 mg、
+UP 0.80--1.05 mg。控制时钟、方向和作用点均未改变；详情及验证证据见
+`TASK-009B-parameterized-force-range-adjustment-report.md`。
+
 ## 待人工验收门禁
 
 - Gate 5 三视图现场验收：等待用户运行可视化并确认画面。

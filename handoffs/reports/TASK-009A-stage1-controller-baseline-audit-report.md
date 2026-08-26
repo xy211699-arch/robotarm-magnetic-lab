@@ -1,5 +1,8 @@
 # TASK-009A 第一阶段控制器基线发布与审计报告
 
+> 本报告记录TASK-009A发布时的历史范围。当前实测范围已由TASK-009B更新，执行时应以
+> `TASK-009B-parameterized-force-range-adjustment-report.md`及最新代码为准。
+
 ## 1. 结论
 
 - 状态：`complete`

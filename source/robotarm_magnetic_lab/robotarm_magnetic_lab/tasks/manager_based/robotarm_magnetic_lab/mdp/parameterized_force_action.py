@@ -222,8 +222,8 @@ class ParameterizedForceActionTermCfg(ActionTermCfg):
     camera_sensor_name: str = "capsule_camera"
     cylinder_height_m: float = 0.012
     move_min_ratio: float = 0.70
-    move_max_ratio: float = 1.20
-    view_min_ratio: float = 0.30
-    view_max_ratio: float = 0.90
-    up_min_ratio: float = 0.70
-    up_max_ratio: float = 1.00
+    move_max_ratio: float = 1.40
+    view_min_ratio: float = 0.20
+    view_max_ratio: float = 0.50
+    up_min_ratio: float = 0.80
+    up_max_ratio: float = 1.05

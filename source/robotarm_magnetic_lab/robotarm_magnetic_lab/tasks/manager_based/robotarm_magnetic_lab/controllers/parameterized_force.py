@@ -39,11 +39,11 @@ NEGATIVE_MODES = frozenset((ParameterizedForceMode.MOVE_NEG, ParameterizedForceM
 @dataclass(frozen=True)
 class ParameterizedForceConfig:
     move_min_ratio: float = 0.70
-    move_max_ratio: float = 1.20
-    view_min_ratio: float = 0.30
-    view_max_ratio: float = 0.90
-    up_min_ratio: float = 0.70
-    up_max_ratio: float = 1.00
+    move_max_ratio: float = 1.40
+    view_min_ratio: float = 0.20
+    view_max_ratio: float = 0.50
+    up_min_ratio: float = 0.80
+    up_max_ratio: float = 1.05
     physics_hz: int = PHYSICS_HZ
     control_hz: int = CONTROL_HZ
 

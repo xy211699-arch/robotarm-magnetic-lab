@@ -33,9 +33,9 @@ def test_clocks_and_strength_mapping_are_frozen():
     assert CONTROL_HZ == 10
     assert PHYSICS_STEPS_PER_CONTROL == 24
     cfg = ParameterizedForceConfig()
-    assert [parameterized_force_ratio(ParameterizedForceMode.MOVE_POS, alpha, cfg) for alpha in (0, 0.5, 1)] == pytest.approx([0.70, 0.95, 1.20])
-    assert [parameterized_force_ratio(ParameterizedForceMode.VIEW_POS, alpha, cfg) for alpha in (0, 0.5, 1)] == pytest.approx([0.30, 0.60, 0.90])
-    assert [parameterized_force_ratio(ParameterizedForceMode.UP, alpha, cfg) for alpha in (0, 0.5, 1)] == pytest.approx([0.70, 0.85, 1.00])
+    assert [parameterized_force_ratio(ParameterizedForceMode.MOVE_POS, alpha, cfg) for alpha in (0, 0.5, 1)] == pytest.approx([0.70, 1.05, 1.40])
+    assert [parameterized_force_ratio(ParameterizedForceMode.VIEW_POS, alpha, cfg) for alpha in (0, 0.5, 1)] == pytest.approx([0.20, 0.35, 0.50])
+    assert [parameterized_force_ratio(ParameterizedForceMode.UP, alpha, cfg) for alpha in (0, 0.5, 1)] == pytest.approx([0.80, 0.925, 1.05])
 
 
 def test_force_distribution_and_directions():
@@ -45,17 +45,17 @@ def test_force_distribution_and_directions():
     np.testing.assert_allclose(move.camera_force_world, move.other_force_world)
     assert np.dot(move.direction_world, axis) == pytest.approx(0.0)
     assert move.direction_world[2] == pytest.approx(0.0)
-    assert np.linalg.norm(move.camera_force_world + move.other_force_world) == pytest.approx(0.95 * mass * 9.81)
+    assert np.linalg.norm(move.camera_force_world + move.other_force_world) == pytest.approx(1.05 * mass * 9.81)
 
     move_neg = parameterized_endpoint_forces(ParameterizedForceMode.MOVE_NEG, 0.5, mass_kg=mass, camera_axis_world=axis)
     np.testing.assert_allclose(move_neg.direction_world, -move.direction_world)
 
     view = parameterized_endpoint_forces(ParameterizedForceMode.VIEW_POS, 0.5, mass_kg=mass, camera_axis_world=axis)
-    assert np.linalg.norm(view.camera_force_world) == pytest.approx(0.60 * mass * 9.81)
+    assert np.linalg.norm(view.camera_force_world) == pytest.approx(0.35 * mass * 9.81)
     np.testing.assert_allclose(view.other_force_world, np.zeros(3))
 
     up = parameterized_endpoint_forces(ParameterizedForceMode.UP, 0.5, mass_kg=mass, camera_axis_world=axis)
-    np.testing.assert_allclose(up.camera_force_world, [0.0, 0.0, 0.85 * mass * 9.81])
+    np.testing.assert_allclose(up.camera_force_world, [0.0, 0.0, 0.925 * mass * 9.81])
     np.testing.assert_allclose(up.other_force_world, np.zeros(3))
 
     hold = parameterized_endpoint_forces(ParameterizedForceMode.HOLD, 1.0, mass_kg=mass, camera_axis_world=axis)

@@ -15,6 +15,7 @@ artifacts/
 ├── task009b_pose_library/             # Gate 3位姿库、生成摘要、接受种子和拒绝记录
 ├── task009b_pose_library_validation/  # Gate 3固定回载验证日志
 ├── task009b_coverage_validation/      # Gate 4覆盖率验证日志
+├── task009b_force_range_validation/   # 参数化力新范围live验证
 └── task009b_three_view/               # Gate 5现场会话、覆盖图片、mask和轨迹
 ```
 
