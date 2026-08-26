@@ -45,6 +45,12 @@ parser.add_argument(
     help="Stored pose ID; empty selects the first frozen train live-reload pose.",
 )
 parser.add_argument("--output_directory", type=Path, default=DEFAULT_ARTIFACT_ROOT)
+parser.add_argument(
+    "--unreachable_region",
+    type=Path,
+    default=None,
+    help="Frozen unreachable-region JSON used for reachable-ROI coverage.",
+)
 parser.add_argument("--max_cycles", type=int, default=0)
 parser.add_argument(
     "--scripted_actions",
@@ -234,6 +240,7 @@ def main() -> int:
                 require_camera_facing_normal=True,
                 camera_facing_normal_sign=-1,
                 raycast_device=str(args_cli.device),
+                unreachable_region_path=args_cli.unreachable_region,
             )
             if not HEADLESS:
                 keyboard = KitHeldKeyboard(args_cli.initial_alpha)
@@ -332,7 +339,8 @@ def main() -> int:
                     "TASK009B_THREE_VIEW_BOUNDARY "
                     f"cycle={cycle} mode={mode.name} alpha={alpha:.1f} "
                     f"rgb_frame={evaluator.latest_record['frame_id']} "
-                    f"area_coverage_percent={100.0 * update.coverage_fraction:.3f}",
+                    f"reachable_coverage_percent={100.0 * update.coverage_fraction:.3f} "
+                    f"raw_coverage_percent={100.0 * evaluator.raw_accumulator.coverage_fraction:.3f}",
                     flush=True,
                 )
                 if args_cli.max_cycles and cycle >= args_cli.max_cycles:

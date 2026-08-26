@@ -12,6 +12,7 @@ import numpy as np
 UNCOVERED_COLOR = np.asarray([220, 35, 35], dtype=np.uint8)
 COVERED_COLOR = np.asarray([30, 190, 70], dtype=np.uint8)
 CURRENT_VISIBLE_COLOR = np.asarray([30, 145, 235], dtype=np.uint8)
+EXCLUDED_COLOR = np.asarray([105, 105, 105], dtype=np.uint8)
 CAPSULE_COLOR = np.asarray([40, 40, 40], dtype=np.uint8)
 TRAJECTORY_COLOR = np.asarray([0, 0, 0], dtype=np.uint8)
 AXIS_NAMES = ("X", "Y", "Z")
@@ -22,7 +23,11 @@ AXIS_NAMES = ("X", "Y", "Z")
 _DEFERRED_KIT_VIEW_RESOURCES: list[tuple[Any, Any]] = []
 
 
-def coverage_colors(mask: np.ndarray, current_visible_mask: np.ndarray | None = None) -> np.ndarray:
+def coverage_colors(
+    mask: np.ndarray,
+    current_visible_mask: np.ndarray | None = None,
+    excluded_mask: np.ndarray | None = None,
+) -> np.ndarray:
     values = np.asarray(mask, dtype=np.bool_).reshape(-1)
     colors = np.tile(UNCOVERED_COLOR, (len(values), 1))
     colors[values] = COVERED_COLOR
@@ -31,6 +36,11 @@ def coverage_colors(mask: np.ndarray, current_visible_mask: np.ndarray | None = 
         if len(current) != len(values):
             raise ValueError("current visible mask length must equal cumulative mask length")
         colors[current] = CURRENT_VISIBLE_COLOR
+    if excluded_mask is not None:
+        excluded = np.asarray(excluded_mask, dtype=np.bool_).reshape(-1)
+        if len(excluded) != len(values):
+            raise ValueError("excluded mask length must equal cumulative mask length")
+        colors[excluded] = EXCLUDED_COLOR
     return colors
 
 
@@ -81,6 +91,9 @@ def export_coverage_projection(
     coverage_fraction: float,
     elapsed_time_s: float,
     config: ProjectionConfig = ProjectionConfig(),
+    *,
+    excluded_mask: np.ndarray | None = None,
+    raw_coverage_fraction: float | None = None,
 ) -> dict[str, Any]:
     """Export the deterministic red/green coverage projection and metadata."""
     from PIL import Image, ImageDraw, ImageFont
@@ -95,7 +108,7 @@ def export_coverage_projection(
     vertex_pixels = np.rint(transform(vertices)).astype(int)
     image = Image.new("RGB", (config.width_px, config.height_px), (245, 245, 245))
     draw = ImageDraw.Draw(image)
-    colors = coverage_colors(values)
+    colors = coverage_colors(values, excluded_mask=excluded_mask)
     for pixel, color in zip(vertex_pixels, colors, strict=True):
         x, y = int(pixel[0]), int(pixel[1])
         draw.ellipse((x - 1, y - 1, x + 1, y + 1), fill=tuple(int(v) for v in color))
@@ -114,13 +127,25 @@ def export_coverage_projection(
     )
     font = ImageFont.load_default()
     coverage_text = f"{float(coverage_fraction) * 100.0:.3f}%"
-    draw.rectangle((8, 8, 265, 55), fill=(245, 245, 245))
-    draw.text((12, 12), f"Coverage: {coverage_text}", fill=(0, 0, 0), font=font)
+    draw.rectangle((8, 8, 315, 72), fill=(245, 245, 245))
+    draw.text((12, 12), f"Reachable coverage: {coverage_text}", fill=(0, 0, 0), font=font)
     draw.text((12, 30), f"Elapsed: {float(elapsed_time_s):.3f} s", fill=(0, 0, 0), font=font)
+    if raw_coverage_fraction is not None:
+        draw.text(
+            (12, 48),
+            f"Raw coverage: {100.0 * float(raw_coverage_fraction):.3f}%",
+            fill=(0, 0, 0),
+            font=font,
+        )
     draw.rectangle((config.width_px - 180, 12, config.width_px - 168, 24), fill=tuple(UNCOVERED_COLOR))
     draw.text((config.width_px - 162, 12), "uncovered", fill=(0, 0, 0), font=font)
     draw.rectangle((config.width_px - 180, 30, config.width_px - 168, 42), fill=tuple(COVERED_COLOR))
     draw.text((config.width_px - 162, 30), "covered", fill=(0, 0, 0), font=font)
+    if excluded_mask is not None:
+        draw.rectangle(
+            (config.width_px - 180, 48, config.width_px - 168, 60), fill=tuple(EXCLUDED_COLOR)
+        )
+        draw.text((config.width_px - 162, 48), "excluded", fill=(0, 0, 0), font=font)
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
     image.save(output, format="PNG", optimize=False, compress_level=9)
@@ -134,6 +159,11 @@ def export_coverage_projection(
         "world_bounds_on_projection_axes_m": [lower.tolist(), upper.tolist()],
         "padding_px": config.padding_px,
         "coverage_percent_text": coverage_text,
+        "raw_coverage_percent_text": (
+            None
+            if raw_coverage_fraction is None
+            else f"{100.0 * float(raw_coverage_fraction):.3f}%"
+        ),
     }
 
 
@@ -152,6 +182,7 @@ class KitCoveragePointCloudView:
         vertices_world: np.ndarray,
         root_path: str = "/World/P0CoverageDebug",
         context_name: str = "p0_stomach_coverage",
+        excluded_mask: np.ndarray | None = None,
     ) -> None:
         import omni.ui
         import omni.usd
@@ -167,6 +198,13 @@ class KitCoveragePointCloudView:
         # deadlock Hydra in Kit 110.1.
         self._context_name = f"{context_name}_{id(self):x}"
         self._vertices = np.asarray(vertices_world, dtype=np.float64).reshape(-1, 3)
+        self._excluded_mask = (
+            np.zeros(len(self._vertices), dtype=np.bool_)
+            if excluded_mask is None
+            else np.asarray(excluded_mask, dtype=np.bool_).reshape(-1).copy()
+        )
+        if len(self._excluded_mask) != len(self._vertices):
+            raise ValueError("excluded mask length must equal coverage vertex count")
         self._context = omni.usd.create_context(self._context_name)
         self._context.new_stage()
         stage = self._context.get_stage()
@@ -206,7 +244,7 @@ class KitCoveragePointCloudView:
         with self._hud_frame:
             with omni.ui.VStack():
                 self._coverage_label = omni.ui.Label(
-                    "Area coverage: 0.000% (0 / 0 vertices)",
+                    "Reachable area coverage: 0.000% (raw 0.000%)",
                     width=340,
                     height=30,
                     alignment=omni.ui.Alignment.LEFT_CENTER,
@@ -218,7 +256,7 @@ class KitCoveragePointCloudView:
                     },
                 )
                 self._legend_label = omni.ui.Label(
-                    "red=uncovered  green=history  blue=current",
+                    "red=uncovered  green=history  blue=current  gray=excluded",
                     width=430,
                     height=24,
                     alignment=omni.ui.Alignment.LEFT_CENTER,
@@ -238,15 +276,19 @@ class KitCoveragePointCloudView:
         trajectory_world: np.ndarray,
         current_visible_mask: np.ndarray | None = None,
         coverage_fraction: float | None = None,
+        raw_coverage_fraction: float | None = None,
     ) -> None:
         values = np.asarray(mask, dtype=np.bool_).reshape(-1)
-        colors = coverage_colors(values, current_visible_mask).astype(np.float32) / 255.0
+        colors = coverage_colors(
+            values, current_visible_mask, self._excluded_mask
+        ).astype(np.float32) / 255.0
         self._points.GetDisplayColorAttr().Set(self._Vt.Vec3fArray.FromNumpy(colors))
         covered = int(values.sum())
         total = len(values)
         fraction = covered / total if coverage_fraction is None else float(coverage_fraction)
+        raw_text = "n/a" if raw_coverage_fraction is None else f"{100.0 * raw_coverage_fraction:.3f}%"
         self._coverage_label.text = (
-            f"Area coverage: {100.0 * fraction:.3f}% ({covered} / {total} vertices)"
+            f"Reachable area coverage: {100.0 * fraction:.3f}% (raw {raw_text})"
         )
         marker = np.asarray(capsule_position_world, dtype=np.float32).reshape(1, 3)
         self._marker.GetPointsAttr().Set(self._Vt.Vec3fArray.FromNumpy(marker))

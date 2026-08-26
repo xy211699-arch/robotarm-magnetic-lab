@@ -15,6 +15,7 @@ from .area_weights import target_vertex_area_weights, weights_sha256
 from .records import CoverageRecordWriter, artifact_inventory
 from .reference_mesh import MeshInput, preprocess_reference_mesh
 from .runtime import RecordedFrameClock, assert_coverage_consistency
+from .unreachable_region import load_unreachable_mask
 from .visibility import (
     FOV_HALF_ANGLE_DEG,
     HIT_DISTANCE_TOLERANCE_M,
@@ -97,6 +98,7 @@ class P0CoverageRuntime:
         raycast_device: str | None = None,
         surface_prim_path: str = DEFAULT_INNER_SURFACE_PATH,
         print_updates: bool = True,
+        unreachable_region_path: Path | None = None,
     ) -> None:
         self.env = env.unwrapped
         self.camera = self.env.scene["capsule_camera"]
@@ -109,11 +111,28 @@ class P0CoverageRuntime:
         self.raycast_device = str(raycast_device or self.env.device)
         self.print_updates = bool(print_updates)
         self.raycaster = WarpFirstHitRaycaster(self.reference, device=self.raycast_device)
-        self.vertex_weights = target_vertex_area_weights(self.reference)
+        self.raw_vertex_weights = target_vertex_area_weights(self.reference)
+        self.unreachable_region_record = None
+        self.unreachable_mask = None
+        if unreachable_region_path is None:
+            self.vertex_weights = self.raw_vertex_weights
+        else:
+            self.unreachable_region_record, self.unreachable_mask = load_unreachable_mask(
+                Path(unreachable_region_path), self.reference
+            )
+            self.vertex_weights = target_vertex_area_weights(
+                self.reference, self.unreachable_mask.reachable_triangle_indices
+            )
+        self.reachable_vertex_mask = self.vertex_weights > 0.0
+        self.excluded_vertex_mask = (self.raw_vertex_weights > 0.0) & ~self.reachable_vertex_mask
         self.accumulator = CoverageAccumulator(
             len(self.reference.vertices_world), vertex_weights=self.vertex_weights
         )
+        self.raw_accumulator = CoverageAccumulator(
+            len(self.reference.vertices_world), vertex_weights=self.raw_vertex_weights
+        )
         self.current_visible_mask = np.zeros(len(self.reference.vertices_world), dtype=np.bool_)
+        self.raw_current_visible_mask = np.zeros(len(self.reference.vertices_world), dtype=np.bool_)
         self._last_camera_frame: int | None = None
         self.clock = RecordedFrameClock(float(self.camera.cfg.update_period))
         self.trajectory: list[np.ndarray] = []
@@ -122,7 +141,14 @@ class P0CoverageRuntime:
         self.ray_counts: list[int] = []
         self.latest_record: dict[str, Any] | None = None
         self.snapshot_index = 0
-        self.view = KitCoveragePointCloudView(self.reference.vertices_world) if enable_view else None
+        self.view = (
+            KitCoveragePointCloudView(
+                self.reference.vertices_world,
+                excluded_mask=self.excluded_vertex_mask,
+            )
+            if enable_view
+            else None
+        )
         metadata = {
             "task_id": task_id,
             "seed": int(seed),
@@ -137,6 +163,32 @@ class P0CoverageRuntime:
             "target_triangle_count": len(self.reference.triangles),
             "target_total_area_m2": self.accumulator.total_area_m2,
             "target_vertex_weights_sha256": weights_sha256(self.vertex_weights),
+            "raw_target_vertex_count": int(np.count_nonzero(self.raw_vertex_weights > 0.0)),
+            "raw_target_triangle_count": len(self.reference.triangles),
+            "raw_target_total_area_m2": self.raw_accumulator.total_area_m2,
+            "raw_target_vertex_weights_sha256": weights_sha256(self.raw_vertex_weights),
+            "reachable_target": {
+                "enabled": self.unreachable_mask is not None,
+                "unreachable_region_path": (
+                    None if unreachable_region_path is None else str(Path(unreachable_region_path).resolve())
+                ),
+                "unreachable_region_config_sha256": (
+                    None if self.unreachable_mask is None else self.unreachable_mask.config_sha256
+                ),
+                "excluded_triangle_count": (
+                    0
+                    if self.unreachable_mask is None
+                    else int(len(self.unreachable_mask.excluded_triangle_indices))
+                ),
+                "excluded_area_m2": (
+                    0.0 if self.unreachable_mask is None else self.unreachable_mask.excluded_area_m2
+                ),
+                "excluded_area_fraction": (
+                    0.0
+                    if self.unreachable_mask is None
+                    else self.unreachable_mask.excluded_area_fraction
+                ),
+            },
             "camera": {
                 "prim_path": self.camera.cfg.prim_path,
                 "width": int(self.camera.cfg.width),
@@ -264,9 +316,14 @@ class P0CoverageRuntime:
             )
             visible &= normal_facing
             normal_facing_count = int(np.count_nonzero(normal_facing))
+        visible_indices = candidates[visible]
+        self.raw_current_visible_mask.fill(False)
+        self.raw_current_visible_mask[visible_indices] = True
+        reachable_visible_indices = visible_indices[self.reachable_vertex_mask[visible_indices]]
         self.current_visible_mask.fill(False)
-        self.current_visible_mask[candidates[visible]] = True
-        update = self.accumulator.update(frame_id, candidates[visible])
+        self.current_visible_mask[reachable_visible_indices] = True
+        raw_update = self.raw_accumulator.update(frame_id, visible_indices)
+        update = self.accumulator.update(frame_id, reachable_visible_indices)
         elapsed = time.perf_counter() - started
         capsule_position = self.capsule_position()
         self.trajectory.append(capsule_position.copy())
@@ -297,6 +354,31 @@ class P0CoverageRuntime:
             "cumulative_area_m2": float(update.cumulative_area_m2),
             "total_area_m2": float(update.total_area_m2),
             "coverage_fraction": float(update.coverage_fraction),
+            "coverage_target": "reachable_roi",
+            "reachable_visible_count": int(update.visible_count),
+            "reachable_newly_covered_count": int(update.newly_covered_count),
+            "reachable_cumulative_count": int(update.cumulative_count),
+            "reachable_visible_area_m2": float(update.visible_area_m2),
+            "reachable_newly_covered_area_m2": float(update.newly_covered_area_m2),
+            "reachable_cumulative_area_m2": float(update.cumulative_area_m2),
+            "reachable_total_area_m2": float(update.total_area_m2),
+            "reachable_coverage_fraction": float(update.coverage_fraction),
+            "raw_visible_count": int(raw_update.visible_count),
+            "raw_newly_covered_count": int(raw_update.newly_covered_count),
+            "raw_cumulative_count": int(raw_update.cumulative_count),
+            "raw_visible_area_m2": float(raw_update.visible_area_m2),
+            "raw_newly_covered_area_m2": float(raw_update.newly_covered_area_m2),
+            "raw_cumulative_area_m2": float(raw_update.cumulative_area_m2),
+            "raw_total_area_m2": float(raw_update.total_area_m2),
+            "raw_coverage_fraction": float(raw_update.coverage_fraction),
+            "excluded_area_m2": (
+                0.0 if self.unreachable_mask is None else self.unreachable_mask.excluded_area_m2
+            ),
+            "excluded_area_fraction": (
+                0.0
+                if self.unreachable_mask is None
+                else self.unreachable_mask.excluded_area_fraction
+            ),
             "coverage_update_s": float(elapsed),
         }
         if write_record:
@@ -306,7 +388,8 @@ class P0CoverageRuntime:
             print(
                 "P0_COVERAGE "
                 f"frame={frame_id} covered={update.cumulative_count}/{len(self.reference.vertices_world)} "
-                f"percent={100.0 * update.coverage_fraction:.3f} "
+                f"reachable_percent={100.0 * update.coverage_fraction:.3f} "
+                f"raw_percent={100.0 * raw_update.coverage_fraction:.3f} "
                 f"new={update.newly_covered_count}",
                 flush=True,
             )
@@ -320,6 +403,7 @@ class P0CoverageRuntime:
                 np.asarray(self.trajectory, dtype=np.float64).reshape(-1, 3),
                 current_visible_mask=self.current_visible_mask,
                 coverage_fraction=self.accumulator.coverage_fraction,
+                raw_coverage_fraction=self.raw_accumulator.coverage_fraction,
             )
 
     def snapshot(self, reason: str) -> dict[str, Any]:
@@ -338,6 +422,8 @@ class P0CoverageRuntime:
             trajectory,
             fraction,
             self.sim_time_s,
+            excluded_mask=self.excluded_vertex_mask,
+            raw_coverage_fraction=self.raw_accumulator.coverage_fraction,
         )
         metadata = {
             "reason": reason,
@@ -345,6 +431,16 @@ class P0CoverageRuntime:
             "cumulative_count": int(mask.sum()),
             "vertex_count": int(len(mask)),
             "coverage_fraction": fraction,
+            "coverage_target": "reachable_roi",
+            "reachable_coverage_fraction": fraction,
+            "raw_coverage_fraction": self.raw_accumulator.coverage_fraction,
+            "reachable_area_m2": self.accumulator.total_area_m2,
+            "raw_area_m2": self.raw_accumulator.total_area_m2,
+            "excluded_area_fraction": (
+                0.0
+                if self.unreachable_mask is None
+                else self.unreachable_mask.excluded_area_fraction
+            ),
             **projection,
         }
         metadata_path = self.partial_directory / f"{stem}.json"
@@ -359,8 +455,10 @@ class P0CoverageRuntime:
         if save_snapshot:
             self.snapshot("reset")
         self.accumulator.reset()
+        self.raw_accumulator.reset()
         self.clock.reset()
         self.current_visible_mask.fill(False)
+        self.raw_current_visible_mask.fill(False)
         self._last_camera_frame = None
         self.trajectory.clear()
         self.latest_record = None
@@ -370,6 +468,8 @@ class P0CoverageRuntime:
     def finalize(self, reason: str = "exit") -> Path:
         self.snapshot(reason)
         np.save(self.partial_directory / "coverage_mask.npy", self.accumulator.mask)
+        np.save(self.partial_directory / "raw_coverage_mask.npy", self.raw_accumulator.mask)
+        np.save(self.partial_directory / "excluded_vertex_mask.npy", self.excluded_vertex_mask)
         np.save(
             self.partial_directory / "trajectory_world_m.npy",
             np.asarray(self.trajectory, dtype=np.float64).reshape(-1, 3),
@@ -379,6 +479,19 @@ class P0CoverageRuntime:
             "reason": reason,
             "coverage_updates": len(self.timings_s),
             "coverage_fraction": self.accumulator.coverage_fraction,
+            "coverage_target": "reachable_roi",
+            "reachable_coverage_fraction": self.accumulator.coverage_fraction,
+            "raw_coverage_fraction": self.raw_accumulator.coverage_fraction,
+            "reachable_area_m2": self.accumulator.total_area_m2,
+            "raw_area_m2": self.raw_accumulator.total_area_m2,
+            "excluded_area_m2": (
+                0.0 if self.unreachable_mask is None else self.unreachable_mask.excluded_area_m2
+            ),
+            "excluded_area_fraction": (
+                0.0
+                if self.unreachable_mask is None
+                else self.unreachable_mask.excluded_area_fraction
+            ),
             "timing_s": {
                 "median": float(np.median(self.timings_s)) if self.timings_s else None,
                 "p95": float(np.percentile(self.timings_s, 95)) if self.timings_s else None,

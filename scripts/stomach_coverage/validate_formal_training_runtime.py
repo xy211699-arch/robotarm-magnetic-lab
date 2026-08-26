@@ -26,6 +26,12 @@ parser.add_argument("--task", default=TASK_ID)
 parser.add_argument("--cycles", type=int, default=1000)
 parser.add_argument("--resets", type=int, default=100)
 parser.add_argument(
+    "--unreachable_region",
+    type=Path,
+    default=None,
+    help="Optional frozen unreachable-region JSON for reachable-ROI validation.",
+)
+parser.add_argument(
     "--output_root",
     type=Path,
     default=artifact_root(ROOT) / "task009b_formal_runtime_validation",
@@ -143,6 +149,7 @@ def main() -> int:
                 camera_facing_normal_sign=-1,
                 raycast_device=str(args_cli.device),
                 print_updates=False,
+                unreachable_region_path=args_cli.unreachable_region,
             )
             initial_sync = dict(base._task009b_policy_rgb_sync_latest)
             initial_rgb = observation["policy"]["rgb"]

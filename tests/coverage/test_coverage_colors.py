@@ -11,6 +11,7 @@ from robotarm_magnetic_lab.ui.coverage_view import (
     CAPSULE_COLOR,
     COVERED_COLOR,
     CURRENT_VISIBLE_COLOR,
+    EXCLUDED_COLOR,
     TRAJECTORY_COLOR,
     UNCOVERED_COLOR,
     ProjectionConfig,
@@ -35,6 +36,17 @@ def test_current_visible_vertices_override_cumulative_history_color():
     np.testing.assert_array_equal(colors[0], UNCOVERED_COLOR)
     np.testing.assert_array_equal(colors[1], COVERED_COLOR)
     np.testing.assert_array_equal(colors[2], CURRENT_VISIBLE_COLOR)
+    np.testing.assert_array_equal(colors[3], CURRENT_VISIBLE_COLOR)
+
+
+def test_excluded_vertices_override_all_coverage_colors():
+    cumulative = np.asarray([False, True, True, False])
+    current = np.asarray([False, False, True, True])
+    excluded = np.asarray([True, False, True, False])
+    colors = coverage_colors(cumulative, current, excluded)
+    np.testing.assert_array_equal(colors[0], EXCLUDED_COLOR)
+    np.testing.assert_array_equal(colors[1], COVERED_COLOR)
+    np.testing.assert_array_equal(colors[2], EXCLUDED_COLOR)
     np.testing.assert_array_equal(colors[3], CURRENT_VISIBLE_COLOR)
 
 
