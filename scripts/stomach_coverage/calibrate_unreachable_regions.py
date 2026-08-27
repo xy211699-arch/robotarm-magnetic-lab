@@ -64,11 +64,15 @@ from robotarm_magnetic_lab.coverage.entry_surface_region import nearest_surface_
 from robotarm_magnetic_lab.coverage.simulator_runtime import reference_from_stage
 from robotarm_magnetic_lab.coverage.unreachable_region import (
     UNREACHABLE_RADII_M,
+    UnreachableBox,
     UnreachableSeed,
+    boxes_from_record,
     build_unreachable_mask,
+    box_triangle_indices,
     load_unreachable_mask,
     save_and_reload_unreachable,
     seeds_from_record,
+    unreachable_box_from_corners,
     unreachable_region_record,
 )
 from robotarm_magnetic_lab.teleop.atomic_keyboard import normalize_key
@@ -76,7 +80,8 @@ from robotarm_magnetic_lab.teleop.atomic_keyboard import normalize_key
 
 CONTROLS = (
     "W/S=+Y/-Y A/D=-X/+X Q/E=+Z/-Z; Shift=fine; G=add seed; "
-    "Tab=select seed; [ ]=radius; Backspace=delete; C=clear; Enter=freeze/save; Esc=exit"
+    "B=start/finish box; X=delete last box; Tab=select seed; [ ]=radius; "
+    "Backspace=delete seed; C=clear; Enter=freeze/save; Esc=exit"
 )
 FROZEN_SELECTION_REASON = "operator_confirmed_physical_or_anatomical_unreachable_surface"
 
@@ -138,14 +143,15 @@ class Panel:
                     word_wrap=True,
                 )
 
-    def update(self, cursor: np.ndarray, seeds, selected, mask) -> None:
+    def update(self, cursor: np.ndarray, seeds, boxes, selected, mask, box_start) -> None:
         self.cursor.text = f"Cursor world m: {np.round(cursor, 5).tolist()} (physics paused)"
         if selected is None:
-            self.selection.text = f"Seeds: {len(seeds)}; selected: none"
+            self.selection.text = f"Seeds: {len(seeds)}; boxes: {len(boxes)}; selected seed: none"
         else:
             seed = seeds[selected]
             self.selection.text = (
-                f"Seeds: {len(seeds)}; selected={selected + 1}; face={seed.triangle_index}; "
+                f"Seeds: {len(seeds)}; boxes: {len(boxes)}; selected={selected + 1}; "
+                f"face={seed.triangle_index}; "
                 f"radius={1000.0 * seed.radius_m:.0f} mm; point={np.round(seed.point_world_m, 5).tolist()}"
             )
         if mask is None:
@@ -156,6 +162,10 @@ class Panel:
                 f"area={mask.excluded_area_m2:.7f} m2 "
                 f"fraction={100.0 * mask.excluded_area_fraction:.3f}% "
                 f"reachable area={mask.reachable_area_m2:.7f} m2"
+            )
+        if box_start is not None:
+            self.status.text = (
+                f"Box first corner={np.round(box_start, 5).tolist()}; move cursor and press B again."
             )
 
 
@@ -194,11 +204,51 @@ class DebugGeometry:
         self.seeds.SetWidthsInterpolation(UsdGeom.Tokens.constant)
         self.seeds.CreateDisplayColorAttr([Gf.Vec3f(0.0, 1.0, 0.2)])
         self._constant(self.seeds, "displayColor")
+        self.boxes = UsdGeom.BasisCurves.Define(stage, self.ROOT + "/Boxes")
+        self.boxes.CreateTypeAttr(UsdGeom.Tokens.linear)
+        self.boxes.CreatePointsAttr([])
+        self.boxes.CreateCurveVertexCountsAttr([])
+        self.boxes.CreateWidthsAttr([0.0012])
+        self.boxes.SetWidthsInterpolation(UsdGeom.Tokens.constant)
+        self.boxes.CreateDisplayColorAttr([Gf.Vec3f(1.0, 0.75, 0.0)])
+        self._constant(self.boxes, "displayColor")
 
     def update_cursor(self, point: np.ndarray) -> None:
         self.cursor.GetPointsAttr().Set(
             Vt.Vec3fArray.FromNumpy(np.asarray(point, dtype=np.float32).reshape(1, 3))
         )
+
+    @staticmethod
+    def _box_edges(box: UnreachableBox) -> np.ndarray:
+        lower = np.asarray(box.minimum_world_m, dtype=np.float64)
+        upper = np.asarray(box.maximum_world_m, dtype=np.float64)
+        corners = np.asarray(
+            [
+                [x, y, z]
+                for x in (lower[0], upper[0])
+                for y in (lower[1], upper[1])
+                for z in (lower[2], upper[2])
+            ],
+            dtype=np.float64,
+        )
+        edges = []
+        for first in range(8):
+            for axis_bit in (1, 2, 4):
+                second = first ^ axis_bit
+                if first < second:
+                    edges.extend((corners[first], corners[second]))
+        return np.asarray(edges, dtype=np.float64)
+
+    def update_boxes(self, boxes, box_start, cursor) -> None:
+        visible_boxes = list(boxes)
+        if box_start is not None:
+            visible_boxes.append(unreachable_box_from_corners(box_start, cursor))
+        if visible_boxes:
+            points = np.concatenate([self._box_edges(box) for box in visible_boxes], axis=0)
+        else:
+            points = np.empty((0, 3), dtype=np.float64)
+        self.boxes.GetPointsAttr().Set(Vt.Vec3fArray.FromNumpy(points.astype(np.float32)))
+        self.boxes.GetCurveVertexCountsAttr().Set([2] * (len(points) // 2))
 
     def update(self, reference, mask, seeds) -> None:
         self.seeds.GetPointsAttr().Set(
@@ -269,21 +319,28 @@ def main() -> int:
             capsule_pose = _tensor(base.scene["capsule"].data.root_pose_w)[0]
             cursor = capsule_pose[:3].detach().cpu().numpy().astype(np.float64)
             seeds: list[UnreachableSeed] = []
+            boxes: list[UnreachableBox] = []
+            box_start = None
             selected: int | None = None
             mask = None
             radius_index = UNREACHABLE_RADII_M.index(float(args_cli.initial_radius_mm) / 1000.0)
             if args_cli.output.exists() and not args_cli.new:
                 resumed_record, resumed_mask = load_unreachable_mask(args_cli.output, reference)
                 seeds = list(seeds_from_record(resumed_record))
+                boxes = list(boxes_from_record(resumed_record))
                 mask = resumed_mask
-                selected = len(seeds) - 1
-                radius_index = UNREACHABLE_RADII_M.index(seeds[selected].radius_m)
-                cursor = seeds[selected].point_world_m.copy()
+                selected = len(seeds) - 1 if seeds else None
+                if selected is not None:
+                    radius_index = UNREACHABLE_RADII_M.index(seeds[selected].radius_m)
+                    cursor = seeds[selected].point_world_m.copy()
+                elif boxes:
+                    cursor = 0.5 * (boxes[-1].minimum_world_m + boxes[-1].maximum_world_m)
                 session.emit(
                     "RESUMED",
                     path=str(args_cli.output.resolve()),
                     config_sha256=resumed_record["config_sha256"],
                     seed_count=len(seeds),
+                    box_count=len(boxes),
                     excluded_triangle_count=len(mask.excluded_triangle_indices),
                     excluded_area_fraction=mask.excluded_area_fraction,
                 )
@@ -298,8 +355,9 @@ def main() -> int:
             geometry = DebugGeometry()
             geometry.update_cursor(cursor)
             geometry.update(reference, mask, seeds)
-            panel.update(cursor, seeds, selected, mask)
-            if seeds:
+            geometry.update_boxes(boxes, box_start, cursor)
+            panel.update(cursor, seeds, boxes, selected, mask, box_start)
+            if seeds or boxes:
                 panel.status.text = (
                     "Existing frozen mask resumed. Add/edit seeds, then press Enter to save."
                 )
@@ -319,7 +377,8 @@ def main() -> int:
                 if np.any(direction):
                     cursor += speed * dt * direction / max(float(np.linalg.norm(direction)), 1.0)
                     geometry.update_cursor(cursor)
-                    panel.update(cursor, seeds, selected, mask)
+                    geometry.update_boxes(boxes, box_start, cursor)
+                    panel.update(cursor, seeds, boxes, selected, mask, box_start)
 
                 while keyboard.presses:
                     key = keyboard.presses.popleft()
@@ -337,7 +396,7 @@ def main() -> int:
                             )
                         )
                         selected = len(seeds) - 1
-                        mask, _ = build_unreachable_mask(reference, seeds)
+                        mask, _ = build_unreachable_mask(reference, seeds, boxes)
                         geometry.update(reference, mask, seeds)
                         panel.status.text = "Seed added. Red surface is excluded; inspect both sides."
                         session.emit(
@@ -358,7 +417,7 @@ def main() -> int:
                         seeds[selected] = UnreachableSeed(
                             old.triangle_index, old.point_world_m, UNREACHABLE_RADII_M[radius_index]
                         )
-                        mask, _ = build_unreachable_mask(reference, seeds)
+                        mask, _ = build_unreachable_mask(reference, seeds, boxes)
                         geometry.update(reference, mask, seeds)
                         session.emit(
                             "RADIUS_CHANGED",
@@ -368,22 +427,76 @@ def main() -> int:
                     elif key == "BACKSPACE" and selected is not None:
                         removed = seeds.pop(selected)
                         selected = None if not seeds else min(selected, len(seeds) - 1)
-                        mask = None if not seeds else build_unreachable_mask(reference, seeds)[0]
+                        mask = (
+                            None
+                            if not seeds and not boxes
+                            else build_unreachable_mask(reference, seeds, boxes)[0]
+                        )
                         geometry.update(reference, mask, seeds)
                         session.emit("SEED_REMOVED", triangle_index=removed.triangle_index)
+                    elif key == "B":
+                        if box_start is None:
+                            box_start = cursor.copy()
+                            geometry.update_boxes(boxes, box_start, cursor)
+                            session.emit("BOX_STARTED", first_corner_world_m=box_start.tolist())
+                        else:
+                            candidate_box = unreachable_box_from_corners(box_start, cursor)
+                            try:
+                                candidate_faces = box_triangle_indices(reference, candidate_box)
+                                candidate_mask, _ = build_unreachable_mask(
+                                    reference, seeds, (*boxes, candidate_box)
+                                )
+                            except ValueError as error:
+                                panel.status.text = f"Box rejected: {error}. Move cursor and press B again."
+                                session.emit("BOX_REJECTED", reason=str(error))
+                                continue
+                            boxes.append(candidate_box)
+                            box_start = None
+                            mask = candidate_mask
+                            geometry.update(reference, mask, seeds)
+                            geometry.update_boxes(boxes, box_start, cursor)
+                            session.emit(
+                                "BOX_ADDED",
+                                box_index=len(boxes) - 1,
+                                minimum_world_m=candidate_box.minimum_world_m.tolist(),
+                                maximum_world_m=candidate_box.maximum_world_m.tolist(),
+                                selected_triangle_count=len(candidate_faces),
+                            )
+                    elif key == "X" and boxes:
+                        removed_box = boxes.pop()
+                        box_start = None
+                        mask = (
+                            None
+                            if not seeds and not boxes
+                            else build_unreachable_mask(reference, seeds, boxes)[0]
+                        )
+                        geometry.update(reference, mask, seeds)
+                        geometry.update_boxes(boxes, box_start, cursor)
+                        session.emit(
+                            "BOX_REMOVED",
+                            minimum_world_m=removed_box.minimum_world_m.tolist(),
+                            maximum_world_m=removed_box.maximum_world_m.tolist(),
+                        )
                     elif key == "C":
                         seeds.clear()
+                        boxes.clear()
+                        box_start = None
                         selected = None
                         mask = None
                         geometry.update(reference, mask, seeds)
+                        geometry.update_boxes(boxes, box_start, cursor)
                         session.emit("CLEARED")
                     elif _save(key):
-                        if not seeds:
-                            panel.status.text = "Cannot save: add at least one seed with G."
+                        if box_start is not None:
+                            panel.status.text = "Finish the active box with B, or clear it with C, before saving."
+                            continue
+                        if not seeds and not boxes:
+                            panel.status.text = "Cannot save: add a seed with G or a box with B."
                             continue
                         record = unreachable_region_record(
                             reference=reference,
                             seeds=seeds,
+                            boxes=boxes,
                             reason=FROZEN_SELECTION_REASON,
                             operator=args_cli.operator,
                         )
@@ -395,6 +508,7 @@ def main() -> int:
                             config_sha256=record["config_sha256"],
                             stomach_geometry_sha256=record["stomach_geometry_sha256"],
                             seed_count=len(seeds),
+                            box_count=len(boxes),
                             excluded_triangle_count=record["excluded_triangle_count"],
                             excluded_area_m2=record["excluded_area_m2"],
                             excluded_area_fraction=record["excluded_area_fraction"],
@@ -404,7 +518,7 @@ def main() -> int:
                         panel.status.text = "Frozen unreachable mask saved and reloaded."
                         running = False
                         break
-                    panel.update(cursor, seeds, selected, mask)
+                    panel.update(cursor, seeds, boxes, selected, mask, box_start)
 
                 if float(base.sim.physics_manager.get_simulation_time()) != paused_time:
                     raise RuntimeError("physics time advanced during unreachable-region calibration")
@@ -414,6 +528,7 @@ def main() -> int:
                         "STATE",
                         cursor_world_m=cursor.tolist(),
                         seed_count=len(seeds),
+                        box_count=len(boxes),
                         selected_seed=selected,
                         excluded_area_fraction=(None if mask is None else mask.excluded_area_fraction),
                         physics_paused=True,

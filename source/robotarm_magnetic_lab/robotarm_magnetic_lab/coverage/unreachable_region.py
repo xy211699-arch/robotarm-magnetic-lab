@@ -21,8 +21,9 @@ from .reference_mesh import ReferenceMesh
 
 
 UNREACHABLE_REGION_SCHEMA = "robotarm_magnetic_lab.task009b_unreachable_region"
-UNREACHABLE_REGION_VERSION = 1
+UNREACHABLE_REGION_VERSION = 2
 UNREACHABLE_RADII_M = tuple(float(radius_mm) / 1000.0 for radius_mm in range(10, 81, 5))
+MINIMUM_BOX_EXTENT_M = 0.001
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,14 @@ class UnreachableSeed:
     triangle_index: int
     point_world_m: np.ndarray
     radius_m: float
+
+
+@dataclass(frozen=True)
+class UnreachableBox:
+    """One world-axis-aligned box selecting triangle centroids inside it."""
+
+    minimum_world_m: np.ndarray
+    maximum_world_m: np.ndarray
 
 
 @dataclass(frozen=True)
@@ -63,15 +72,45 @@ def _triangle_areas(reference: ReferenceMesh) -> np.ndarray:
     return areas
 
 
+def unreachable_box_from_corners(first: np.ndarray, second: np.ndarray) -> UnreachableBox:
+    """Create an AABB and guarantee visible nonzero thickness on every axis."""
+    first_value = np.asarray(first, dtype=np.float64).reshape(3)
+    second_value = np.asarray(second, dtype=np.float64).reshape(3)
+    if not np.isfinite(first_value).all() or not np.isfinite(second_value).all():
+        raise ValueError("unreachable box corners must be finite")
+    lower = np.minimum(first_value, second_value)
+    upper = np.maximum(first_value, second_value)
+    thin = (upper - lower) < MINIMUM_BOX_EXTENT_M
+    midpoint = 0.5 * (lower + upper)
+    lower[thin] = midpoint[thin] - 0.5 * MINIMUM_BOX_EXTENT_M
+    upper[thin] = midpoint[thin] + 0.5 * MINIMUM_BOX_EXTENT_M
+    return UnreachableBox(lower, upper)
+
+
+def box_triangle_indices(reference: ReferenceMesh, box: UnreachableBox) -> np.ndarray:
+    """Select faces whose centroids lie in the inclusive world AABB."""
+    lower = np.asarray(box.minimum_world_m, dtype=np.float64).reshape(3)
+    upper = np.asarray(box.maximum_world_m, dtype=np.float64).reshape(3)
+    if not np.isfinite(lower).all() or not np.isfinite(upper).all() or np.any(upper <= lower):
+        raise ValueError("unreachable box bounds must be finite and strictly ordered")
+    centroids = reference.vertices_world[reference.triangles].mean(axis=1)
+    selected = np.flatnonzero(np.all((centroids >= lower) & (centroids <= upper), axis=1))
+    if len(selected) == 0:
+        raise ValueError("unreachable box contains no stomach triangle centroids")
+    return selected.astype(np.int64)
+
+
 def build_unreachable_mask(
     reference: ReferenceMesh,
     seeds: Iterable[UnreachableSeed],
+    boxes: Iterable[UnreachableBox] = (),
 ) -> tuple[UnreachableMask, tuple[np.ndarray, ...]]:
-    """Expand every seed on the shared-edge graph and return their exact union."""
+    """Return the union of geodesic seed regions and world AABB selections."""
     seed_values = tuple(seeds)
-    if not seed_values:
-        raise ValueError("at least one unreachable-region seed is required")
-    adjacency = shared_edge_adjacency(reference)
+    box_values = tuple(boxes)
+    if not seed_values and not box_values:
+        raise ValueError("at least one unreachable-region seed or box is required")
+    adjacency = shared_edge_adjacency(reference) if seed_values else ()
     per_seed_faces: list[np.ndarray] = []
     for seed in seed_values:
         triangle_index = int(seed.triangle_index)
@@ -84,7 +123,8 @@ def build_unreachable_mask(
         per_seed_faces.append(
             surface_region_from_distances(reference, distances, radius_m).triangle_indices
         )
-    excluded = np.unique(np.concatenate(per_seed_faces)).astype(np.int64)
+    per_box_faces = [box_triangle_indices(reference, box) for box in box_values]
+    excluded = np.unique(np.concatenate((*per_seed_faces, *per_box_faces))).astype(np.int64)
     all_faces = np.arange(len(reference.triangles), dtype=np.int64)
     reachable = np.setdiff1d(all_faces, excluded, assume_unique=True)
     if len(reachable) == 0:
@@ -111,12 +151,15 @@ def unreachable_region_record(
     *,
     reference: ReferenceMesh,
     seeds: Iterable[UnreachableSeed],
+    boxes: Iterable[UnreachableBox] = (),
     reason: str,
     operator: str,
 ) -> dict[str, Any]:
     """Create a reviewable, immutable unreachable-region configuration."""
     seed_values = tuple(seeds)
-    mask, per_seed_faces = build_unreachable_mask(reference, seed_values)
+    box_values = tuple(boxes)
+    mask, per_seed_faces = build_unreachable_mask(reference, seed_values, box_values)
+    per_box_faces = tuple(box_triangle_indices(reference, box) for box in box_values)
     raw_weights = target_vertex_area_weights(reference)
     reachable_weights = target_vertex_area_weights(
         reference, mask.reachable_triangle_indices
@@ -151,6 +194,21 @@ def unreachable_region_record(
             }
             for index, (seed, faces) in enumerate(zip(seed_values, per_seed_faces, strict=True))
         ],
+        "boxes": [
+            {
+                "box_id": index,
+                "selection_rule": "triangle_centroid_inside_inclusive_world_aabb",
+                "minimum_world_m": np.asarray(box.minimum_world_m, dtype=np.float64)
+                .reshape(3)
+                .tolist(),
+                "maximum_world_m": np.asarray(box.maximum_world_m, dtype=np.float64)
+                .reshape(3)
+                .tolist(),
+                "selected_triangle_indices": faces.tolist(),
+                "selected_triangle_count": int(len(faces)),
+            }
+            for index, (box, faces) in enumerate(zip(box_values, per_box_faces, strict=True))
+        ],
         "excluded_triangle_indices": mask.excluded_triangle_indices.tolist(),
         "excluded_vertex_indices": mask.excluded_vertex_indices.tolist(),
         "excluded_triangle_count": int(len(mask.excluded_triangle_indices)),
@@ -184,6 +242,17 @@ def seeds_from_record(record: dict[str, Any]) -> tuple[UnreachableSeed, ...]:
     )
 
 
+def boxes_from_record(record: dict[str, Any]) -> tuple[UnreachableBox, ...]:
+    """Restore editable boxes; version-1 seed-only records remain valid."""
+    return tuple(
+        UnreachableBox(
+            minimum_world_m=np.asarray(item["minimum_world_m"], dtype=np.float64),
+            maximum_world_m=np.asarray(item["maximum_world_m"], dtype=np.float64),
+        )
+        for item in record.get("boxes", ())
+    )
+
+
 def save_and_reload_unreachable(path: Path, record: dict[str, Any]) -> dict[str, Any]:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -211,7 +280,8 @@ def load_unreachable_mask(path: Path, reference: ReferenceMesh) -> tuple[dict[st
     if _hash(hash_payload) != expected_hash:
         raise ValueError("unreachable-region configuration hash mismatch")
     seeds = seeds_from_record(record)
-    computed, _ = build_unreachable_mask(reference, seeds)
+    boxes = boxes_from_record(record)
+    computed, _ = build_unreachable_mask(reference, seeds, boxes)
     if computed.excluded_triangle_indices.tolist() != record["excluded_triangle_indices"]:
         raise ValueError("stored unreachable triangle union differs from recomputed geodesic union")
     if computed.reachable_triangle_indices.tolist() != record["reachable_triangle_indices"]:

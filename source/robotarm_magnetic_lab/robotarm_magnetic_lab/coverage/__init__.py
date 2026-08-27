@@ -7,11 +7,15 @@ from .accumulator import CoverageAccumulator, CoverageUpdate
 from .area_weights import target_vertex_area_weights, weights_sha256
 from .unreachable_region import (
     UNREACHABLE_REGION_SCHEMA,
+    UnreachableBox,
     UnreachableMask,
     UnreachableSeed,
     build_unreachable_mask,
+    boxes_from_record,
+    box_triangle_indices,
     load_unreachable_mask,
     seeds_from_record,
+    unreachable_box_from_corners,
     unreachable_region_record,
 )
 from .visibility import (
@@ -28,11 +32,15 @@ __all__ = [
     "target_vertex_area_weights",
     "weights_sha256",
     "UNREACHABLE_REGION_SCHEMA",
+    "UnreachableBox",
     "UnreachableMask",
     "UnreachableSeed",
     "build_unreachable_mask",
+    "boxes_from_record",
+    "box_triangle_indices",
     "load_unreachable_mask",
     "seeds_from_record",
+    "unreachable_box_from_corners",
     "unreachable_region_record",
     "MeshInput",
     "ReferenceMesh",

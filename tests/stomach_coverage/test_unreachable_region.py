@@ -8,10 +8,13 @@ import pytest
 from robotarm_magnetic_lab.coverage.area_weights import target_vertex_area_weights
 from robotarm_magnetic_lab.coverage.reference_mesh import MeshInput, preprocess_reference_mesh
 from robotarm_magnetic_lab.coverage.unreachable_region import (
+    boxes_from_record,
+    box_triangle_indices,
     UnreachableSeed,
     build_unreachable_mask,
     load_unreachable_mask,
     seeds_from_record,
+    unreachable_box_from_corners,
     unreachable_region_record,
 )
 
@@ -89,3 +92,35 @@ def test_empty_and_complete_exclusions_are_rejected():
             reference,
             (UnreachableSeed(0, np.zeros(3), 0.08),),
         )
+
+
+def test_world_aabb_selects_centroids_and_round_trips_with_seed_union(tmp_path):
+    reference = _strip_reference()
+    box = unreachable_box_from_corners(
+        np.asarray([0.014, -0.001, 0.0]),
+        np.asarray([0.026, 0.011, 0.0]),
+    )
+    box_faces = box_triangle_indices(reference, box)
+    assert 0 < len(box_faces) < len(reference.triangles)
+    seed = UnreachableSeed(0, reference.vertices_world[0], 0.01)
+    mask, _ = build_unreachable_mask(reference, (seed,), (box,))
+    assert set(box_faces).issubset(set(mask.excluded_triangle_indices))
+
+    record = unreachable_region_record(
+        reference=reference,
+        seeds=(seed,),
+        boxes=(box,),
+        reason="operator confirmed",
+        operator="unit-test",
+    )
+    assert record["version"] == 2
+    assert len(record["boxes"]) == 1
+    path = tmp_path / "mixed_unreachable.json"
+    path.write_text(json.dumps(record), encoding="utf-8")
+    loaded, loaded_mask = load_unreachable_mask(path, reference)
+    loaded_boxes = boxes_from_record(loaded)
+    assert len(loaded_boxes) == 1
+    np.testing.assert_allclose(loaded_boxes[0].minimum_world_m, box.minimum_world_m)
+    np.testing.assert_array_equal(
+        loaded_mask.excluded_triangle_indices, mask.excluded_triangle_indices
+    )
