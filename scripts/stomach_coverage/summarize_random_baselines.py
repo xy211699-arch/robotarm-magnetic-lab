@@ -36,6 +36,10 @@ source.add_argument("--latest_smoke", action="store_true")
 source.add_argument("--latest_formal", action="store_true")
 parser.add_argument("--validate_only", action="store_true")
 parser.add_argument("--write_figures", action="store_true")
+# The repository launcher appends this argument to every Python command.  This
+# is a pure offline utility, so accepting and ignoring it preserves the exact
+# contract command without initializing Kit.
+parser.add_argument("--kit_args", default=None, help=argparse.SUPPRESS)
 parser.add_argument(
     "--config", type=Path, default=ROOT / "configs/task009c/random_baseline_preexperiment_v1.json"
 )
