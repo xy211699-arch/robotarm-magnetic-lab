@@ -1,0 +1,662 @@
+{
+  "schema": "robotarm_magnetic_lab.task009c_random_baseline_preexperiment",
+  "version": 1,
+  "config_sha256": "ee734310b167cab3d89622b80c3390a4b143d2d034770a80bd9d35de1eccc1c4",
+  "task_id": "Template-Robotarm-Magnetic-Parameterized-Force-Stomach-Coverage-Lab-v0",
+  "exact_code_baseline": "64dd2ff33951cb780f938a81c91c22dde8764c93",
+  "planning_commit": "98dbd2f951d53962f8b3f7a2ab0f857d8aa89cb5",
+  "clocks": {
+    "physics_hz": 240,
+    "control_hz": 10,
+    "physics_steps_per_action": 24
+  },
+  "durations": {
+    "reset_hold_cycles": 10,
+    "reset_hold_s": 1,
+    "smoke_episode_s": 3,
+    "formal_episode_s": 300,
+    "environment_episode_length_s": 1800
+  },
+  "force_ratio_mg": {
+    "MOVE": {
+      "minimum": 0.7,
+      "maximum": 1.4
+    },
+    "VIEW": {
+      "minimum": 0.2,
+      "maximum": 0.5
+    },
+    "UP": {
+      "minimum": 0.8,
+      "maximum": 1.05
+    },
+    "HOLD": {
+      "minimum": 0,
+      "maximum": 0
+    }
+  },
+  "validation_pose_ids": [
+    "validation-0006",
+    "validation-0011",
+    "validation-0015",
+    "validation-0017",
+    "validation-0019"
+  ],
+  "hold_pose_ids": [
+    "validation-0006",
+    "validation-0019"
+  ],
+  "environment_seeds": {
+    "validation-0006": 950006,
+    "validation-0011": 950011,
+    "validation-0015": 950015,
+    "validation-0017": 950017,
+    "validation-0019": 950019
+  },
+  "scheduling": {
+    "outer_loop": "pose",
+    "scheduler_seed": 970009,
+    "policy_order_per_pose": [
+      "R2",
+      "R5",
+      "R6",
+      "R7",
+      "R1",
+      "R4",
+      "R3"
+    ],
+    "hold_after_random_episodes": true
+  },
+  "policies": {
+    "R1": {
+      "type": "iid_uniform_modes",
+      "mode_probabilities": [
+        0.16666666666666666,
+        0.16666666666666666,
+        0.16666666666666666,
+        0.16666666666666666,
+        0.16666666666666666,
+        0.16666666666666666
+      ],
+      "alpha": "uniform_0_1"
+    },
+    "R2": {
+      "type": "fixed_block_uniform",
+      "block_cycles": 5,
+      "alpha": "uniform_0_1_per_block"
+    },
+    "R3": {
+      "type": "fixed_block_uniform",
+      "block_cycles": 10,
+      "alpha": "uniform_0_1_per_block"
+    },
+    "R4": {
+      "type": "markov_persistent",
+      "stay_probability": 0.8,
+      "switch_probability": 0.2,
+      "alpha_sigma": 0.1
+    },
+    "R5": {
+      "type": "move_biased_persistent",
+      "stay_probability": 0.9,
+      "resample_probability": 0.1,
+      "mode_probabilities": [
+        0.05,
+        0.3,
+        0.3,
+        0.125,
+        0.125,
+        0.1
+      ],
+      "alpha": "uniform_0_1_per_resample"
+    },
+    "R6": {
+      "type": "move_biased_persistent_fixed_alpha",
+      "stay_probability": 0.9,
+      "resample_probability": 0.1,
+      "mode_probabilities": [
+        0.05,
+        0.3,
+        0.3,
+        0.125,
+        0.125,
+        0.1
+      ],
+      "fixed_alpha": 0.5
+    },
+    "R7": {
+      "type": "alternating_move_observe",
+      "minimum_stage_cycles": 5,
+      "maximum_stage_cycles": 20,
+      "initial_stage": "MOVE",
+      "alpha": "uniform_0_1_per_stage"
+    },
+    "HOLD": {
+      "type": "diagnostic_hold",
+      "alpha": 0
+    }
+  },
+  "pose_library": {
+    "manifest_path": "configs/task009b/pose_library_manifest_v1.json",
+    "manifest_file_sha256": "fbe86f8323b521fa78f71b2b8c54b7d8adbc4e8e6eb3af2e1cc2e1823e1d7839",
+    "manifest_config_sha256": "3c22d6951d7aae378d3b60b716392b2f784aaa2da2e6163989a10bd46686b9fc",
+    "data_path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009b_pose_library/20260826_040250_292641Z/pose_library_v1.jsonl",
+    "data_sha256": "7a7a20e175dcfade0c3f07ccc2a4dca377508485f726fc6999a0453cb7cea855"
+  },
+  "coverage": {
+    "manifest_path": "configs/task009b/coverage_manifest_v1.json",
+    "manifest_file_sha256": "9262d508fc16cd6f9b15078ab544db173bcd8e2ee025f7519cd2f64215aaa7f9",
+    "manifest_config_sha256": "99c6ccdd07440d117e9b662c1ecb64bbfe90225b30bf9d22734c3b62ebb17df9",
+    "distance_m": 0.07,
+    "weighting": "vertex_area"
+  },
+  "unreachable_region": {
+    "path": "configs/task009b/unreachable_region_v1.json",
+    "file_sha256": "044bd8f26e24dcc092e6365c97a6b37a21688cb60a35fab88d7ace05868dcb31",
+    "config_sha256": "d4f1a29e238aae3aa448103dbf191beb1972a1c277765b1770793aff71ef02a7"
+  },
+  "candidate_times_s": [
+    30,
+    60,
+    120,
+    180,
+    240,
+    300
+  ],
+  "formal_episodes": [
+    {
+      "episode_id": "formal-validation-0006-r2",
+      "kind": "formal",
+      "policy_id": "R2",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 962006,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0006-r5",
+      "kind": "formal",
+      "policy_id": "R5",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 965006,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0006-r6",
+      "kind": "formal",
+      "policy_id": "R6",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 966006,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0006-r7",
+      "kind": "formal",
+      "policy_id": "R7",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 967006,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0006-r1",
+      "kind": "formal",
+      "policy_id": "R1",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 961006,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0006-r4",
+      "kind": "formal",
+      "policy_id": "R4",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 964006,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0006-r3",
+      "kind": "formal",
+      "policy_id": "R3",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 963006,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0011-r2",
+      "kind": "formal",
+      "policy_id": "R2",
+      "pose_id": "validation-0011",
+      "environment_seed": 950011,
+      "policy_seed": 962011,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0011-r5",
+      "kind": "formal",
+      "policy_id": "R5",
+      "pose_id": "validation-0011",
+      "environment_seed": 950011,
+      "policy_seed": 965011,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0011-r6",
+      "kind": "formal",
+      "policy_id": "R6",
+      "pose_id": "validation-0011",
+      "environment_seed": 950011,
+      "policy_seed": 966011,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0011-r7",
+      "kind": "formal",
+      "policy_id": "R7",
+      "pose_id": "validation-0011",
+      "environment_seed": 950011,
+      "policy_seed": 967011,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0011-r1",
+      "kind": "formal",
+      "policy_id": "R1",
+      "pose_id": "validation-0011",
+      "environment_seed": 950011,
+      "policy_seed": 961011,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0011-r4",
+      "kind": "formal",
+      "policy_id": "R4",
+      "pose_id": "validation-0011",
+      "environment_seed": 950011,
+      "policy_seed": 964011,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0011-r3",
+      "kind": "formal",
+      "policy_id": "R3",
+      "pose_id": "validation-0011",
+      "environment_seed": 950011,
+      "policy_seed": 963011,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0015-r2",
+      "kind": "formal",
+      "policy_id": "R2",
+      "pose_id": "validation-0015",
+      "environment_seed": 950015,
+      "policy_seed": 962015,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0015-r5",
+      "kind": "formal",
+      "policy_id": "R5",
+      "pose_id": "validation-0015",
+      "environment_seed": 950015,
+      "policy_seed": 965015,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0015-r6",
+      "kind": "formal",
+      "policy_id": "R6",
+      "pose_id": "validation-0015",
+      "environment_seed": 950015,
+      "policy_seed": 966015,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0015-r7",
+      "kind": "formal",
+      "policy_id": "R7",
+      "pose_id": "validation-0015",
+      "environment_seed": 950015,
+      "policy_seed": 967015,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0015-r1",
+      "kind": "formal",
+      "policy_id": "R1",
+      "pose_id": "validation-0015",
+      "environment_seed": 950015,
+      "policy_seed": 961015,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0015-r4",
+      "kind": "formal",
+      "policy_id": "R4",
+      "pose_id": "validation-0015",
+      "environment_seed": 950015,
+      "policy_seed": 964015,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0015-r3",
+      "kind": "formal",
+      "policy_id": "R3",
+      "pose_id": "validation-0015",
+      "environment_seed": 950015,
+      "policy_seed": 963015,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0017-r2",
+      "kind": "formal",
+      "policy_id": "R2",
+      "pose_id": "validation-0017",
+      "environment_seed": 950017,
+      "policy_seed": 962017,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0017-r5",
+      "kind": "formal",
+      "policy_id": "R5",
+      "pose_id": "validation-0017",
+      "environment_seed": 950017,
+      "policy_seed": 965017,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0017-r6",
+      "kind": "formal",
+      "policy_id": "R6",
+      "pose_id": "validation-0017",
+      "environment_seed": 950017,
+      "policy_seed": 966017,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0017-r7",
+      "kind": "formal",
+      "policy_id": "R7",
+      "pose_id": "validation-0017",
+      "environment_seed": 950017,
+      "policy_seed": 967017,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0017-r1",
+      "kind": "formal",
+      "policy_id": "R1",
+      "pose_id": "validation-0017",
+      "environment_seed": 950017,
+      "policy_seed": 961017,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0017-r4",
+      "kind": "formal",
+      "policy_id": "R4",
+      "pose_id": "validation-0017",
+      "environment_seed": 950017,
+      "policy_seed": 964017,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0017-r3",
+      "kind": "formal",
+      "policy_id": "R3",
+      "pose_id": "validation-0017",
+      "environment_seed": 950017,
+      "policy_seed": 963017,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0019-r2",
+      "kind": "formal",
+      "policy_id": "R2",
+      "pose_id": "validation-0019",
+      "environment_seed": 950019,
+      "policy_seed": 962019,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0019-r5",
+      "kind": "formal",
+      "policy_id": "R5",
+      "pose_id": "validation-0019",
+      "environment_seed": 950019,
+      "policy_seed": 965019,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0019-r6",
+      "kind": "formal",
+      "policy_id": "R6",
+      "pose_id": "validation-0019",
+      "environment_seed": 950019,
+      "policy_seed": 966019,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0019-r7",
+      "kind": "formal",
+      "policy_id": "R7",
+      "pose_id": "validation-0019",
+      "environment_seed": 950019,
+      "policy_seed": 967019,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0019-r1",
+      "kind": "formal",
+      "policy_id": "R1",
+      "pose_id": "validation-0019",
+      "environment_seed": 950019,
+      "policy_seed": 961019,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0019-r4",
+      "kind": "formal",
+      "policy_id": "R4",
+      "pose_id": "validation-0019",
+      "environment_seed": 950019,
+      "policy_seed": 964019,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0019-r3",
+      "kind": "formal",
+      "policy_id": "R3",
+      "pose_id": "validation-0019",
+      "environment_seed": 950019,
+      "policy_seed": 963019,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0006-hold",
+      "kind": "formal",
+      "policy_id": "HOLD",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 960006,
+      "duration_s": 300,
+      "action_cycles": 3000
+    },
+    {
+      "episode_id": "formal-validation-0019-hold",
+      "kind": "formal",
+      "policy_id": "HOLD",
+      "pose_id": "validation-0019",
+      "environment_seed": 950019,
+      "policy_seed": 960019,
+      "duration_s": 300,
+      "action_cycles": 3000
+    }
+  ],
+  "smoke_episodes": [
+    {
+      "episode_id": "smoke-validation-0006-r1",
+      "kind": "smoke",
+      "policy_id": "R1",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 961006,
+      "duration_s": 3,
+      "action_cycles": 30
+    },
+    {
+      "episode_id": "smoke-validation-0006-r2",
+      "kind": "smoke",
+      "policy_id": "R2",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 962006,
+      "duration_s": 3,
+      "action_cycles": 30
+    },
+    {
+      "episode_id": "smoke-validation-0006-r3",
+      "kind": "smoke",
+      "policy_id": "R3",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 963006,
+      "duration_s": 3,
+      "action_cycles": 30
+    },
+    {
+      "episode_id": "smoke-validation-0006-r4",
+      "kind": "smoke",
+      "policy_id": "R4",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 964006,
+      "duration_s": 3,
+      "action_cycles": 30
+    },
+    {
+      "episode_id": "smoke-validation-0006-r5",
+      "kind": "smoke",
+      "policy_id": "R5",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 965006,
+      "duration_s": 3,
+      "action_cycles": 30
+    },
+    {
+      "episode_id": "smoke-validation-0006-r6",
+      "kind": "smoke",
+      "policy_id": "R6",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 966006,
+      "duration_s": 3,
+      "action_cycles": 30
+    },
+    {
+      "episode_id": "smoke-validation-0006-r7",
+      "kind": "smoke",
+      "policy_id": "R7",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 967006,
+      "duration_s": 3,
+      "action_cycles": 30
+    },
+    {
+      "episode_id": "smoke-validation-0006-hold",
+      "kind": "smoke",
+      "policy_id": "HOLD",
+      "pose_id": "validation-0006",
+      "environment_seed": 950006,
+      "policy_seed": 960006,
+      "duration_s": 3,
+      "action_cycles": 30
+    }
+  ],
+  "curve_styles": {
+    "R1": {
+      "color": "#0072B2",
+      "linestyle": "-",
+      "marker": "o"
+    },
+    "R2": {
+      "color": "#E69F00",
+      "linestyle": "--",
+      "marker": "s"
+    },
+    "R3": {
+      "color": "#009E73",
+      "linestyle": "-.",
+      "marker": "^"
+    },
+    "R4": {
+      "color": "#D55E00",
+      "linestyle": ":",
+      "marker": "D"
+    },
+    "R5": {
+      "color": "#CC79A7",
+      "linestyle": "-",
+      "marker": "v"
+    },
+    "R6": {
+      "color": "#56B4E9",
+      "linestyle": "--",
+      "marker": "P"
+    },
+    "R7": {
+      "color": "#882255",
+      "linestyle": "-.",
+      "marker": "X"
+    },
+    "HOLD": {
+      "color": "#000000",
+      "linestyle": ":",
+      "marker": "*"
+    }
+  }
+}
