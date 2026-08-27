@@ -1,9 +1,9 @@
 # Active task contracts
 
-The currently authorized Linux implementation task is `TASK-008-six-action-dynamic-force-controller.md`.
+The currently authorized Linux implementation task is `TASK-009C-synchronous-random-baseline-preexperiment.md`.
 
-Linux must fetch the Windows planning branch `workflow/TASK-008-six-action-dynamic-force`, record its exact head, create `feature/TASK-008-six-action-dynamic-force-controller` from that planning head, execute the two referenced design documents manually, and return `handoffs/reports/TASK-008-six-action-dynamic-force-controller-report.md` with reproducible evidence.
+Linux must fetch the Windows planning branch `workflow/TASK-009C-synchronous-random-baselines`, record its exact head, create `feature/TASK-009C-synchronous-random-baselines` from that planning head, and execute `docs/design/2026-08-27-task009c-synchronous-random-baseline-preexperiment-plan.md` manually in gate order.
 
-TASK-008 starts from the final TASK-003 dynamic-force implementation and replaces all later eleven-action, latch, virtual-magnet, and pose-control plans as execution authority. TASK-003 remains the physical implementation baseline and historical evidence; TASK-005 through TASK-007-R1 are not authorized implementation routes for this task.
+TASK-009C starts from the completed TASK-009B implementation at `64dd2ff33951cb780f938a81c91c22dde8764c93`. It adds selected-pose reset ordering, a single-environment synchronous episode runner, seven random baselines, one HOLD diagnostic, a 37-episode preexperiment, and aligned coverage summaries.
 
-TASK-008 contains six one-second force macros, synchronous 1 Hz Actor boundaries, flat-table calibration and held-out acceptance, and an unchanged-parameter stomach keyboard viewer with external, capsule-RGB, and coverage displays. It does not authorize VLM/Actor/Critic training, expert-data generation, magnetic control, direct runtime pose correction, or asset modification.
+TASK-009C does not authorize VLM, CNN, GRU, Actor, Critic, PPO, rewards, multi-environment training, controller recalibration, coverage-ROI changes, pose-library regeneration, or simulation-asset changes.
