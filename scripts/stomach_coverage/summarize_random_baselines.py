@@ -260,6 +260,32 @@ def _artifact(path: Path) -> dict:
     return {"path": str(path.resolve()), "bytes": path.stat().st_size, "sha256": file_sha256(path)}
 
 
+def write_artifact_inventory(run_directory: Path) -> dict:
+    """Create one hash inventory for every immutable external file in the run."""
+    inventory_path = run_directory / "summary" / "artifact_inventory.json"
+    files = []
+    for path in sorted(run_directory.rglob("*")):
+        if not path.is_file() or path == inventory_path or path.name.endswith(".partial"):
+            continue
+        files.append(
+            {
+                "relative_path": str(path.relative_to(run_directory)),
+                **_artifact(path),
+            }
+        )
+    _write_json(
+        inventory_path,
+        {
+            "schema": "robotarm_magnetic_lab.task009c_artifact_inventory",
+            "version": 1,
+            "run_directory": str(run_directory.resolve()),
+            "file_count": len(files),
+            "files": files,
+        },
+    )
+    return _artifact(inventory_path)
+
+
 def main() -> int:
     args = parser.parse_args()
     kind = "smoke" if args.latest_smoke else "formal"
@@ -280,6 +306,7 @@ def main() -> int:
             output = manifest_path.parent / "summary"
             result["tables"] = write_formal_outputs(output, grouped, config, summaries)
             result["figures"] = write_figures(output, grouped, config)
+            result["artifact_inventory"] = write_artifact_inventory(manifest_path.parent)
     print("TASK009C_SUMMARY " + json.dumps(result, sort_keys=True), flush=True)
     return 0
 

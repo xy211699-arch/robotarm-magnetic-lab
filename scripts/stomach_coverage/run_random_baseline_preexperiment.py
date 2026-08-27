@@ -205,7 +205,11 @@ def _active_reset_events(base) -> list[str]:
     manager = getattr(base, "event_manager", None)
     terms = getattr(manager, "active_terms", ()) if manager is not None else ()
     if isinstance(terms, dict):
-        return sorted(str(name) for name in terms)
+        return sorted(
+            f"{mode}:{name}"
+            for mode, names in terms.items()
+            for name in names
+        )
     return sorted(str(name) for name in terms)
 
 
