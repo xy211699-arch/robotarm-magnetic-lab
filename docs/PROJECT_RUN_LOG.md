@@ -991,3 +991,6 @@
   配置纳入交付，覆盖/胃部回归53/53通过，准备推送至双向交接仓库origin。
 - 交接报告及正式冻结配置已提交为`e646489f75eba029e9aa7c183898f948efcfaaee`，并成功推送到
   origin分支`feature/TASK-009B-stomach-coverage-environment`；upstream保持只读且未发生推送。
+- Windows端反馈未读取到分支后，Linux端通过`git ls-remote`和GitHub API再次直接核验：
+  `xy211699-arch/robotarm-magnetic-lab`远端确有该feature分支，交付提交对象可正常读取；判断
+  为Windows端远程仓库或分支过滤/缓存问题，不是首次推送失败。
