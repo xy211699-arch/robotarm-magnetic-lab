@@ -5,8 +5,8 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
-import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -51,9 +51,16 @@ import torch
 import robotarm_magnetic_lab.tasks  # noqa: F401
 from isaaclab.app import launch_simulation
 from isaaclab_tasks.utils import parse_env_cfg
-from robotarm_magnetic_lab.baselines.random_policies import load_random_baseline_config
+from robotarm_magnetic_lab.baselines.random_policies import build_policy, load_random_baseline_config
 from robotarm_magnetic_lab.coverage.entry_pose_library import file_sha256
 from robotarm_magnetic_lab.coverage.simulator_runtime import P0CoverageRuntime
+from robotarm_magnetic_lab.runtime.task009c_episode_runner import (
+    EpisodeProtocolError,
+    EpisodeSpec,
+    SynchronousEpisodeRunner,
+    read_episode_jsonl,
+    validate_episode_records,
+)
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.task009b_training_env import (
     RESET_HOLD_CYCLES,
     TASK009C_OPTION_KEY,
@@ -79,6 +86,12 @@ def _write_json(path: Path, row: dict) -> None:
     path.write_text(json.dumps(row, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def _atomic_write_json(path: Path, row: dict) -> None:
+    temporary = path.with_suffix(path.suffix + ".partial")
+    _write_json(temporary, row)
+    os.replace(temporary, path)
+
+
 def _sha256(path: Path) -> str:
     return file_sha256(path)
 
@@ -96,6 +109,84 @@ def _pose_request(record: dict, manifest_hash: str) -> dict:
     }
 
 
+def _latest_pointer_path(output_root: Path, kind: str) -> Path:
+    return output_root / f"latest_{kind}_manifest.json"
+
+
+def _update_latest_pointer(output_root: Path, kind: str, run_id: str, manifest_path: Path) -> None:
+    _atomic_write_json(
+        _latest_pointer_path(output_root, kind),
+        {
+            "schema": "robotarm_magnetic_lab.task009c_latest_manifest",
+            "version": 1,
+            "kind": kind,
+            "run_id": run_id,
+            "manifest_path": str(manifest_path.resolve()),
+            "manifest_bytes": manifest_path.stat().st_size,
+            "manifest_sha256": _sha256(manifest_path),
+        },
+    )
+
+
+def _append_run_record(
+    manifest_path: Path, output_root: Path, kind: str, run_id: str, row: dict
+) -> None:
+    _append(manifest_path, row)
+    _update_latest_pointer(output_root, kind, run_id, manifest_path)
+
+
+def _read_jsonl(path: Path) -> list[dict]:
+    with path.open("r", encoding="utf-8") as stream:
+        return [json.loads(line) for line in stream if line.strip()]
+
+
+def _valid_completed_episode(entry: dict, spec: EpisodeSpec) -> bool:
+    try:
+        if entry.get("record_type") != "episode" or entry.get("status") != "pass":
+            return False
+        path = Path(entry["boundary_log_path"])
+        if (
+            not path.is_file()
+            or path.stat().st_size != int(entry["boundary_log_bytes"])
+            or _sha256(path) != entry["boundary_log_sha256"]
+        ):
+            return False
+        validate_episode_records(
+            read_episode_jsonl(path),
+            expected_cycles=spec.action_cycles,
+            expected_episode_id=spec.episode_id,
+        )
+        return True
+    except (KeyError, OSError, TypeError, ValueError, EpisodeProtocolError):
+        return False
+
+
+def _select_run_directory(output_root: Path, kind: str, config: dict) -> tuple[str, Path, Path, list[dict]]:
+    """Resume only an incomplete, hash-verified formal manifest."""
+    output_root.mkdir(parents=True, exist_ok=True)
+    pointer_path = _latest_pointer_path(output_root, kind)
+    if kind == "formal" and pointer_path.is_file():
+        pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+        manifest_path = Path(pointer.get("manifest_path", ""))
+        valid_pointer = (
+            pointer.get("kind") == kind
+            and manifest_path.is_file()
+            and manifest_path.stat().st_size == int(pointer.get("manifest_bytes", -1))
+            and _sha256(manifest_path) == pointer.get("manifest_sha256")
+        )
+        if valid_pointer:
+            rows = _read_jsonl(manifest_path)
+            incomplete = rows and rows[-1].get("record_type") != "run_complete"
+            matching = rows and rows[0].get("config_sha256") == config["config_sha256"]
+            if incomplete and matching:
+                return str(pointer["run_id"]), manifest_path.parent, manifest_path, rows
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%fZ")
+    run_id = f"{kind}-{stamp}"
+    output = output_root / run_id
+    output.mkdir(parents=True, exist_ok=False)
+    return run_id, output, output / "run_manifest.jsonl", []
+
+
 def _assert_gpu(base) -> dict:
     camera_tensor = base.scene["capsule_camera"].data.output["rgb"].torch
     physics_view = base.sim.physics_sim_view
@@ -108,6 +199,14 @@ def _assert_gpu(base) -> dict:
     if any(not value.startswith("cuda") for value in devices.values()):
         raise RuntimeError(f"TASK-009C requires GPU PhysX and camera tensors: {devices}")
     return devices
+
+
+def _active_reset_events(base) -> list[str]:
+    manager = getattr(base, "event_manager", None)
+    terms = getattr(manager, "active_terms", ()) if manager is not None else ()
+    if isinstance(terms, dict):
+        return sorted(str(name) for name in terms)
+    return sorted(str(name) for name in terms)
 
 
 def _run_reset_only(env, output: Path, config: dict, manifest: dict, allowed: dict) -> dict:
@@ -191,15 +290,204 @@ def _run_reset_only(env, output: Path, config: dict, manifest: dict, allowed: di
     }
 
 
+def _run_episode_batch(
+    env,
+    output: Path,
+    output_root: Path,
+    manifest_path: Path,
+    existing_rows: list[dict],
+    config: dict,
+    pose_manifest: dict,
+    allowed: dict,
+    *,
+    kind: str,
+    run_id: str,
+) -> dict:
+    base = env.unwrapped
+    devices = _assert_gpu(base)
+    episode_records = config["smoke_episodes" if kind == "smoke" else "formal_episodes"]
+    specs = [EpisodeSpec.from_record(record) for record in episode_records]
+    completed_entries = {
+        row.get("episode_id"): row for row in existing_rows if row.get("record_type") == "episode"
+    }
+    if not existing_rows:
+        _append_run_record(
+            manifest_path,
+            output_root,
+            kind,
+            run_id,
+            {
+                "record_type": "run_start",
+                "schema": "robotarm_magnetic_lab.task009c_run_manifest",
+                "version": 1,
+                "kind": kind,
+                "run_id": run_id,
+                "config_sha256": config["config_sha256"],
+                "config_file": _artifact(args_cli.config),
+                "repository_commit": _git("rev-parse", "HEAD"),
+                "repository_branch": _git("branch", "--show-current"),
+                "devices": devices,
+                "num_envs": int(base.num_envs),
+                "physics_hz": 1.0 / float(base.sim.get_physics_dt()),
+                "control_hz": 1.0 / float(base.step_dt),
+                "physics_steps_per_action": int(config["clocks"]["physics_steps_per_action"]),
+                "active_reset_events": _active_reset_events(base),
+                "expected_episode_ids": [spec.episode_id for spec in specs],
+                "started_at_utc": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+    passed = 0
+    skipped = 0
+    for index, spec in enumerate(specs, start=1):
+        existing = completed_entries.get(spec.episode_id)
+        if existing is not None and _valid_completed_episode(existing, spec):
+            passed += 1
+            skipped += 1
+            print(
+                f"TASK009C_EPISODE_SKIP index={index}/{len(specs)} id={spec.episode_id} hash_valid=True",
+                flush=True,
+            )
+            continue
+        observation, extras = env.reset(
+            seed=spec.environment_seed,
+            options={
+                TASK009C_OPTION_KEY: _pose_request(
+                    allowed[spec.pose_id], pose_manifest["config_sha256"]
+                )
+            },
+        )
+        reset_info = extras[TASK009C_OPTION_KEY]
+        evaluator = P0CoverageRuntime(
+            env,
+            output / "coverage" / spec.episode_id,
+            task_id=TASK_ID,
+            seed=spec.environment_seed,
+            commit=_git("rev-parse", "HEAD"),
+            branch=_git("branch", "--show-current"),
+            require_camera_facing_normal=True,
+            camera_facing_normal_sign=-1,
+            raycast_device=str(base.device),
+            print_updates=False,
+            unreachable_region_path=ROOT / config["unreachable_region"]["path"],
+        )
+        runner = SynchronousEpisodeRunner(
+            env, evaluator, config_sha256=config["config_sha256"], run_id=run_id
+        )
+        boundary_path = output / "episodes" / f"{spec.episode_id}.jsonl"
+        summary_path = output / "episode_summaries" / f"{spec.episode_id}.json"
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            _, episode_summary = runner.run(
+                spec=spec,
+                policy=build_policy(spec.policy_id, spec.policy_seed, config),
+                initial_observation=observation,
+                output_path=boundary_path,
+            )
+            coverage_directory = evaluator.finalize("task009c_episode_complete")
+        except Exception as exc:
+            try:
+                evaluator.finalize("task009c_episode_failed")
+            finally:
+                _append_run_record(
+                    manifest_path,
+                    output_root,
+                    kind,
+                    run_id,
+                    {
+                        "record_type": "episode_failure",
+                        "episode_id": spec.episode_id,
+                        "status": "failed",
+                        "exception_type": type(exc).__name__,
+                        "exception": str(exc),
+                        "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+                    },
+                )
+            raise
+        episode_summary.update(
+            {
+                "reset_write_position_error_m": reset_info["write_position_error_m"],
+                "reset_write_quaternion_absolute_alignment": reset_info[
+                    "write_quaternion_absolute_alignment"
+                ],
+                "coverage_artifact_directory": str(Path(coverage_directory).resolve()),
+            }
+        )
+        _atomic_write_json(summary_path, episode_summary)
+        entry = {
+            "record_type": "episode",
+            "episode_id": spec.episode_id,
+            "kind": kind,
+            "policy_id": spec.policy_id,
+            "pose_id": spec.pose_id,
+            "environment_seed": spec.environment_seed,
+            "policy_seed": spec.policy_seed,
+            "status": "pass",
+            "boundary_log_path": str(boundary_path.resolve()),
+            "boundary_log_bytes": boundary_path.stat().st_size,
+            "boundary_log_sha256": _sha256(boundary_path),
+            "summary_path": str(summary_path.resolve()),
+            "summary_bytes": summary_path.stat().st_size,
+            "summary_sha256": _sha256(summary_path),
+            "boundary_count": episode_summary["boundary_count"],
+            "action_cycles": episode_summary["action_cycles"],
+            "C0_reachable": episode_summary["C0_reachable"],
+            "C_final_reachable": episode_summary["C_final_reachable"],
+            "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+        }
+        _append_run_record(manifest_path, output_root, kind, run_id, entry)
+        completed_entries[spec.episode_id] = entry
+        passed += 1
+        print(
+            f"TASK009C_EPISODE index={index}/{len(specs)} id={spec.episode_id} "
+            f"points={episode_summary['boundary_count']} "
+            f"C0={100.0 * episode_summary['C0_reachable']:.3f}% "
+            f"Cend={100.0 * episode_summary['C_final_reachable']:.3f}% pass=True",
+            flush=True,
+        )
+    if passed != len(specs):
+        raise EpisodeProtocolError(f"only {passed}/{len(specs)} configured episodes passed")
+    _append_run_record(
+        manifest_path,
+        output_root,
+        kind,
+        run_id,
+        {
+            "record_type": "run_complete",
+            "status": "pass",
+            "episode_count": passed,
+            "resumed_episode_count": skipped,
+            "completed_at_utc": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    return {
+        "status": "pass",
+        "gate": 4 if kind == "smoke" else 5,
+        "run_id": run_id,
+        "episode_count": passed,
+        "resumed_episode_count": skipped,
+        "devices": devices,
+        "run_manifest": _artifact(manifest_path),
+        "stable_pointer": _artifact(_latest_pointer_path(output_root, kind)),
+    }
+
+
 def main() -> int:
     config = load_random_baseline_config(args_cli.config)
     loaded_config, manifest, allowed = _load_task009c_pose_records(args_cli.config)
     if config["config_sha256"] != loaded_config["config_sha256"]:
         raise RuntimeError("TASK-009C configuration changed between loaders")
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%fZ")
     mode_name = "reset_only" if args_cli.reset_only else "smoke" if args_cli.smoke else "formal"
-    output = args_cli.output_root / f"{mode_name}-{stamp}"
-    output.mkdir(parents=True, exist_ok=False)
+    if mode_name == "reset_only":
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%fZ")
+        output = args_cli.output_root / f"reset_only-{stamp}"
+        output.mkdir(parents=True, exist_ok=False)
+        run_id = output.name
+        manifest_path = None
+        existing_rows = []
+    else:
+        run_id, output, manifest_path, existing_rows = _select_run_directory(
+            args_cli.output_root, mode_name, config
+        )
     cfg = parse_env_cfg(TASK_ID, device=args_cli.device, num_envs=1, use_fabric=True)
     cfg.sim.render_interval = 24
     env = None
@@ -209,7 +497,19 @@ def main() -> int:
             if args_cli.reset_only:
                 summary = _run_reset_only(env, output, config, manifest, allowed)
             else:
-                raise NotImplementedError("Gate 3 episode runner is not implemented yet")
+                assert manifest_path is not None
+                summary = _run_episode_batch(
+                    env,
+                    output,
+                    args_cli.output_root,
+                    manifest_path,
+                    existing_rows,
+                    config,
+                    manifest,
+                    allowed,
+                    kind=mode_name,
+                    run_id=run_id,
+                )
         finally:
             if env is not None:
                 env.close()
