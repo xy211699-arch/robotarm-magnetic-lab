@@ -172,6 +172,18 @@ def unreachable_region_record(
     return payload
 
 
+def seeds_from_record(record: dict[str, Any]) -> tuple[UnreachableSeed, ...]:
+    """Restore editable seeds from a validated or newly-created record."""
+    return tuple(
+        UnreachableSeed(
+            triangle_index=int(item["seed_triangle_index"]),
+            point_world_m=np.asarray(item["surface_point_world_m"], dtype=np.float64),
+            radius_m=float(item["geodesic_radius_m"]),
+        )
+        for item in record["seeds"]
+    )
+
+
 def save_and_reload_unreachable(path: Path, record: dict[str, Any]) -> dict[str, Any]:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -198,14 +210,7 @@ def load_unreachable_mask(path: Path, reference: ReferenceMesh) -> tuple[dict[st
     }
     if _hash(hash_payload) != expected_hash:
         raise ValueError("unreachable-region configuration hash mismatch")
-    seeds = tuple(
-        UnreachableSeed(
-            triangle_index=int(item["seed_triangle_index"]),
-            point_world_m=np.asarray(item["surface_point_world_m"], dtype=np.float64),
-            radius_m=float(item["geodesic_radius_m"]),
-        )
-        for item in record["seeds"]
-    )
+    seeds = seeds_from_record(record)
     computed, _ = build_unreachable_mask(reference, seeds)
     if computed.excluded_triangle_indices.tolist() != record["excluded_triangle_indices"]:
         raise ValueError("stored unreachable triangle union differs from recomputed geodesic union")

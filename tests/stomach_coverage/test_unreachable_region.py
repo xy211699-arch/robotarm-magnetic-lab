@@ -11,6 +11,7 @@ from robotarm_magnetic_lab.coverage.unreachable_region import (
     UnreachableSeed,
     build_unreachable_mask,
     load_unreachable_mask,
+    seeds_from_record,
     unreachable_region_record,
 )
 
@@ -67,6 +68,11 @@ def test_frozen_record_round_trip_recomputes_and_rejects_tampering(tmp_path):
     assert loaded["status"] == "frozen"
     assert mask.config_sha256 == record["config_sha256"]
     assert 0.0 < mask.excluded_area_fraction < 1.0
+    restored = seeds_from_record(loaded)
+    assert len(restored) == 1
+    assert restored[0].triangle_index == seeds[0].triangle_index
+    np.testing.assert_allclose(restored[0].point_world_m, seeds[0].point_world_m)
+    assert restored[0].radius_m == seeds[0].radius_m
 
     record["reason"] = "controller happened to fail"
     path.write_text(json.dumps(record), encoding="utf-8")

@@ -11,6 +11,7 @@ from .unreachable_region import (
     UnreachableSeed,
     build_unreachable_mask,
     load_unreachable_mask,
+    seeds_from_record,
     unreachable_region_record,
 )
 from .visibility import (
@@ -31,6 +32,7 @@ __all__ = [
     "UnreachableSeed",
     "build_unreachable_mask",
     "load_unreachable_mask",
+    "seeds_from_record",
     "unreachable_region_record",
     "MeshInput",
     "ReferenceMesh",

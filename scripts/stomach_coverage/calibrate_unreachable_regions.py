@@ -34,7 +34,11 @@ parser.add_argument(
 )
 parser.add_argument("--operator", default=os.environ.get("USER", "unknown"))
 parser.add_argument("--initial_radius_mm", type=int, choices=tuple(range(10, 81, 5)), default=20)
-parser.add_argument("--overwrite", action="store_true")
+parser.add_argument(
+    "--new",
+    action="store_true",
+    help="Start a blank draft instead of resuming an existing frozen configuration.",
+)
 AppLauncher.add_app_launcher_args(parser)
 parser.set_defaults(visualizer=["kit"])
 args_cli = parser.parse_args()
@@ -62,7 +66,9 @@ from robotarm_magnetic_lab.coverage.unreachable_region import (
     UNREACHABLE_RADII_M,
     UnreachableSeed,
     build_unreachable_mask,
+    load_unreachable_mask,
     save_and_reload_unreachable,
+    seeds_from_record,
     unreachable_region_record,
 )
 from robotarm_magnetic_lab.teleop.atomic_keyboard import normalize_key
@@ -70,7 +76,7 @@ from robotarm_magnetic_lab.teleop.atomic_keyboard import normalize_key
 
 CONTROLS = (
     "W/S=+Y/-Y A/D=-X/+X Q/E=+Z/-Z; Shift=fine; G=add seed; "
-    "Tab=select seed; [ ]=radius; Backspace=delete; C=clear; F=freeze/save; Esc=exit"
+    "Tab=select seed; [ ]=radius; Backspace=delete; C=clear; Enter=freeze/save; Esc=exit"
 )
 FROZEN_SELECTION_REASON = "operator_confirmed_physical_or_anatomical_unreachable_surface"
 
@@ -236,9 +242,11 @@ def _escape(key: str) -> bool:
     return key in ("ESC", "ESCAPE")
 
 
+def _save(key: str) -> bool:
+    return key in ("ENTER", "RETURN", "NUMPAD_ENTER", "KP_ENTER")
+
+
 def main() -> int:
-    if args_cli.output.exists() and not args_cli.overwrite:
-        raise FileExistsError(f"output already exists; inspect it or pass --overwrite: {args_cli.output}")
     cfg = parse_env_cfg(args_cli.task, device="cpu", num_envs=1, use_fabric=True)
     cfg.sim.device = "cpu"
     session = SessionLog(args_cli.log_root)
@@ -264,12 +272,37 @@ def main() -> int:
             selected: int | None = None
             mask = None
             radius_index = UNREACHABLE_RADII_M.index(float(args_cli.initial_radius_mm) / 1000.0)
+            if args_cli.output.exists() and not args_cli.new:
+                resumed_record, resumed_mask = load_unreachable_mask(args_cli.output, reference)
+                seeds = list(seeds_from_record(resumed_record))
+                mask = resumed_mask
+                selected = len(seeds) - 1
+                radius_index = UNREACHABLE_RADII_M.index(seeds[selected].radius_m)
+                cursor = seeds[selected].point_world_m.copy()
+                session.emit(
+                    "RESUMED",
+                    path=str(args_cli.output.resolve()),
+                    config_sha256=resumed_record["config_sha256"],
+                    seed_count=len(seeds),
+                    excluded_triangle_count=len(mask.excluded_triangle_indices),
+                    excluded_area_fraction=mask.excluded_area_fraction,
+                )
+            elif args_cli.output.exists() and args_cli.new:
+                session.emit(
+                    "NEW_DRAFT_STARTED",
+                    preserved_existing_path=str(args_cli.output.resolve()),
+                    instruction="existing file remains unchanged until Enter saves the new draft",
+                )
             keyboard = Keyboard()
             panel = Panel()
             geometry = DebugGeometry()
             geometry.update_cursor(cursor)
             geometry.update(reference, mask, seeds)
             panel.update(cursor, seeds, selected, mask)
+            if seeds:
+                panel.status.text = (
+                    "Existing frozen mask resumed. Add/edit seeds, then press Enter to save."
+                )
             last_wall = time.monotonic()
             last_report = 0.0
             running = True
@@ -344,7 +377,7 @@ def main() -> int:
                         mask = None
                         geometry.update(reference, mask, seeds)
                         session.emit("CLEARED")
-                    elif key == "F":
+                    elif _save(key):
                         if not seeds:
                             panel.status.text = "Cannot save: add at least one seed with G."
                             continue
