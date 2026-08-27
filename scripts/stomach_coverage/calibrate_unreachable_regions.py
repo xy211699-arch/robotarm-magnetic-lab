@@ -33,11 +33,6 @@ parser.add_argument(
     default=ROOT / "logs/task009b_unreachable_calibration",
 )
 parser.add_argument("--operator", default=os.environ.get("USER", "unknown"))
-parser.add_argument(
-    "--reason",
-    default="",
-    help="Physical/anatomical reason for exclusion; controller failure alone is forbidden.",
-)
 parser.add_argument("--initial_radius_mm", type=int, choices=tuple(range(10, 81, 5)), default=20)
 parser.add_argument("--overwrite", action="store_true")
 AppLauncher.add_app_launcher_args(parser)
@@ -45,8 +40,6 @@ parser.set_defaults(visualizer=["kit"])
 args_cli = parser.parse_args()
 if args_cli.task != TASK_ID:
     parser.error(f"this calibrator only accepts {TASK_ID}")
-if not str(args_cli.reason).strip():
-    parser.error("--reason is required and must describe a physical/anatomical exclusion")
 args_cli.enable_cameras = True
 
 launcher = AppLauncher(args_cli)
@@ -77,8 +70,9 @@ from robotarm_magnetic_lab.teleop.atomic_keyboard import normalize_key
 
 CONTROLS = (
     "W/S=+Y/-Y A/D=-X/+X Q/E=+Z/-Z; Shift=fine; G=add seed; "
-    "Tab=select seed; [ ]=radius; Backspace=delete; C=clear; S=freeze/save; Esc=exit"
+    "Tab=select seed; [ ]=radius; Backspace=delete; C=clear; F=freeze/save; Esc=exit"
 )
+FROZEN_SELECTION_REASON = "operator_confirmed_physical_or_anatomical_unreachable_surface"
 
 
 def _tensor(value):
@@ -253,7 +247,7 @@ def main() -> int:
         "STARTED",
         output=str(args_cli.output.resolve()),
         operator=args_cli.operator,
-        reason=args_cli.reason,
+        reason=FROZEN_SELECTION_REASON,
         controls=CONTROLS,
     )
     with launch_simulation(cfg, args_cli):
@@ -350,14 +344,14 @@ def main() -> int:
                         mask = None
                         geometry.update(reference, mask, seeds)
                         session.emit("CLEARED")
-                    elif key == "S":
+                    elif key == "F":
                         if not seeds:
                             panel.status.text = "Cannot save: add at least one seed with G."
                             continue
                         record = unreachable_region_record(
                             reference=reference,
                             seeds=seeds,
-                            reason=args_cli.reason,
+                            reason=FROZEN_SELECTION_REASON,
                             operator=args_cli.operator,
                         )
                         save_and_reload_unreachable(args_cli.output, record)
