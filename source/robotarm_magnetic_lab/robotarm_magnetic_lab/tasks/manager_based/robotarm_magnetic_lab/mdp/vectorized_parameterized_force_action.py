@@ -74,6 +74,12 @@ class VectorizedParameterizedForceAction(ActionTerm):
         self.last_resultant_forces_world = torch.zeros_like(
             self.last_camera_positions_world
         )
+        self.last_camera_forces_world = torch.zeros_like(
+            self.last_camera_positions_world
+        )
+        self.last_other_forces_world = torch.zeros_like(
+            self.last_camera_positions_world
+        )
         self.last_resultant_torques_world = torch.zeros_like(
             self.last_camera_positions_world
         )
@@ -153,6 +159,8 @@ class VectorizedParameterizedForceAction(ActionTerm):
         self.last_camera_positions_world.copy_(camera)
         self.last_other_positions_world.copy_(other)
         self.last_directions_world.copy_(command.directions_world)
+        self.last_camera_forces_world.copy_(command.camera_forces_world)
+        self.last_other_forces_world.copy_(command.other_forces_world)
         self.last_resultant_forces_world.copy_(resultant)
         self.last_resultant_torques_world.copy_(torque)
         com_rows = torch.nonzero(
@@ -196,6 +204,8 @@ class VectorizedParameterizedForceAction(ActionTerm):
         self.last_other_positions_world[rows] = 0.0
         self.last_directions_world[rows] = 0.0
         self.last_resultant_forces_world[rows] = 0.0
+        self.last_camera_forces_world[rows] = 0.0
+        self.last_other_forces_world[rows] = 0.0
         self.last_resultant_torques_world[rows] = 0.0
         self.capsule.permanent_wrench_composer.reset(env_ids=rows)
 

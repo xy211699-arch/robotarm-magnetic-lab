@@ -138,6 +138,12 @@ class Task009D0CoverageRuntime:
         self.rgb_sync = Task009D0RgbSynchronizer(self.num_envs, self.device)
         self.visibility_override = visibility_override
         self.raycaster = raycaster
+        self.latest_raw_visible_mask = torch.zeros(
+            (self.num_envs, len(self.vertices_local)), dtype=torch.bool, device=self.device
+        )
+        self.latest_reachable_visible_mask = torch.zeros_like(
+            self.latest_raw_visible_mask
+        )
         self.latest_update: Task009D0CoverageBoundary | None = None
         self._latest_boundary: int | None = None
 
@@ -289,6 +295,10 @@ class Task009D0CoverageRuntime:
             ray_count = 0
         else:
             visible, candidate_counts, ray_count = self._visibility(centers, axes)
+            self.latest_raw_visible_mask.copy_(visible)
+            self.latest_reachable_visible_mask.copy_(
+                visible & self.reachable_vertex_mask[None, :]
+            )
             raw_update = self.raw_accumulator.update(frames, visible)
             reachable_update = self.reachable_accumulator.update(
                 frames, visible & self.reachable_vertex_mask[None, :]
@@ -350,6 +360,8 @@ class Task009D0CoverageRuntime:
         rows = env_ids.to(device=self.device, dtype=torch.int64).reshape(-1)
         self.raw_accumulator.reset_rows(rows)
         self.reachable_accumulator.reset_rows(rows)
+        self.latest_raw_visible_mask[rows] = False
+        self.latest_reachable_visible_mask[rows] = False
         self.rgb_sync.reset_rows(rows)
         self._latest_boundary = None
         self.latest_update = None
