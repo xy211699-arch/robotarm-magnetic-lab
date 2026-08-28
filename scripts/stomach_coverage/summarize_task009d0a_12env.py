@@ -22,6 +22,9 @@ from robotarm_magnetic_lab.runtime.task009d0_config import (  # noqa: E402
 )
 
 
+RARE_C0_ABORT = "RuntimeError: TASK-009D0 reset produced non-positive initial C0"
+
+
 def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -54,12 +57,27 @@ def decide(
     return 12 if eligible and statistics.median(throughputs) > threshold else 8
 
 
+def is_accepted_rare_c0_abort(records: list[dict[str, Any]]) -> bool:
+    """Recognize only the explicitly accepted, pre-measurement C0 reset abort."""
+    failed = [record for record in records if record.get("status") == "fail"]
+    return (
+        len(failed) == 1
+        and failed[0].get("faults") == [RARE_C0_ABORT]
+        and failed[0].get("measurements") == []
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact_root", type=Path, required=True)
     parser.add_argument("--candidate_config", type=Path, required=True)
     parser.add_argument("--base_frozen_config", type=Path, required=True)
     parser.add_argument("--write_frozen_config", type=Path, required=True)
+    parser.add_argument(
+        "--accept_rare_nonpositive_c0_abort",
+        action="store_true",
+        help="Apply the explicit 2026-08-28 user waiver for one known pre-measurement C0 reset abort.",
+    )
     parser.add_argument("--kit_args", default="", help=argparse.SUPPRESS)
     args = parser.parse_args()
 
@@ -80,10 +98,25 @@ def main() -> None:
     fault_count = sum(len(row.get("faults", ())) for row in records)
     if any(row.get("status") not in ("pass", "fail") for row in records):
         raise ValueError("12-env manifest status is invalid")
-    selected = decide(
-        candidate, throughputs, minimum_free, fault_count, observed_process_count=len(records)
-    )
     threshold = float(candidate["baseline_median_environment_transitions_per_second"]) * 1.10
+    rare_abort_waived = bool(
+        args.accept_rare_nonpositive_c0_abort
+        and is_accepted_rare_c0_abort(records)
+        and candidate.get("accepted_rare_reset_abort")
+        == "TASK-009D0 reset produced non-positive initial C0"
+    )
+    if rare_abort_waived:
+        selected = (
+            12
+            if len(successful) >= 2
+            and statistics.median(throughputs) > threshold
+            and minimum_free >= float(candidate["minimum_gpu_free_memory_fraction"])
+            else 8
+        )
+    else:
+        selected = decide(
+            candidate, throughputs, minimum_free, fault_count, observed_process_count=len(records)
+        )
     evidence = [
         {"path": str(path.resolve()), "bytes": path.stat().st_size, "sha256": file_sha256(path)}
         for path in paths
@@ -91,7 +124,11 @@ def main() -> None:
     summary = {
         "schema": "robotarm_magnetic_lab.task009d0a_12env_throughput_summary",
         "version": 1,
-        "status": "candidate_selected" if selected == 12 else "candidate_rejected",
+        "status": (
+            "candidate_selected_with_user_waiver"
+            if selected == 12 and rare_abort_waived
+            else "candidate_selected" if selected == 12 else "candidate_rejected"
+        ),
         "implementation_commit": records[0]["commit"],
         "candidate_config_path": str(args.candidate_config.resolve()),
         "candidate_config_sha256": file_sha256(args.candidate_config),
@@ -112,6 +149,11 @@ def main() -> None:
         ),
         "minimum_gpu_free_fraction": minimum_free,
         "fault_count": fault_count,
+        "rare_nonpositive_c0_abort_user_waiver": rare_abort_waived,
+        "waiver_policy": (
+            "abort the affected run; no resampling and no pose-library modification"
+            if rare_abort_waived else None
+        ),
         "selected_num_envs": selected,
         "source_manifests": evidence,
     }
@@ -126,7 +168,14 @@ def main() -> None:
         "summary_path": str(summary_path.resolve()),
         "summary_sha256": file_sha256(summary_path),
         "source_manifest_sha256": [item["sha256"] for item in evidence],
-        "rule": "select 12 only if median > 1.10 * 30.310967, zero faults, and minimum free GPU fraction >= 0.20",
+        "rule": (
+            "user-authorized 2026-08-28 waiver: accept one known pre-measurement non-positive-C0 reset abort; "
+            "successful median > 1.10 * 30.310967 and minimum free GPU fraction >= 0.20"
+            if rare_abort_waived
+            else "select 12 only if median > 1.10 * 30.310967, zero faults, and minimum free GPU fraction >= 0.20"
+        ),
+        "rare_nonpositive_c0_abort_user_waiver": rare_abort_waived,
+        "runtime_policy": "abort an affected run; do not resample or modify the pose library",
     }
     frozen["config_sha256"] = manifest_hash({key: value for key, value in frozen.items() if key != "config_sha256"})
     _atomic_json(args.write_frozen_config, frozen)

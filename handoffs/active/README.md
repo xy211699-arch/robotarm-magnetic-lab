@@ -14,6 +14,7 @@ TASK-009D0A 只授权十二环境吞吐增量测试、必要的十二环境稳�
 覆盖区域变化、位姿库重建或 USD 修改。
 
 Linux 执行状态（2026-08-28）：TASK-009D0A `complete`。TASK-009D0 的原始 Gate 3 结果保持
-为 `fail_with_manual_waiver`，D0 总状态按合同收尾为 `accepted_with_manual_waiver`；12环境
-因三次正式进程中一次reset非正C0故障而未冻结，最终继续选择8环境。完整证据见
+为 `fail_with_manual_waiver`，D0 总状态按合同收尾为 `accepted_with_manual_waiver`。用户
+进一步接受少见非正C0 reset直接中止的运行策略，最终冻结12环境；不重采样或修改位姿库。
+完整证据见
 `handoffs/reports/TASK-009D0-vectorized-training-infrastructure-report.md`。

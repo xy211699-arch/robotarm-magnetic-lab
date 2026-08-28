@@ -12,5 +12,8 @@
   "warmup_steps": 50,
   "measured_steps": 300,
   "independent_process_repeats": 3,
-  "selection_rule": "select 12 only when its median throughput is strictly greater than 1.10 times the frozen 8-env median and all 12-env runs are fault-free with at least 20 percent GPU memory free"
+  "accepted_rare_reset_abort": "TASK-009D0 reset produced non-positive initial C0",
+  "accepted_rare_reset_abort_policy": "abort the affected run; do not resample or modify the pose library",
+  "accepted_rare_reset_abort_authorized_utc_date": "2026-08-28",
+  "selection_rule": "select 12 when successful-run median throughput is strictly greater than 1.10 times the frozen 8-env median, GPU free memory is at least 20 percent, and any sole failure is exactly the user-accepted pre-measurement non-positive-C0 reset abort"
 }

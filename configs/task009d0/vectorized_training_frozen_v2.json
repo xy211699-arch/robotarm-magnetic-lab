@@ -18,7 +18,7 @@
     "physics_hz": 240,
     "physics_steps_per_action": 24
   },
-  "config_sha256": "06b380fd0112b38c6cb1e1a43ab4ef665c86d7035e7adc6c6418d57195137c03",
+  "config_sha256": "28940b6b591753dfcc892e80faf679fce77db343ec6892b7b384c80d06ce082c",
   "coverage": {
     "first_hit_tolerance_m": 0.0001,
     "fov_half_angle_deg": 60.0,
@@ -89,17 +89,19 @@
     }
   },
   "schema": "robotarm_magnetic_lab.task009d0_vectorized_training_frozen",
-  "selected_num_envs": 8,
+  "selected_num_envs": 12,
   "selection": {
     "implementation_commit": "676e4e528c18d4f52dd067a0d88afa592821c1ed",
-    "rule": "select 12 only if median > 1.10 * 30.310967, zero faults, and minimum free GPU fraction >= 0.20",
+    "rare_nonpositive_c0_abort_user_waiver": true,
+    "rule": "user-authorized 2026-08-28 waiver: accept one known pre-measurement non-positive-C0 reset abort; successful median > 1.10 * 30.310967 and minimum free GPU fraction >= 0.20",
+    "runtime_policy": "abort an affected run; do not resample or modify the pose library",
     "source_manifest_sha256": [
       "00e716ba31d28aa41da59a30ffc4af5bd4bf1035915dacd87100ce405487e088",
       "7a3485c3cdc9618841d166303e583b29f0b20cc05c45bd78b6cd68307862d2a4",
       "145a12747744aeb1485d9d907e4cc2cb86a4bbb4ff7176fc651d7b67fae83382"
     ],
     "summary_path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate5_12env_incremental/task009d0a_12env_throughput_summary.json",
-    "summary_sha256": "a258a0f8b3fef7b49a1cbcd785c7e6da605e6d21eb99c8b94e8359ce66922afc"
+    "summary_sha256": "5f5f772bdf0cbca87a71227e684a7c467c05e597fa8448200c99f335d6e78e70"
   },
   "task_id": "Template-Robotarm-Magnetic-Task009D0-Vector-Coverage-Lab-v0",
   "training_seed": 990009,
