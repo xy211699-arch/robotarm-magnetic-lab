@@ -1,25 +1,18 @@
-# Active task contracts
+# 活动任务合同
 
-The currently authorized Linux implementation task is
-`TASK-009D0-vectorized-training-infrastructure.md`.
+当前授权 Linux 执行的任务为
+`TASK-009D0A-12-env-incremental-closeout.md`。
 
-Linux must fetch the Windows planning branch
-`workflow/TASK-009D0-vectorized-training-infrastructure`, record its exact HEAD, confirm
-`7c4c5a18780b980ad3882ce75f1d64733fc3080d` and
-`f8eb6b825aa8e5765b3db52532b169a9d299066e` are ancestors, create
-`feature/TASK-009D0-vectorized-training-infrastructure` from the planning HEAD, and execute
-`docs/superpowers/plans/2026-08-28-task009d0-vectorized-training-infrastructure.md` in task and Gate order.
+Linux 必须从远端 feature 提交
+`6dbb8d5bc8c4bbd2d688eb997912d385b697df0a` 继续，获取本合同所在的最新 Windows 规划
+提交并纳入现有 feature 分支。不得重建或覆盖既有 TASK-009D0 实现。
 
-TASK-009D0 adds a separate non-destructive multi-environment task, exact batched GPU coverage,
-synchronous 120-second episodes, isolation tests, throughput selection, and long-soak evidence.
-The accepted TASK-009C single-environment task remains the regression reference.
+TASK-009D0A 只授权十二环境吞吐增量测试、必要的十二环境稳定性验证、两个过期力度测试
+修正和 D0 文档收尾。原 Gate 3 失败事实必须保留，最终状态使用用户豁免后的验收表述。
 
-TASK-009D0 does not authorize CNN, GRU, Actor/Critic models, PPO, VLM, reward shaping,
-disturbance ranges, controller recalibration, ROI changes, pose-library regeneration, or USD edits.
+本任务不授权 CNN、GRU、Actor、Critic、PPO、VLM、奖励塑形、扰动范围、控制器重新标定、
+覆盖区域变化、位姿库重建或 USD 修改。
 
-Linux execution status (2026-08-28): `partial`. Gate 1 and Gate 2 passed; Gate 3 failed the frozen
-two-environment 1 micrometre local-trajectory tolerance after the required HOLD stabilization.
-The user explicitly accepted this environment difference and authorized Gates 4--6 to continue as
-a manual waiver. Gate 4 reset-sync, Gate 5 throughput selection (`num_envs=8`) and Gate 6 two-episode
-long soak all passed after that waiver; Gate 3 remains failed and its threshold is unchanged. See
-`handoffs/reports/TASK-009D0-vectorized-training-infrastructure-report.md`.
+TASK-009D0 的原始 Gate 3 结果保持为 `fail_with_manual_waiver`；TASK-009D0A 完成后，
+D0 总状态按合同收尾为 `accepted_with_manual_waiver`。完整证据见
+`handoffs/reports/TASK-009D0-vectorized-training-infrastructure-report.md`。
