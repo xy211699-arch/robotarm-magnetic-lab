@@ -2,9 +2,10 @@
 
 ## 最终状态
 
-`partial`：Gate 1 和 Gate 2 通过；Gate 3 双环境一致性失败。依照合同停止 Gate 4 reset、
-Gate 5 吞吐测试与并行数冻结、Gate 6 两回合长时验证。未修改 USD、胃部资产、相机参数、
-70 mm 可见距离、覆盖权重、不可达区域、位姿库或控制器力度。
+`partial`：Gate 1 和 Gate 2 通过；Gate 3 双环境一致性仍为失败。2026-08-28 用户明确判断
+该环境差异可忽略，并授权 Linux 执行端在不改判 Gate 3、不放宽阈值的前提下继续 Gate 4--6。
+后续结果属于“人工豁免后继续执行”的补充证据，不能据此声称全部合同门禁通过。未修改 USD、
+胃部资产、相机参数、70 mm 可见距离、覆盖权重、不可达区域、位姿库或控制器力度。
 
 ## 执行边界
 
@@ -112,11 +113,15 @@ Enhanced Determinism，并将两个重复位姿规范为完全相同的边界起
 
 ## Gate 4--6
 
-- Gate 4：`not_run`。reset-sync 验证器已实现，但按 Gate 3 停止规则未执行。
-- Gate 5：`not_run`。没有运行 1/2/4/8 环境的 12 个独立吞吐进程，没有冻结 `num_envs`。
-- Gate 6：`not_run`。没有运行两个连续 120 秒回合。
+- Gate 4：`pass_after_manual_waiver`。20/20 次双环境同步 reset 通过；每次均执行十个连续
+  HOLD RGB 边界，两个 train 位姿互异，RGB 有限、C0 为正、正式 episode length/上一动作/
+  Actor 力清零，环境、PhysX、相机和覆盖设备均为 `cuda:0`。首次运行仅因 Isaac Lab 3.0
+  底层 `RigidBodyView.device` 私有接口不存在而中止；改用公开 SimulationContext 设备接口后
+  相同配置一次通过，未重试物理样本。
+- Gate 5：`pending_after_manual_waiver`。
+- Gate 6：`pending_after_manual_waiver`。
 
-因此本分支没有可报告的吞吐/显存表、冻结并行数或长时覆盖结果，也不授权 TASK-009D-1。
+本报告将在后续门禁完成后补入直接观测结果；在此之前仍不授权 TASK-009D-1。
 
 ## 关键命令
 
@@ -132,6 +137,10 @@ Enhanced Determinism，并将两个重复位姿规范为完全相同的边界起
 ./run_isaaclab.sh -p scripts/stomach_coverage/validate_task009d0_two_env_isolation.py \
   --headless --device cuda:0 --output_directory \
   /mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate3_isolation
+
+./run_isaaclab.sh -p scripts/stomach_coverage/validate_task009d0_gpu_reset_sync.py \
+  --headless --device cuda:0 --resets 20 --output_directory \
+  /mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate4_reset_sync
 ```
 
 Isaac Lab 3.0 当前 AppLauncher 不公开 `--headless`，验证脚本只做兼容转换并将 visualizer 设为
@@ -144,13 +153,12 @@ Isaac Lab 3.0 当前 AppLauncher 不公开 `--headless`，验证脚本只做兼�
 | 先决条件 | `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/prerequisites/task009d0_prerequisites.json` | 2309 | `e2d2fb5f6dbaea0f6c596e49c798def28da63fabaa797e9a3628c6d09a5415fa` |
 | Gate 2 | `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate2_single_parity/task009d0_gate2_single_env_parity.json` | 306475 | `6dd58a33a300bcea2cec4bd7b3ca9c4f9452fee453109aaf99722a069cd514b9` |
 | Gate 3 | `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate3_isolation/task009d0_gate3_two_env_isolation.json` | 2540 | `ceb3518cd23a65275f8963417110687783e823789e6062b8dc6d10d2b8f6911e` |
+| Gate 4 | `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate4_reset_sync/task009d0_gate4_gpu_reset_sync.json` | 19306 | `3862a8d72f9859ae235e2ff3e5f4cc9ab5197f1fe9222467c8163b273568591b` |
 | 外部位姿库 | `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009b_pose_library/20260826_040250_292641Z/pose_library_v1.jsonl` | 1935122 | `7a7a20e175dcfade0c3f07ccc2a4dca377508485f726fc6999a0453cb7cea855` |
 
 外部工件未加入 Git。
 
 ## 偏离与后续决策
 
-未放宽任何合同门槛。Gate 3 的失败要求 Windows 方案端决定后续方向，例如是否把门槛改为
-物理上可实现的统计一致性、是否调整多环境空间布局/隔离架构，或是否允许为确定性验收使用
-不同后端。任何决定都必须形成新合同；Linux 端不会在本任务中自行改变 4 m 间距、资产或
-1 μm 门槛。
+未放宽任何合同门槛。用户于 2026-08-28 明确接受当前环境差异并要求继续后续工作；Linux
+端将其记录为人工豁免，而不是新合同或 Gate 3 通过。4 m 间距、资产和 1 μm 门槛保持不变。

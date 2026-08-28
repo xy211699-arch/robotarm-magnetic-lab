@@ -72,9 +72,12 @@ def main() -> None:
                     composer.out_torque_b.torch != 0
                 ).item():
                     raise RuntimeError("wrench composer retained force after reset")
+                physics_view = env.sim.physics_sim_view
                 devices = {
                     "environment": str(env.device),
-                    "physics": str(env.scene["capsule"].root_view._backend.device),
+                    "physics": str(
+                        getattr(physics_view, "device", getattr(physics_view, "_device", env.sim.device))
+                    ),
                     "camera": str(rgb.device),
                     "coverage": str(runtime.vertices_local.device),
                 }
