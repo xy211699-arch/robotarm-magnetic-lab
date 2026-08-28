@@ -13,6 +13,7 @@ TASK-009D0A 只授权十二环境吞吐增量测试、必要的十二环境稳�
 本任务不授权 CNN、GRU、Actor、Critic、PPO、VLM、奖励塑形、扰动范围、控制器重新标定、
 覆盖区域变化、位姿库重建或 USD 修改。
 
-TASK-009D0 的原始 Gate 3 结果保持为 `fail_with_manual_waiver`；TASK-009D0A 完成后，
-D0 总状态按合同收尾为 `accepted_with_manual_waiver`。完整证据见
+Linux 执行状态（2026-08-28）：TASK-009D0A `complete`。TASK-009D0 的原始 Gate 3 结果保持
+为 `fail_with_manual_waiver`，D0 总状态按合同收尾为 `accepted_with_manual_waiver`；12环境
+因三次正式进程中一次reset非正C0故障而未冻结，最终继续选择8环境。完整证据见
 `handoffs/reports/TASK-009D0-vectorized-training-infrastructure-report.md`。

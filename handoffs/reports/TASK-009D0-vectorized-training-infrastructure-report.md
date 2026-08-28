@@ -2,19 +2,23 @@
 
 ## 最终状态
 
-`partial`。Gate 1、2 通过；Gate 3 严格一致性失败。用户于 2026-08-28 明确接受该环境差异并
-授权继续，Gate 4、5、6 均在原合同参数下通过。Gate 3 阈值和失败结论未改变，因此不能将
-总体状态写为 `complete`，也不据此声称 TASK-009D-1 已获授权。
+`accepted_with_manual_waiver`。Gate 1、2 通过；Gate 3 保持
+`fail_with_manual_waiver`，其阈值和原始失败数据未改写。用户于 2026-08-28 明确接受该微小
+跨环境差异；Gate 4、原 Gate 5、Gate 6 均在原合同参数下通过。TASK-009D0A 又完成12环境
+增量决策、过期测试修正和全仓零失败回归，因此按最新合同完成D0收尾，并授权后续
+TASK-009D-1使用最终冻结的8环境配置。
 
 ## 版本边界
 
 - Windows 规划分支：`workflow/TASK-009D0-vectorized-training-infrastructure`
-- 规划 HEAD：`35273aa3ae5a2a33f3a443028f720f0c4308d608`
+- 原规划 HEAD：`35273aa3ae5a2a33f3a443028f720f0c4308d608`
+- TASK-009D0A 规划 HEAD：`a082dcf6002e1a67ddb0d73f1af4abb54110ae8f`
 - 设计提交：`f8eb6b825aa8e5765b3db52532b169a9d299066e`
 - 精确代码基线：`7c4c5a18780b980ad3882ce75f1d64733fc3080d`
 - Linux 分支：`feature/TASK-009D0-vectorized-training-infrastructure`
 - Gate 5 工件实现 HEAD：`0e5a5f2fedfa2b48ae294a58b5cc52fb16cb6f32`
 - Gate 6 工件实现 HEAD：`4464adaf499a85e35512dc9ce03cf298b34af013`
+- TASK-009D0A 12环境工件实现 HEAD：`676e4e528c18d4f52dd067a0d88afa592821c1ed`
 
 基线和设计提交均已验证为当前分支祖先。文档提交会产生新的最终 HEAD，推送后由终端交付
 信息给出完整本地/远端哈希。
@@ -43,14 +47,13 @@ GPU dynamics 禁用 CCD 的上游警告保留在日志中；没有切换 CPU 或
 
 - Gate 6 前定向协议：17/17 通过。
 - 最终合同测试：181/181 通过，49 条上游弃用警告。
-- 另一次全仓测试：343 通过、2 个既有旧合同测试失败；旧测试仍期望 MOVE 上限 1.20 mg，
-  当前冻结合同为 1.40 mg。本任务未修改不在最终合同测试集内的旧测试。
+- TASK-009D0A 按合同修正两个过期测试中的旧力度期望，未改控制器实现或范围。
+- 最终全仓测试：353/353 通过，0 失败，73 条上游警告。
 
 最终命令：
 
 ```bash
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./run_isaaclab.sh -p -m pytest -q \
-  tests/parameterized_force tests/coverage tests/stomach_coverage tests/runtime
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./run_isaaclab.sh -p -m pytest -q tests
 ```
 
 ## Gate 结果
@@ -66,6 +69,9 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./run_isaaclab.sh -p -m pytest -q \
   环境。
 - Gate 6 `pass_after_manual_waiver`：2×8 个完整 120 秒回合通过；每环境 1201 点、28800
   正式子步、240 HOLD，状态/RGB 有限、覆盖单调、帧连续、reset 不继承掩码。
+- TASK-009D0A `complete`：12环境短冒烟通过；三次独立正式进程中repeat 0/2通过，repeat 1
+  因reset产生非正初始C0而严格中止。12环境不满足零故障门槛，v2继续冻结8环境；全仓
+  353/353通过。根据合同，选择仍为8环境时不重复已通过的Gate 6长测。
 
 ### Gate 5 原始吞吐
 
@@ -81,6 +87,20 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./run_isaaclab.sh -p -m pytest -q \
 - 回合 0：8 个 train 位姿，C0 为 0.0108%–12.08%，最终 60.82%–99.62%。
 - 回合 1：8 个新 train 位姿，C0 为 0.4357%–11.96%，最终 88.22%–99.78%。
 - 上述为确定性 R3 随机动作长测，不是学习策略性能或论文正式统计。
+
+### TASK-009D0A 十二环境增量结果
+
+| 进程 | 状态 | 吞吐（env-steps/s） | 最低剩余显存 | 说明 |
+|---:|---|---:|---:|---|
+| 冒烟 | pass | 42.438179 | 0.632678 | 2步预热、5步测量 |
+| repeat 0 | pass | 44.625125 | 0.632674 | 50步预热、300步测量 |
+| repeat 1 | fail | — | — | reset后非正初始C0，未进入测量 |
+| repeat 2 | pass | 44.549097 | 0.632674 | 50步预热、300步测量 |
+
+成功进程吞吐中位数为`44.587111`，比既有8环境中位数`30.310967`高47.10%，且显存满足
+20%门槛；但合同同时要求三次进程零故障，repeat 1的严格reset失败使12环境候选被拒绝。
+最终`configs/task009d0/vectorized_training_frozen_v2.json`选择`selected_num_envs=8`，没有覆盖
+v1。该决定不是性能近似并列，而是零故障硬门槛未满足。
 
 ## 关键执行命令
 
@@ -108,6 +128,17 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 ./run_isaaclab.sh -p -m pytest -q \
 
 ./run_isaaclab.sh -p scripts/stomach_coverage/validate_task009d0_long_soak.py \
   --device cuda:0 --output_directory /mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate6_long_soak
+
+# TASK-009D0A：先加 --smoke 执行一次短冒烟，再去掉 --smoke 并分别使用 repeat 0/1/2。
+./run_isaaclab.sh -p scripts/stomach_coverage/benchmark_task009d0_throughput.py \
+  --num_envs 12 --repeat_index <0|1|2> --device cuda:0 \
+  --output_directory /mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate5_12env_incremental
+
+./run_isaaclab.sh -p scripts/stomach_coverage/summarize_task009d0a_12env.py \
+  --artifact_root /mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate5_12env_incremental \
+  --candidate_config configs/task009d0/vectorized_training_candidate_12env_v2.json \
+  --base_frozen_config configs/task009d0/vectorized_training_frozen_v1.json \
+  --write_frozen_config configs/task009d0/vectorized_training_frozen_v2.json
 ```
 
 AppLauncher 3.0 不公开 `--headless` 时，脚本移除该兼容参数并使用空 visualizer；仿真、相机与
@@ -125,10 +156,21 @@ AppLauncher 3.0 不公开 `--headless` 时，脚本移除该兼容参数并使�
 | `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate6_long_soak/task009d0_gate6_long_soak.json` | 1578983 | `3bbf68398ec3c58ff805b4d285b35250e6985f2047f5b11487f2aa10a911f023` |
 | `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate6_long_soak/artifact_inventory.json` | 283 | `7f90e130241ad8ecdc4efdf1f22debac61a277f0b7fdcd34c204f396c5aa5844` |
 | `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/artifact_inventory.json` | 5409 | `36b5584ea2a0aa1736680a3c1933cd39be713132ec8afdd6367c4b690528bf50` |
+| `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate5_12env_incremental/task009d0a_smoke_env12.json` | 4952 | `f22a7961bb7c153a2bd2eecacf740bf73dbae7ae61889f589a011cff49b68531` |
+| `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate5_12env_incremental/task009d0_throughput_env12_repeat0.json` | 250762 | `00e716ba31d28aa41da59a30ffc4af5bd4bf1035915dacd87100ce405487e088` |
+| `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate5_12env_incremental/task009d0_throughput_env12_repeat1.json` | 730 | `7a3485c3cdc9618841d166303e583b29f0b20cc05c45bd78b6cd68307862d2a4` |
+| `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate5_12env_incremental/task009d0_throughput_env12_repeat2.json` | 251184 | `145a12747744aeb1485d9d907e4cc2cb86a4bbb4ff7176fc651d7b67fae83382` |
+| `/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate5_12env_incremental/task009d0a_12env_throughput_summary.json` | 1807 | `a258a0f8b3fef7b49a1cbcd785c7e6da605e6d21eb99c8b94e8359ce66922afc` |
 
 Git 内冻结配置为
 `configs/task009d0/vectorized_training_frozen_v1.json`，4419 字节，SHA-256
 `e94993f410b2a48bcdc8d5a40ef5504b8541ff6fe68091abef540639b8eab3b1`。
+
+TASK-009D0A 新增且不覆盖旧文件：候选配置
+`configs/task009d0/vectorized_training_candidate_12env_v2.json`，784字节，SHA-256
+`a1d133c0759eadc3e7984779d66c3655c9c400e343517e471a92b208f8e77af3`；冻结配置
+`configs/task009d0/vectorized_training_frozen_v2.json`，3802字节，SHA-256
+`7103be5debb3dbfa0f20ae5d9268fd5321650582db9ec226d0f039616d17d662`。
 
 ### Gate 5 十二份源清单
 
@@ -154,6 +196,8 @@ Git 内冻结配置为
 
 ## 偏离与未验证项
 
-唯一研究合同偏离是用户人工接受 Gate 3 的跨环境微小差异后继续。没有放宽阈值、降低分辨率、
+唯一研究合同偏离是用户人工接受 Gate 3 的跨环境微小差异。Gate 3结果保持
+`fail_with_manual_waiver`，总状态依据TASK-009D0A合同收尾为`accepted_with_manual_waiver`。
+没有放宽阈值、降低分辨率、
 改变相机/70 mm/ROI/力度/位姿库、删除困难样本或修改 USD。未验证或未实现的内容包括 PPO
 训练、网络吞吐、策略性能、VLM 和 TASK-009D-1 模型；本报告不作这些声明。
