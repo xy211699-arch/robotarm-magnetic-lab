@@ -37,9 +37,16 @@ def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
-def decide(candidate: dict[str, Any], throughputs: list[float], minimum_free: float, fault_count: int) -> int:
-    if len(throughputs) != int(candidate["independent_process_repeats"]):
-        raise ValueError("exactly three 12-env throughput results are required")
+def decide(
+    candidate: dict[str, Any], throughputs: list[float], minimum_free: float, fault_count: int,
+    *, observed_process_count: int = 3,
+) -> int:
+    if observed_process_count != int(candidate["independent_process_repeats"]):
+        raise ValueError("exactly three 12-env process results are required")
+    if fault_count:
+        return 8
+    if len(throughputs) != observed_process_count:
+        raise ValueError("fault-free 12-env results must all provide throughput")
     eligible = fault_count == 0 and minimum_free >= float(candidate["minimum_gpu_free_memory_fraction"])
     threshold = float(candidate["baseline_median_environment_transitions_per_second"]) * (
         1.0 + float(candidate["minimum_relative_improvement"])
@@ -53,6 +60,7 @@ def main() -> None:
     parser.add_argument("--candidate_config", type=Path, required=True)
     parser.add_argument("--base_frozen_config", type=Path, required=True)
     parser.add_argument("--write_frozen_config", type=Path, required=True)
+    parser.add_argument("--kit_args", default="", help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     candidate = json.loads(args.candidate_config.read_text(encoding="utf-8"))
@@ -66,10 +74,15 @@ def main() -> None:
         raise ValueError("all 12-env runs must share one implementation commit")
     if any(int(row["warmup_steps"]) != 50 or int(row["measured_steps"]) != 300 for row in records):
         raise ValueError("12-env Gate 5 timing protocol mismatch")
-    throughputs = [float(row["environment_transitions_per_second"]) for row in records]
-    minimum_free = min(float(row["minimum_gpu_free_fraction"]) for row in records)
+    successful = [row for row in records if row.get("status") == "pass"]
+    throughputs = [float(row["environment_transitions_per_second"]) for row in successful]
+    minimum_free = min((float(row["minimum_gpu_free_fraction"]) for row in successful), default=0.0)
     fault_count = sum(len(row.get("faults", ())) for row in records)
-    selected = decide(candidate, throughputs, minimum_free, fault_count)
+    if any(row.get("status") not in ("pass", "fail") for row in records):
+        raise ValueError("12-env manifest status is invalid")
+    selected = decide(
+        candidate, throughputs, minimum_free, fault_count, observed_process_count=len(records)
+    )
     threshold = float(candidate["baseline_median_environment_transitions_per_second"]) * 1.10
     evidence = [
         {"path": str(path.resolve()), "bytes": path.stat().st_size, "sha256": file_sha256(path)}
@@ -78,7 +91,7 @@ def main() -> None:
     summary = {
         "schema": "robotarm_magnetic_lab.task009d0a_12env_throughput_summary",
         "version": 1,
-        "status": "pass",
+        "status": "candidate_selected" if selected == 12 else "candidate_rejected",
         "implementation_commit": records[0]["commit"],
         "candidate_config_path": str(args.candidate_config.resolve()),
         "candidate_config_sha256": file_sha256(args.candidate_config),
@@ -89,9 +102,14 @@ def main() -> None:
         "required_strictly_greater_than": threshold,
         "candidate_num_envs": 12,
         "repeat_throughputs": throughputs,
-        "median_environment_transitions_per_second": statistics.median(throughputs),
-        "relative_improvement_over_8env": statistics.median(throughputs) /
-        float(candidate["baseline_median_environment_transitions_per_second"]) - 1.0,
+        "successful_process_count": len(successful),
+        "failed_process_count": len(records) - len(successful),
+        "median_environment_transitions_per_second": statistics.median(throughputs) if throughputs else None,
+        "relative_improvement_over_8env": (
+            statistics.median(throughputs) /
+            float(candidate["baseline_median_environment_transitions_per_second"]) - 1.0
+            if throughputs else None
+        ),
         "minimum_gpu_free_fraction": minimum_free,
         "fault_count": fault_count,
         "selected_num_envs": selected,

@@ -27,4 +27,4 @@ def test_12_env_requires_strictly_more_than_ten_percent():
 
 def test_12_env_rejected_for_memory_or_faults():
     assert decide(candidate(), [40.0] * 3, 0.19, 0) == 8
-    assert decide(candidate(), [40.0] * 3, 0.30, 1) == 8
+    assert decide(candidate(), [40.0] * 2, 0.30, 1) == 8

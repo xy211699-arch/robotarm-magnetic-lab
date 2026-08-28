@@ -1,0 +1,112 @@
+{
+  "artifact_root": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training",
+  "benchmark": {
+    "measured_steps": 300,
+    "minimum_free_memory_fraction": 0.2,
+    "near_tie_fraction": 0.1,
+    "repeats": 3,
+    "warmup_steps": 50
+  },
+  "camera": {
+    "fov_deg": 120.0,
+    "height": 720,
+    "hz": 10,
+    "width": 1280
+  },
+  "clocks": {
+    "control_hz": 10,
+    "physics_hz": 240,
+    "physics_steps_per_action": 24
+  },
+  "config_sha256": "06b380fd0112b38c6cb1e1a43ab4ef665c86d7035e7adc6c6418d57195137c03",
+  "coverage": {
+    "first_hit_tolerance_m": 0.0001,
+    "fov_half_angle_deg": 60.0,
+    "manifest_config_sha256": "99c6ccdd07440d117e9b662c1ecb64bbfe90225b30bf9d22734c3b62ebb17df9",
+    "manifest_file_sha256": "9262d508fc16cd6f9b15078ab544db173bcd8e2ee025f7519cd2f64215aaa7f9",
+    "manifest_path": "configs/task009b/coverage_manifest_v1.json",
+    "max_distance_m": 0.07,
+    "normal_sign": -1,
+    "raw_total_area_m2": 0.0644836229259155,
+    "reachable_positive_weight_vertex_count": 17055,
+    "reachable_total_area_m2": 0.043159926672903914,
+    "target_triangle_count": 49047,
+    "target_vertex_count": 24529
+  },
+  "env_spacing_m": 4.0,
+  "episode": {
+    "coverage_points": 1201,
+    "duration_s": 120.0,
+    "formal_physics_substeps": 28800,
+    "formal_steps": 1200,
+    "hold_steps": 10,
+    "inter_episode_hold_substeps": 240,
+    "long_audit_duration_s": 300.0,
+    "thresholds": [
+      0.8,
+      0.9,
+      0.95
+    ]
+  },
+  "exact_code_baseline": "7c4c5a18780b980ad3882ce75f1d64733fc3080d",
+  "force_ratio_mg": {
+    "HOLD": {
+      "maximum": 0.0,
+      "minimum": 0.0
+    },
+    "MOVE": {
+      "maximum": 1.4,
+      "minimum": 0.7
+    },
+    "UP": {
+      "maximum": 1.05,
+      "minimum": 0.8
+    },
+    "VIEW": {
+      "maximum": 0.5,
+      "minimum": 0.2
+    }
+  },
+  "num_env_candidates": [
+    1,
+    2,
+    4,
+    8,
+    12
+  ],
+  "planning_head": "35273aa3ae5a2a33f3a443028f720f0c4308d608",
+  "pose_library": {
+    "data_bytes": 1935122,
+    "data_path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009b_pose_library/20260826_040250_292641Z/pose_library_v1.jsonl",
+    "data_sha256": "7a7a20e175dcfade0c3f07ccc2a4dca377508485f726fc6999a0453cb7cea855",
+    "manifest_config_sha256": "3c22d6951d7aae378d3b60b716392b2f784aaa2da2e6163989a10bd46686b9fc",
+    "manifest_file_sha256": "fbe86f8323b521fa78f71b2b8c54b7d8adbc4e8e6eb3af2e1cc2e1823e1d7839",
+    "manifest_path": "configs/task009b/pose_library_manifest_v1.json",
+    "split_counts": {
+      "test": 100,
+      "train": 1000,
+      "validation": 100
+    }
+  },
+  "schema": "robotarm_magnetic_lab.task009d0_vectorized_training_frozen",
+  "selected_num_envs": 8,
+  "selection": {
+    "implementation_commit": "676e4e528c18d4f52dd067a0d88afa592821c1ed",
+    "rule": "select 12 only if median > 1.10 * 30.310967, zero faults, and minimum free GPU fraction >= 0.20",
+    "source_manifest_sha256": [
+      "00e716ba31d28aa41da59a30ffc4af5bd4bf1035915dacd87100ce405487e088",
+      "7a3485c3cdc9618841d166303e583b29f0b20cc05c45bd78b6cd68307862d2a4",
+      "145a12747744aeb1485d9d907e4cc2cb86a4bbb4ff7176fc651d7b67fae83382"
+    ],
+    "summary_path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training/gate5_12env_incremental/task009d0a_12env_throughput_summary.json",
+    "summary_sha256": "a258a0f8b3fef7b49a1cbcd785c7e6da605e6d21eb99c8b94e8359ce66922afc"
+  },
+  "task_id": "Template-Robotarm-Magnetic-Task009D0-Vector-Coverage-Lab-v0",
+  "training_seed": 990009,
+  "unreachable_region": {
+    "config_sha256": "d4f1a29e238aae3aa448103dbf191beb1972a1c277765b1770793aff71ef02a7",
+    "file_sha256": "044bd8f26e24dcc092e6365c97a6b37a21688cb60a35fab88d7ace05868dcb31",
+    "path": "configs/task009b/unreachable_region_v1.json"
+  },
+  "version": 1
+}
