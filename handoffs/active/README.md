@@ -16,3 +16,8 @@ The accepted TASK-009C single-environment task remains the regression reference.
 
 TASK-009D0 does not authorize CNN, GRU, Actor/Critic models, PPO, VLM, reward shaping,
 disturbance ranges, controller recalibration, ROI changes, pose-library regeneration, or USD edits.
+
+Linux execution status (2026-08-28): `partial`. Gate 1 and Gate 2 passed; Gate 3 failed the frozen
+two-environment 1 micrometre local-trajectory tolerance after the required HOLD stabilization.
+Per the contract, Gates 4--6 were not run. See
+`handoffs/reports/TASK-009D0-vectorized-training-infrastructure-report.md`.
