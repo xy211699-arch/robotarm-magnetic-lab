@@ -53,6 +53,10 @@ class BatchedCoverageAccumulator:
     def total_area_m2(self) -> torch.Tensor:
         return self._weights.sum()
 
+    @property
+    def weights(self) -> torch.Tensor:
+        return self._weights.clone()
+
     def update(
         self, frame_ids: torch.Tensor, visible_mask: torch.Tensor
     ) -> BatchedCoverageUpdate:
