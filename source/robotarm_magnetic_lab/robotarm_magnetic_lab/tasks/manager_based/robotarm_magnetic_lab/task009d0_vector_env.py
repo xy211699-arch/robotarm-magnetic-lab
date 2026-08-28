@@ -165,12 +165,31 @@ class Task009D0VectorEnv(ManagerBasedRLEnv):
         if self._formal_step > FORMAL_STEPS:
             raise RuntimeError("TASK-009D0 formal horizon counter exceeded")
         if self._formal_step == FORMAL_STEPS:
+            runtime = self._task009d0_coverage_runtime
+            latest = runtime.latest_update
+            if latest is None:
+                raise RuntimeError("TASK-009D0 terminal coverage snapshot is unavailable")
+            capsule = self.scene["capsule"]
+            action_term = self.action_manager.get_term("parameterized_force")
+            terminal_audit = {
+                "formal_step": int(self._formal_step),
+                "episode_length": self.episode_length_buf.detach().clone(),
+                "frame_ids": latest.frame_ids.detach().clone(),
+                "reachable_coverage": latest.reachable.coverage_fraction.detach().clone(),
+                "raw_coverage": latest.raw.coverage_fraction.detach().clone(),
+                "reachable_masks": runtime.reachable_accumulator.mask.detach().clone(),
+                "raw_masks": runtime.raw_accumulator.mask.detach().clone(),
+                "root_pose": capsule.data.root_pose_w.torch.detach().clone(),
+                "root_velocity": capsule.data.root_com_vel_w.torch.detach().clone(),
+                "previous_action": action_term.previous_action_features.detach().clone(),
+            }
             terminal = _clone_observation(observation)
             observation, reset_extras = self._reset_all_with_hold(
                 seed=None, options=None
             )
             extras.update(reset_extras)
             extras["terminal_observation"] = terminal
+            extras["task009d0_terminal_audit"] = terminal_audit
             truncated = torch.ones(
                 self.num_envs, dtype=torch.bool, device=self.device
             )
