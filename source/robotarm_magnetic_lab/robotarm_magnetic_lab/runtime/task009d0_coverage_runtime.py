@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
@@ -20,6 +20,7 @@ from robotarm_magnetic_lab.coverage.batched_visibility import (
     visible_from_batched_first_hits,
 )
 from robotarm_magnetic_lab.coverage.reference_mesh import ReferenceMesh
+from robotarm_magnetic_lab.coverage.reference_mesh import translated_reference_mesh
 
 
 def _tensor(value) -> torch.Tensor:
@@ -163,20 +164,26 @@ class Task009D0CoverageRuntime:
 
         base = env.unwrapped if hasattr(env, "unwrapped") else env
         world_reference = reference_from_stage(surface_prim_path or DEFAULT_INNER_SURFACE_PATH)
-        raw_weights = target_vertex_area_weights(world_reference)
-        _, unreachable = load_unreachable_mask(
-            Path(unreachable_region_path), world_reference
-        )
-        reachable_weights = target_vertex_area_weights(
-            world_reference, unreachable.reachable_triangle_indices
-        )
         origins = _tensor(base.scene.env_origins).to(
             device=base.device, dtype=torch.float64
         )
-        local_reference = replace(
+        # The frozen TASK-009B surface hash and operator-authored unreachable
+        # regions are expressed in one environment's local frame.  Isaac Lab
+        # centers cloned environments around the origin, so env_0 itself is
+        # translated whenever ``num_envs > 1``.  Validate and recompute the
+        # frozen mask after removing that clone translation; otherwise an
+        # identical stomach mesh receives a different geometry hash solely
+        # because the vector batch size changed.
+        local_reference = translated_reference_mesh(
             world_reference,
-            vertices_world=world_reference.vertices_world
-            - origins[0].detach().cpu().numpy()[None, :],
+            -origins[0].detach().cpu().numpy(),
+        )
+        raw_weights = target_vertex_area_weights(local_reference)
+        _, unreachable = load_unreachable_mask(
+            Path(unreachable_region_path), local_reference
+        )
+        reachable_weights = target_vertex_area_weights(
+            local_reference, unreachable.reachable_triangle_indices
         )
         raycaster = BatchedWarpFirstHitRaycaster(local_reference, device=str(base.device))
         return cls(

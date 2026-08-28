@@ -89,10 +89,12 @@ class Task009D0VectorEnv(ManagerBasedRLEnv):
         poses = torch.as_tensor(
             pose_batch.poses_world_xyzw, device=self.device, dtype=torch.float32
         )
-        # Frozen library coordinates belong to env_0. Preserve the same local
-        # pose in every clone by translating positions by its environment origin.
+        # Frozen library coordinates were authored with the single reference
+        # environment at world origin, so they are environment-local poses.
+        # Isaac Lab may place env_0 away from world origin when a vector batch
+        # is centered; add every row's absolute origin (including row zero).
         origins = self.scene.env_origins.to(device=self.device, dtype=torch.float32)
-        poses[:, :3] += origins - origins[0]
+        poses[:, :3] += origins
         capsule = self.scene["capsule"]
         action_term = self.action_manager.get_term("parameterized_force")
         action_term.reset(all_rows)
@@ -179,3 +181,4 @@ class Task009D0VectorEnv(ManagerBasedRLEnv):
         rows = env_ids.to(device=self.device, dtype=torch.int64).reshape(-1)
         self.action_manager.get_term("parameterized_force").reset(rows)
         self._task009d0_coverage_runtime.reset_rows(rows)
+        self._episode_indices[rows] = 0

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from itertools import product
 from typing import Iterable, Sequence
 
@@ -34,6 +34,28 @@ class ReferenceMesh:
     weld_tolerance_m: float
     geometry_sha256: str
     authored_orientations: tuple[tuple[str, str], ...] = ()
+
+
+def translated_reference_mesh(
+    reference: ReferenceMesh, translation_m: np.ndarray
+) -> ReferenceMesh:
+    """Return a translated reference with a matching deterministic geometry hash."""
+    translation = np.asarray(translation_m, dtype=np.float64).reshape(-1)
+    if translation.shape != (3,) or not np.isfinite(translation).all():
+        raise ValueError("reference translation must be a finite three-vector")
+    vertices = np.asarray(reference.vertices_world, dtype=np.float64) + translation[None, :]
+    vertices.setflags(write=False)
+    return replace(
+        reference,
+        vertices_world=vertices,
+        geometry_sha256=_hash(
+            vertices,
+            reference.triangles,
+            reference.selected_prim_paths,
+            reference.weld_tolerance_m,
+            reference.authored_orientations,
+        ),
+    )
 
 
 def _validated(mesh: MeshInput) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:

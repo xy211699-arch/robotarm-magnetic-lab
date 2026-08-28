@@ -5,7 +5,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from robotarm_magnetic_lab.coverage.reference_mesh import MeshInput, preprocess_reference_mesh
+from robotarm_magnetic_lab.coverage.reference_mesh import (
+    MeshInput,
+    preprocess_reference_mesh,
+    translated_reference_mesh,
+)
 
 
 def _triangle(path: str, points: list[list[float]], transform=None) -> MeshInput:
@@ -98,3 +102,25 @@ def test_orientation_is_preserved_and_changes_hash():
     assert reference_left.authored_orientations == (("/Mesh", "leftHanded"),)
     assert reference_right.geometry_sha256 != reference_left.geometry_sha256
     assert np.array_equal(reference_left.triangles, reference_right.triangles[:, [0, 2, 1]])
+
+
+def test_translation_updates_vertices_and_hash_and_round_trips():
+    reference = preprocess_reference_mesh(
+        [_triangle("/Mesh", [[0, 0, 0], [1, 0, 0], [0, 1, 0]])], ["/Mesh"]
+    )
+    shifted = translated_reference_mesh(reference, np.asarray([4.0, -2.0, 1.0]))
+    restored = translated_reference_mesh(shifted, np.asarray([-4.0, 2.0, -1.0]))
+
+    np.testing.assert_allclose(shifted.vertices_world, reference.vertices_world + [4, -2, 1])
+    assert shifted.geometry_sha256 != reference.geometry_sha256
+    np.testing.assert_array_equal(restored.vertices_world, reference.vertices_world)
+    assert restored.geometry_sha256 == reference.geometry_sha256
+
+
+@pytest.mark.parametrize("translation", ([1.0, 2.0], [0.0, float("nan"), 0.0]))
+def test_translation_rejects_invalid_vector(translation):
+    reference = preprocess_reference_mesh(
+        [_triangle("/Mesh", [[0, 0, 0], [1, 0, 0], [0, 1, 0]])], ["/Mesh"]
+    )
+    with pytest.raises(ValueError, match="finite three-vector"):
+        translated_reference_mesh(reference, np.asarray(translation))
