@@ -77,8 +77,8 @@ def load_task009d0_config(path: Path, *, frozen: bool = False) -> dict[str, Any]
         raise ValueError("TASK-009D0 task ID mismatch")
     if record["exact_code_baseline"] != TASK009D0_CODE_BASELINE:
         raise ValueError("TASK-009D0 exact code baseline mismatch")
-    if record["num_env_candidates"] != [1, 2, 4, 8]:
-        raise ValueError("TASK-009D0 candidate environments must be [1, 2, 4, 8]")
+    if record["num_env_candidates"] not in ([1, 2, 4, 8], [1, 2, 4, 8, 12]):
+        raise ValueError("TASK-009D0 candidate environments must be v1 [1, 2, 4, 8] or v2 [1, 2, 4, 8, 12]")
     if _finite(record["env_spacing_m"], "env_spacing_m") != 4.0:
         raise ValueError("TASK-009D0 environment spacing must be 4.0 m")
     if record["clocks"] != {

@@ -1,0 +1,16 @@
+{
+  "schema": "robotarm_magnetic_lab.task009d0a_vectorized_candidate",
+  "version": 2,
+  "task_id": "Template-Robotarm-Magnetic-Task009D0-Vector-Coverage-Lab-v0",
+  "execution_baseline": "6dbb8d5bc8c4bbd2d688eb997912d385b697df0a",
+  "planning_head": "a082dcf6002e1a67ddb0d73f1af4abb54110ae8f",
+  "candidate_num_envs": 12,
+  "baseline_num_envs": 8,
+  "baseline_median_environment_transitions_per_second": 30.310967,
+  "minimum_relative_improvement": 0.10,
+  "minimum_gpu_free_memory_fraction": 0.20,
+  "warmup_steps": 50,
+  "measured_steps": 300,
+  "independent_process_repeats": 3,
+  "selection_rule": "select 12 only when its median throughput is strictly greater than 1.10 times the frozen 8-env median and all 12-env runs are fault-free with at least 20 percent GPU memory free"
+}
