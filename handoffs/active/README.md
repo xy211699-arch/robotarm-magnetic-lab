@@ -20,5 +20,6 @@ disturbance ranges, controller recalibration, ROI changes, pose-library regenera
 Linux execution status (2026-08-28): `partial`. Gate 1 and Gate 2 passed; Gate 3 failed the frozen
 two-environment 1 micrometre local-trajectory tolerance after the required HOLD stabilization.
 The user explicitly accepted this environment difference and authorized Gates 4--6 to continue as
-a manual waiver; Gate 3 remains failed and its threshold is unchanged. See
+a manual waiver. Gate 4 reset-sync, Gate 5 throughput selection (`num_envs=8`) and Gate 6 two-episode
+long soak all passed after that waiver; Gate 3 remains failed and its threshold is unchanged. See
 `handoffs/reports/TASK-009D0-vectorized-training-infrastructure-report.md`.
