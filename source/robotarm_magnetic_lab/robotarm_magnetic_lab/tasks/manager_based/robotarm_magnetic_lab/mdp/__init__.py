@@ -39,3 +39,7 @@ from .parameterized_force_action import (  # noqa: F401
     ParameterizedForceActionTermCfg,
     ParameterizedForceTelemetry,
 )
+from .vectorized_parameterized_force_action import (  # noqa: F401
+    VectorizedParameterizedForceAction,
+    VectorizedParameterizedForceActionTermCfg,
+)
