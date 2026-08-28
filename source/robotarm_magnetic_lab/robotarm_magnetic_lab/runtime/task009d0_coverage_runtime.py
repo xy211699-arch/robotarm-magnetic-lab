@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import product
 from pathlib import Path
 from typing import Callable
 
@@ -20,11 +21,32 @@ from robotarm_magnetic_lab.coverage.batched_visibility import (
     visible_from_batched_first_hits,
 )
 from robotarm_magnetic_lab.coverage.reference_mesh import ReferenceMesh
-from robotarm_magnetic_lab.coverage.reference_mesh import translated_reference_mesh
 
 
 def _tensor(value) -> torch.Tensor:
     return getattr(value, "torch", value)
+
+
+def translation_ulp_transform_candidates(matrix):
+    """Yield deterministic ±1-ULP translation candidates, identity first."""
+    import numpy as np
+
+    source = np.asarray(matrix, dtype=np.float64)
+    if source.shape != (4, 4) or not np.isfinite(source).all():
+        raise ValueError("reference transform must be a finite 4x4 matrix")
+    offsets = sorted(
+        product((-1, 0, 1), repeat=3),
+        key=lambda item: (sum(abs(value) for value in item), item),
+    )
+    for offset in offsets:
+        candidate = source.copy()
+        for axis, direction in enumerate(offset):
+            if direction:
+                candidate[3, axis] = np.nextafter(
+                    candidate[3, axis],
+                    np.inf if direction > 0 else -np.inf,
+                )
+        yield offset, candidate
 
 
 class Task009D0RgbSynchronizer:
@@ -163,21 +185,71 @@ class Task009D0CoverageRuntime:
         from robotarm_magnetic_lab.coverage.unreachable_region import load_unreachable_mask
 
         base = env.unwrapped if hasattr(env, "unwrapped") else env
-        world_reference = reference_from_stage(surface_prim_path or DEFAULT_INNER_SURFACE_PATH)
+        selected_prim_path = surface_prim_path or DEFAULT_INNER_SURFACE_PATH
         origins = _tensor(base.scene.env_origins).to(
             device=base.device, dtype=torch.float64
         )
-        # The frozen TASK-009B surface hash and operator-authored unreachable
-        # regions are expressed in one environment's local frame.  Isaac Lab
-        # centers cloned environments around the origin, so env_0 itself is
-        # translated whenever ``num_envs > 1``.  Validate and recompute the
-        # frozen mask after removing that clone translation; otherwise an
-        # identical stomach mesh receives a different geometry hash solely
-        # because the vector batch size changed.
-        local_reference = translated_reference_mesh(
-            world_reference,
-            -origins[0].detach().cpu().numpy(),
+        # Isaac Lab rewrites a spawned USD default-Prim transform, so obtain
+        # geometry from the live stage and remove the complete env_0 clone
+        # transform.  Using USD doubles avoids float32 env-origin residue in
+        # the frozen geometry hash for 2-D 4/8-environment layouts.
+        import json
+        import numpy as np
+        import omni.usd
+        from pxr import UsdGeom
+
+        stage = omni.usd.get_context().get_stage()
+        env_zero = stage.GetPrimAtPath("/World/envs/env_0")
+        if not env_zero.IsValid():
+            raise RuntimeError("TASK-009D0 env_0 clone prim is unavailable")
+        surface = stage.GetPrimAtPath(selected_prim_path)
+        if not surface.IsValid():
+            raise RuntimeError(f"approved stomach surface is unavailable: {selected_prim_path}")
+        relative_matrix_gf, _ = UsdGeom.XformCache(0.0).ComputeRelativeTransform(
+            surface, env_zero
         )
+        relative_matrix = np.asarray(
+            [
+                [float(relative_matrix_gf[row][column]) for column in range(4)]
+                for row in range(4)
+            ],
+            dtype=np.float64,
+        )
+        expected_hash = json.loads(Path(unreachable_region_path).read_text(encoding="utf-8"))[
+            "stomach_geometry_sha256"
+        ]
+        local_reference = None
+        matched_offset = None
+        # Gf's one-environment world composition and clone-relative transform
+        # can differ by one ULP after the environment grid translation is
+        # introduced.  Search only translation neighbors and still require the
+        # exact frozen geometry SHA-256; topology or asset changes cannot pass.
+        for offset, candidate in translation_ulp_transform_candidates(relative_matrix):
+            reference = reference_from_stage(
+                selected_prim_path,
+                world_transform_override=candidate,
+            )
+            if reference.geometry_sha256 == expected_hash:
+                local_reference = reference
+                matched_offset = offset
+                break
+        if local_reference is None:
+            raise RuntimeError(
+                "live stomach clone normalization mismatch: "
+                f"expected={expected_hash}, relative={reference.geometry_sha256}, "
+                f"relative_matrix={relative_matrix.tolist()}, "
+                f"env_origin0={origins[0].detach().cpu().tolist()}"
+            )
+        if matched_offset != (0, 0, 0):
+            print(
+                "TASK009D0_REFERENCE_NORMALIZED",
+                json.dumps(
+                    {
+                        "translation_ulp_offset": matched_offset,
+                        "geometry_sha256": expected_hash,
+                    }
+                ),
+            )
         raw_weights = target_vertex_area_weights(local_reference)
         _, unreachable = load_unreachable_mask(
             Path(unreachable_region_path), local_reference

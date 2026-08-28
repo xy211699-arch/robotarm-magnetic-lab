@@ -10,6 +10,7 @@ from robotarm_magnetic_lab.coverage.reference_mesh import ReferenceMesh
 from robotarm_magnetic_lab.runtime.task009d0_coverage_runtime import (
     Task009D0CoverageRuntime,
     Task009D0RgbSynchronizer,
+    translation_ulp_transform_candidates,
 )
 
 
@@ -119,3 +120,32 @@ def test_stabilizing_boundary_suppresses_accumulation():
     )
     assert update.stabilizing
     assert not runtime.reachable_accumulator.mask.any()
+
+
+def test_translation_ulp_candidates_preserve_linear_part_and_bound_search():
+    matrix = np.eye(4, dtype=np.float64)
+    matrix[3, :3] = [0.7254497283050456, -0.3, 0.1]
+    candidates = list(translation_ulp_transform_candidates(matrix))
+
+    assert len(candidates) == 27
+    assert candidates[0][0] == (0, 0, 0)
+    np.testing.assert_array_equal(candidates[0][1], matrix)
+    assert any(offset == (-1, 0, 0) for offset, _ in candidates[:7])
+    for offset, candidate in candidates:
+        np.testing.assert_array_equal(candidate[:3], matrix[:3])
+        for axis, direction in enumerate(offset):
+            expected = matrix[3, axis]
+            if direction:
+                expected = np.nextafter(
+                    expected, np.inf if direction > 0 else -np.inf
+                )
+            assert candidate[3, axis] == expected
+
+
+@pytest.mark.parametrize(
+    "matrix",
+    (np.zeros((3, 3)), np.full((4, 4), np.nan)),
+)
+def test_translation_ulp_candidates_reject_invalid_transform(matrix):
+    with pytest.raises(ValueError, match="finite 4x4"):
+        list(translation_ulp_transform_candidates(matrix))

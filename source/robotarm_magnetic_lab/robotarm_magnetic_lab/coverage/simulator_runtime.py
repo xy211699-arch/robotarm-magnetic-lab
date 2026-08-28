@@ -59,7 +59,11 @@ def _matrix_values(matrix: Any) -> np.ndarray:
     )
 
 
-def reference_from_stage(prim_path: str = DEFAULT_INNER_SURFACE_PATH):
+def reference_from_stage(
+    prim_path: str = DEFAULT_INNER_SURFACE_PATH,
+    *,
+    world_transform_override: np.ndarray | None = None,
+):
     """Read only the preflight-approved luminal mesh from the live stage."""
     import omni.usd
     from pxr import UsdGeom
@@ -69,12 +73,20 @@ def reference_from_stage(prim_path: str = DEFAULT_INNER_SURFACE_PATH):
     if not prim.IsValid() or not prim.IsA(UsdGeom.Mesh):
         raise RuntimeError(f"approved inner surface is unavailable: {prim_path}")
     mesh = UsdGeom.Mesh(prim)
+    world_transform = _matrix_values(
+        UsdGeom.Xformable(prim).ComputeLocalToWorldTransform(0.0)
+    )
+    if world_transform_override is not None:
+        override = np.asarray(world_transform_override, dtype=np.float64)
+        if override.shape != (4, 4) or not np.isfinite(override).all():
+            raise ValueError("world_transform_override must be a finite 4x4 matrix")
+        world_transform = override
     mesh_input = MeshInput(
         prim_path=prim_path,
         vertices=np.asarray(mesh.GetPointsAttr().Get(), dtype=np.float64),
         face_vertex_counts=np.asarray(mesh.GetFaceVertexCountsAttr().Get(), dtype=np.int64),
         face_vertex_indices=np.asarray(mesh.GetFaceVertexIndicesAttr().Get(), dtype=np.int64),
-        world_transform=_matrix_values(UsdGeom.Xformable(prim).ComputeLocalToWorldTransform(0.0)),
+        world_transform=world_transform,
         orientation=str(mesh.GetOrientationAttr().Get() or "rightHanded"),
     )
     return preprocess_reference_mesh([mesh_input], [prim_path])
