@@ -1,0 +1,74 @@
+{
+  "schema": "robotarm_magnetic_lab.task009d0_vectorized_training",
+  "version": 1,
+  "config_sha256": "38a562bf4f0cbafaf4c97d6d3865e8353f9ac3417b7d79528d64a05f08e20672",
+  "task_id": "Template-Robotarm-Magnetic-Task009D0-Vector-Coverage-Lab-v0",
+  "exact_code_baseline": "7c4c5a18780b980ad3882ce75f1d64733fc3080d",
+  "planning_head": "35273aa3ae5a2a33f3a443028f720f0c4308d608",
+  "num_env_candidates": [1, 2, 4, 8],
+  "env_spacing_m": 4.0,
+  "clocks": {
+    "physics_hz": 240,
+    "control_hz": 10,
+    "physics_steps_per_action": 24
+  },
+  "camera": {
+    "width": 1280,
+    "height": 720,
+    "hz": 10,
+    "fov_deg": 120.0
+  },
+  "force_ratio_mg": {
+    "MOVE": {"minimum": 0.7, "maximum": 1.4},
+    "VIEW": {"minimum": 0.2, "maximum": 0.5},
+    "UP": {"minimum": 0.8, "maximum": 1.05},
+    "HOLD": {"minimum": 0.0, "maximum": 0.0}
+  },
+  "pose_library": {
+    "manifest_path": "configs/task009b/pose_library_manifest_v1.json",
+    "manifest_file_sha256": "fbe86f8323b521fa78f71b2b8c54b7d8adbc4e8e6eb3af2e1cc2e1823e1d7839",
+    "manifest_config_sha256": "3c22d6951d7aae378d3b60b716392b2f784aaa2da2e6163989a10bd46686b9fc",
+    "data_path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009b_pose_library/20260826_040250_292641Z/pose_library_v1.jsonl",
+    "data_bytes": 1935122,
+    "data_sha256": "7a7a20e175dcfade0c3f07ccc2a4dca377508485f726fc6999a0453cb7cea855",
+    "split_counts": {"train": 1000, "validation": 100, "test": 100}
+  },
+  "coverage": {
+    "manifest_path": "configs/task009b/coverage_manifest_v1.json",
+    "manifest_file_sha256": "9262d508fc16cd6f9b15078ab544db173bcd8e2ee025f7519cd2f64215aaa7f9",
+    "manifest_config_sha256": "99c6ccdd07440d117e9b662c1ecb64bbfe90225b30bf9d22734c3b62ebb17df9",
+    "max_distance_m": 0.07,
+    "fov_half_angle_deg": 60.0,
+    "first_hit_tolerance_m": 0.0001,
+    "normal_sign": -1,
+    "target_vertex_count": 24529,
+    "target_triangle_count": 49047,
+    "raw_total_area_m2": 0.0644836229259155,
+    "reachable_positive_weight_vertex_count": 17055,
+    "reachable_total_area_m2": 0.043159926672903914
+  },
+  "unreachable_region": {
+    "path": "configs/task009b/unreachable_region_v1.json",
+    "file_sha256": "044bd8f26e24dcc092e6365c97a6b37a21688cb60a35fab88d7ace05868dcb31",
+    "config_sha256": "d4f1a29e238aae3aa448103dbf191beb1972a1c277765b1770793aff71ef02a7"
+  },
+  "episode": {
+    "duration_s": 120.0,
+    "formal_steps": 1200,
+    "hold_steps": 10,
+    "coverage_points": 1201,
+    "formal_physics_substeps": 28800,
+    "inter_episode_hold_substeps": 240,
+    "thresholds": [0.8, 0.9, 0.95],
+    "long_audit_duration_s": 300.0
+  },
+  "benchmark": {
+    "warmup_steps": 50,
+    "measured_steps": 300,
+    "repeats": 3,
+    "minimum_free_memory_fraction": 0.2,
+    "near_tie_fraction": 0.1
+  },
+  "training_seed": 990009,
+  "artifact_root": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task009d0_vectorized_training"
+}
