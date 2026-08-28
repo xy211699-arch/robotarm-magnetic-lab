@@ -18,3 +18,11 @@ from .vectorized_parameterized_force_action import (
     VectorizedParameterizedForceActionTermCfg,
 )
 from .vision import capsule_depth, capsule_rgb
+from .task009d0_terms import (
+    task009d0_new_coverage,
+    task009d0_previous_action,
+    task009d0_privileged_capsule_state,
+    task009d0_privileged_coverage,
+    task009d0_rgb,
+    task009d0_runtime,
+)

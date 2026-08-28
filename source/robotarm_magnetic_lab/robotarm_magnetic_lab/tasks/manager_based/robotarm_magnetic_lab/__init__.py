@@ -143,3 +143,15 @@ gym.register(
         ),
     },
 )
+
+gym.register(
+    id="Template-Robotarm-Magnetic-Task009D0-Vector-Coverage-Lab-v0",
+    entry_point=f"{__name__}.task009d0_vector_env:Task009D0VectorEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": (
+            f"{__name__}.robotarm_magnetic_task009d0_env_cfg:"
+            "RobotarmMagneticTask009D0EnvCfg"
+        ),
+    },
+)

@@ -16,6 +16,16 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_ma
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def test_task009d0_registration_is_additive_to_task009b():
+    registry = (
+        ROOT
+        / "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/"
+        "robotarm_magnetic_lab/__init__.py"
+    ).read_text(encoding="utf-8")
+    assert "Template-Robotarm-Magnetic-Parameterized-Force-Stomach-Coverage-Lab-v0" in registry
+    assert "Template-Robotarm-Magnetic-Task009D0-Vector-Coverage-Lab-v0" in registry
+
+
 def test_stomach_environment_uses_audited_parameterized_force_term():
     cfg = RobotarmMagneticParameterizedForceStomachCoverageLabEnvCfg()
     assert isinstance(cfg.actions.parameterized_force, ParameterizedForceActionTermCfg)
