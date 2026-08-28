@@ -1041,3 +1041,7 @@
 - 仅修正两个过期测试中的旧力度期望，控制器和冻结范围未变；全仓353/353通过、0失败。
 - Gate 3保持`fail_with_manual_waiver`，D0总状态收尾为`accepted_with_manual_waiver`；未实现
   CNN、GRU、Actor、Critic、PPO或VLM。
+- 12环境repeat 1的非正C0已做只读复现诊断：失败行为env 11、位姿`train-0419`；RGB帧号
+  正常为11，原始ROI可见252顶点/C0=0.6747%，但这些顶点全部落入人工冻结不可达区，故
+  可达ROI可见数和C0均为0。根因是旧位姿库只校验稳定/相机在腔内，未按后加入的不可达
+  掩膜筛选正C0；不是GPU、帧同步、PhysX失稳或完全无视觉。
