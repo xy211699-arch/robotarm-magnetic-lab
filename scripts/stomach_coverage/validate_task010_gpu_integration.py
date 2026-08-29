@@ -21,6 +21,8 @@ def validate_summary(value: dict) -> dict:
         "physics_steps_per_action": 24, "all_finite": True,
         "rgb_coverage_same_frame": True, "resnet_unchanged": True,
         "true_terminal": True, "timeout_bootstrap": False,
+        "controlled_zero_reachable_accepted": True,
+        "controlled_zero_pose_id": "train-0419",
     }
     for name, expected in required.items():
         if value.get(name) != expected:
@@ -66,6 +68,23 @@ def main() -> None:
     with launch_simulation(app, cfg):
         env = gym.make(args.task, cfg=cfg).unwrapped
         try:
+            # Seed 1562 deterministically maps row 0 / episode 0 to the
+            # frozen train-0419 record in the 1000-record training split.
+            _, controlled_extras = env.reset(seed=1562)
+            controlled = env._task009d0_coverage_runtime.latest_update
+            controlled_pose_id = controlled_extras["task009d0_reset"]["pose_ids"][0]
+            controlled_reachable = float(controlled.reachable.coverage_fraction[0].item())
+            controlled_raw = float(controlled.raw.coverage_fraction[0].item())
+            controlled_accepted = bool(
+                controlled_pose_id == "train-0419"
+                and controlled_reachable == 0.0
+                and controlled_raw > 0.0
+            )
+            if not controlled_accepted:
+                raise RuntimeError(
+                    "TASK-010 controlled zero-reachable reset evidence did not reproduce: "
+                    f"pose={controlled_pose_id}, reachable={controlled_reachable}, raw={controlled_raw}"
+                )
             observations, reset_extras = env.reset(seed=frozen.training.seed)
             actor = Task010Actor().to(env.device).eval()
             encoder = env._task010_visual_encoder
@@ -121,6 +140,10 @@ def main() -> None:
                 "resnet_unchanged": resnet_before == resnet_after, "gru_rollout_detach_verified": bool(detach_verified),
                 "true_terminal": true_terminal, "timeout_bootstrap": timeout_bootstrap,
                 "initial_zero_reachable_count": initial_zero, "initial_raw_positive": True,
+                "controlled_zero_reachable_accepted": controlled_accepted,
+                "controlled_zero_pose_id": controlled_pose_id,
+                "controlled_zero_reachable_c0": controlled_reachable,
+                "controlled_zero_raw_c0": controlled_raw,
                 "shapes": shapes, "devices": devices, "resnet_sha256": resnet_after,
                 "weight_identity": encoder.weight_identity,
             })
