@@ -1,0 +1,22 @@
+{
+  "schema": "robotarm_magnetic_lab.task010_cnn_gru_development",
+  "version": 1,
+  "config_sha256": "c497fc430af729e7e6fb09849330de23fdea45e568b657a766cc5e030e1d19d4",
+  "task_id": "Template-Robotarm-Magnetic-Task010-CNN-GRU-Coverage-Lab-v0",
+  "base_commit": "1533bfa59f3d2d7b2f1769a9890efb354a5e4de6",
+  "clocks": {"physics_hz": 240, "control_hz": 10, "physics_steps_per_action": 24},
+  "camera": {"width": 1280, "height": 720, "crop_size": 720, "model_input_size": 224, "hz": 10, "fov_deg": 120.0},
+  "model": {"resnet_weights": "IMAGENET1K_V1", "visual_feature_dim": 512, "actor_observation_dim": 519, "critic_observation_dim": 65, "visual_projection_dim": 256, "action_feature_dim": 32, "gru_input_dim": 256, "gru_hidden_dim": 256, "gru_layers": 1},
+  "action": {"mode_names": ["HOLD", "MOVE_POS", "MOVE_NEG", "VIEW_POS", "VIEW_NEG", "UP"], "mode_ids": [0, 1, 2, 3, 4, 5], "force_ratio_mg": {"HOLD": [0.0, 0.0], "MOVE": [0.7, 1.4], "VIEW": [0.2, 0.5], "UP": [0.8, 1.05]}},
+  "episode": {"duration_s": 120.0, "formal_steps": 1200, "coverage_points": 1201, "reset_hold_steps": 10, "true_terminal": true},
+  "coverage": {"max_distance_m": 0.07, "fov_deg": 120.0, "area_weighted": true, "first_hit_occlusion": true, "unreachable_mask": true},
+  "recovery": {"window_s": 5.0, "position_threshold_m": 0.001, "rotation_threshold_deg": 5.0, "coverage_threshold": 0.001, "escape_position_m": 0.003, "escape_rotation_deg": 15.0, "coverage_wait_s": 2.0, "reward_limit_s": 10.0},
+  "reward": {"coverage_gain": 100.0, "escape_progress_gain": 0.1, "no_progress_penalty": -0.002, "coverage_resumed_bonus": 0.2},
+  "ppo": {"rollout_steps": 64, "num_learning_epochs": 5, "num_mini_batches": 4, "clip_param": 0.2, "use_clipped_value_loss": true, "value_loss_coef": 1.0, "learning_rate": 0.0003, "schedule": "adaptive", "desired_kl": 0.01, "max_grad_norm": 1.0, "gamma": 0.999, "lam": 0.95, "entropy_coef": 0.005},
+  "training": {"seed": 991000, "num_envs": 12, "max_updates": 1000, "transitions": 768000, "synchronous_resets": true},
+  "validation": {"updates": [250, 500, 750, 1000], "pose_ids": ["validation-0006", "validation-0011", "validation-0015", "validation-0017", "validation-0019", "validation-0035", "validation-0040", "validation-0042", "validation-0045", "validation-0046", "validation-0051", "validation-0058", "validation-0060", "validation-0063", "validation-0067", "validation-0068", "validation-0069", "validation-0092", "validation-0095", "validation-0097"]},
+  "checkpoints": {"rolling_interval": 50, "permanent_updates": [250, 500, 750, 1000]},
+  "image_augmentation": false,
+  "environment_randomization": false,
+  "artifact_subdirectory": "artifacts/task010_cnn_gru"
+}
