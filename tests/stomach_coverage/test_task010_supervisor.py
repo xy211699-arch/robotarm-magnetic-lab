@@ -40,6 +40,25 @@ def test_start_returns_before_worker_finishes(tmp_path: Path):
     assert _wait(run_dir)["exit_code"] == 23
 
 
+def test_launch_manifest_captures_reproducibility_identity(tmp_path: Path):
+    _, run_dir = _start(tmp_path, "--sleep=1", "--exit-code=0")
+    manifest = json.loads((run_dir / "launch_manifest.json").read_text())
+    assert manifest["command"]
+    assert manifest["hostname"]
+    assert manifest["worker_pid"] > 0
+    assert len(manifest["git"]["commit"]) == 40
+    assert len(manifest["git"]["worktree_status_sha256"]) == 64
+    assert manifest["config"]["path"] == str(CONFIG)
+    assert len(manifest["config"]["sha256"]) == 64
+    assert manifest["config"]["num_envs"] == 12
+    assert manifest["python"]["version"]
+    assert manifest["packages"]["torch"]
+    assert "devices" in manifest["gpu"] or "query_error" in manifest["gpu"]
+    assert _wait(run_dir)["state"] == "completed"
+    events = [json.loads(line) for line in (run_dir / "events.jsonl").read_text().splitlines()]
+    assert any(item["event"] == "preflight_verified" for item in events)
+
+
 def test_failure_preserves_exit_code_stderr_and_traceback(tmp_path: Path):
     _, run_dir = _start(tmp_path, "--exit-code=23")
     status = _wait(run_dir)

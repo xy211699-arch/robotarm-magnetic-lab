@@ -6,10 +6,14 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import hashlib
+from importlib import metadata
 import json
 import os
 from pathlib import Path
+import platform
 import signal
+import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -45,6 +49,103 @@ def _sha256(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _text_sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _git_identity() -> dict:
+    commit = subprocess.check_output(
+        ("git", "rev-parse", "HEAD"), cwd=REPOSITORY, text=True
+    ).strip()
+    status = subprocess.check_output(
+        ("git", "status", "--porcelain=v1", "--untracked-files=all"),
+        cwd=REPOSITORY,
+        text=True,
+    )
+    return {
+        "commit": commit,
+        "worktree_status": status.splitlines(),
+        "worktree_status_sha256": _text_sha256(status),
+    }
+
+
+def _package_version(distribution: str) -> str | None:
+    try:
+        return metadata.version(distribution)
+    except metadata.PackageNotFoundError:
+        return None
+
+
+def _gpu_identity() -> dict:
+    command = (
+        "nvidia-smi", "--query-gpu=name,driver_version,memory.total",
+        "--format=csv,noheader,nounits",
+    )
+    try:
+        output = subprocess.check_output(command, text=True, timeout=5.0).strip()
+    except (FileNotFoundError, subprocess.SubprocessError) as error:
+        return {"query_error": f"{type(error).__name__}: {error}"}
+    rows = []
+    for line in output.splitlines():
+        fields = [item.strip() for item in line.split(",")]
+        rows.append(
+            {
+                "name": fields[0] if fields else None,
+                "driver_version": fields[1] if len(fields) > 1 else None,
+                "memory_total_mib": fields[2] if len(fields) > 2 else None,
+            }
+        )
+    return {"devices": rows}
+
+
+def _config_identity(path: Path) -> dict:
+    resolved = path.resolve(strict=True)
+    payload = _read_json(resolved)
+    training = payload.get("training", {})
+    return {
+        "path": str(resolved),
+        "sha256": _sha256(resolved),
+        "num_envs": training.get("num_envs"),
+        "configured_seed": training.get("seed"),
+        "configured_max_updates": training.get("max_updates"),
+    }
+
+
+def _last_jsonl(path: Path) -> dict | None:
+    if not path.is_file() or path.stat().st_size == 0:
+        return None
+    with path.open("rb") as stream:
+        size = stream.seek(0, os.SEEK_END)
+        stream.seek(max(0, size - 65536))
+        lines = [line for line in stream.read().splitlines() if line.strip()]
+        line = lines[-1] if lines else b""
+    return json.loads(line) if line else None
+
+
+def _runtime_progress(run_dir: Path) -> dict:
+    progress: dict = {}
+    metric = _last_jsonl(run_dir / "metrics.jsonl")
+    if metric is not None:
+        progress["last_update"] = metric.get("update")
+        progress["last_metric_time_ns"] = metric.get(
+            "time_ns", (run_dir / "metrics.jsonl").stat().st_mtime_ns
+        )
+    checkpoints = sorted((run_dir / "checkpoints").glob("update_*.pt"))
+    if checkpoints:
+        newest = checkpoints[-1]
+        progress["latest_checkpoint"] = str(newest)
+        progress["latest_checkpoint_sha256"] = _sha256(newest)
+    return progress
+
+
+def _error_summary(run_dir: Path) -> str | None:
+    path = run_dir / "console.log"
+    if not path.is_file():
+        return None
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    return " | ".join(lines[-5:])[-2000:] if lines else None
 
 
 def _read_json(path: Path) -> dict:
@@ -111,6 +212,11 @@ def _command_from_args(args, run_dir: Path) -> list[str]:
 def _launch(args, *, label: str = "latest", parent: dict | None = None) -> dict:
     root = Path(args.output_root).resolve()
     root.mkdir(parents=True, exist_ok=True)
+    if not os.access(root, os.W_OK):
+        raise PermissionError(f"TASK-010 output root is not writable: {root}")
+    free_bytes = shutil.disk_usage(root).free
+    if free_bytes < 1024 * 1024 * 1024:
+        raise OSError(f"TASK-010 output root has less than 1 GiB free: {root}")
     link = root / label
     if link.exists() or link.is_symlink():
         try:
@@ -123,10 +229,26 @@ def _launch(args, *, label: str = "latest", parent: dict | None = None) -> dict:
     run_dir = root / run_id
     run_dir.mkdir(parents=False)
     command = _command_from_args(args, run_dir)
+    config = _config_identity(Path(args.config))
+    git = _git_identity()
     manifest = {
         "schema": "robotarm_magnetic_lab.task010_launch_manifest",
         "run_id": run_id, "run_dir": str(run_dir), "command": command,
-        "created_epoch_s": time.time(), "parent": parent,
+        "created_epoch_s": time.time(), "created_utc": datetime.now(timezone.utc).isoformat(),
+        "hostname": socket.gethostname(), "launcher_pid": os.getpid(),
+        "parent": parent, "git": git, "config": config,
+        "requested_seed": args.seed,
+        "planned_updates": int(args.max_updates),
+        "save_interval": int(args.save_interval),
+        "validation": str(args.validation),
+        "python": {"version": platform.python_version(), "executable": sys.executable},
+        "packages": {
+            "torch": _package_version("torch"),
+            "torchvision": _package_version("torchvision"),
+            "isaaclab": _package_version("isaaclab"),
+            "rsl_rl": _package_version("rsl-rl-lib"),
+        },
+        "gpu": _gpu_identity(), "output_free_bytes_at_launch": free_bytes,
     }
     _atomic_json(run_dir / "launch_manifest.json", manifest)
     initial = {"state": "starting", "run_id": run_id, "run_dir": str(run_dir), "heartbeat_epoch_s": time.time(), "worker_pid": -1}
@@ -136,6 +258,8 @@ def _launch(args, *, label: str = "latest", parent: dict | None = None) -> dict:
     process = subprocess.Popen(supervisor, cwd=REPOSITORY, stdin=subprocess.DEVNULL, stdout=console, stderr=console, start_new_session=True)
     console.close()
     initial["worker_pid"] = process.pid
+    manifest["worker_pid"] = process.pid
+    _atomic_json(run_dir / "launch_manifest.json", manifest)
     _atomic_json(run_dir / "status.json", initial)
     _update_link(link, run_dir)
     result = {"run_id": run_id, "pid": process.pid, "run_dir": str(run_dir), "status": "starting", "link": str(link)}
@@ -149,24 +273,50 @@ def _worker(run_dir: Path) -> int:
     status = {"state": "running", "run_id": manifest["run_id"], "run_dir": str(run_dir), "worker_pid": os.getpid(), "heartbeat_epoch_s": time.time(), "exit_code": None}
     _atomic_json(run_dir / "status.json", status); _append_event(run_dir, {"event": "worker_started", "pid": os.getpid()})
     try:
+        config = manifest["config"]
+        actual_config_sha = _sha256(Path(config["path"]))
+        if actual_config_sha != config["sha256"]:
+            raise RuntimeError(
+                f"TASK-010 config changed after launch: {actual_config_sha} != {config['sha256']}"
+            )
+        actual_git = _git_identity()
+        if (
+            actual_git["commit"] != manifest["git"]["commit"]
+            or actual_git["worktree_status_sha256"] != manifest["git"]["worktree_status_sha256"]
+        ):
+            raise RuntimeError("TASK-010 Git commit or worktree state changed after launch")
+        _append_event(
+            run_dir,
+            {
+                "event": "preflight_verified",
+                "config_sha256": actual_config_sha,
+                "git_commit": actual_git["commit"],
+                "git_worktree_status_sha256": actual_git["worktree_status_sha256"],
+            },
+        )
         with (run_dir / "console.log").open("ab", buffering=0) as console:
             child = subprocess.Popen(manifest["command"], cwd=REPOSITORY, stdin=subprocess.DEVNULL, stdout=console, stderr=console, start_new_session=False)
             next_heartbeat = 0.0
             while child.poll() is None:
                 now = time.time()
                 if now >= next_heartbeat:
+                    status.update(_runtime_progress(run_dir))
                     status["heartbeat_epoch_s"] = now; status["child_pid"] = child.pid
                     _atomic_json(run_dir / "status.json", status)
                     next_heartbeat = now + HEARTBEAT_INTERVAL_S
                 time.sleep(0.1)
             code = int(child.returncode)
+        status.update(_runtime_progress(run_dir))
         status.update(state="completed" if code == 0 else "failed", exit_code=code, heartbeat_epoch_s=time.time(), finished_epoch_s=time.time())
+        if code != 0:
+            status["error_summary"] = _error_summary(run_dir)
         _atomic_json(run_dir / "status.json", status); _append_event(run_dir, {"event": "worker_finished", "exit_code": code, "state": status["state"]})
         return code
     except BaseException:
         with (run_dir / "console.log").open("a", encoding="utf-8") as console:
             traceback.print_exc(file=console)
-        status.update(state="failed", exit_code=1, heartbeat_epoch_s=time.time(), finished_epoch_s=time.time())
+        status.update(_runtime_progress(run_dir))
+        status.update(state="failed", exit_code=1, heartbeat_epoch_s=time.time(), finished_epoch_s=time.time(), error_summary=_error_summary(run_dir))
         _atomic_json(run_dir / "status.json", status); _append_event(run_dir, {"event": "worker_exception", "exit_code": 1})
         return 1
 
@@ -185,7 +335,8 @@ def _resume(args) -> dict:
     launch.worker_command = None; launch.worker_arg = []
     launch.config = original[config_index]
     launch.max_updates = int(args.additional_updates); launch.save_interval = 1
-    launch.validation = "disabled"; launch.seed = None
+    launch.validation = "disabled"
+    launch.seed = int(original[original.index("--seed") + 1]) if "--seed" in original else None
     launch.resume_checkpoint = checkpoint
     return _launch(launch, label="latest-resume", parent={"run_id": manifest["run_id"], "checkpoint": str(checkpoint), "checkpoint_sha256": _sha256(checkpoint), "additional_updates": int(args.additional_updates)})
 

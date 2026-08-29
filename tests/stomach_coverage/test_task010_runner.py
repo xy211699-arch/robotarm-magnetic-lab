@@ -56,6 +56,10 @@ def test_fake_training_writes_one_fsynced_metric_per_update(tmp_path: Path):
     metrics = [json.loads(line) for line in (tmp_path / "metrics.jsonl").read_text().splitlines()]
     assert [row["update"] for row in metrics] == [1, 2]
     assert all(row["all_finite"] for row in metrics)
+    assert all(row["transitions_per_second"] > 0 for row in metrics)
+    assert all(row["categorical_entropy"] > 0 for row in metrics)
+    assert all("conditional_beta_entropy" in row for row in metrics)
+    assert all("value_explained_variance" in row for row in metrics)
     events = [json.loads(line) for line in (tmp_path / "events.jsonl").read_text().splitlines()]
     assert events[0]["event"] == "runner_initialized"
 
@@ -69,6 +73,7 @@ def test_checkpoint_contains_required_contract_fields(tmp_path: Path):
         "actor", "critic", "optimizer", "current_update", "total_transitions",
         "rng", "config_hash", "config_snapshot", "git_commit",
         "dependency_audit_hash", "actor_observation_schema_sha256", "action_schema_sha256",
+        "visual_weight_identity_sha256",
     ):
         assert key in record
 

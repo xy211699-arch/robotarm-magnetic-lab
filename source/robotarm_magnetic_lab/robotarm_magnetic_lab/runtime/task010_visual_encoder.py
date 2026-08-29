@@ -13,6 +13,7 @@ from torch.nn import functional as F
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
+RESNET18_IMAGENET1K_V1_SHA256 = "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec"
 
 
 def center_crop_circular_rgb(rgb: torch.Tensor) -> torch.Tensor:
@@ -83,6 +84,8 @@ class FrozenResNet18Encoder(nn.Module):
                 "path": str(cache_path),
                 "sha256": _file_sha256(cache_path),
             }
+            if self.weight_identity["sha256"] != RESNET18_IMAGENET1K_V1_SHA256:
+                raise RuntimeError("TASK-010 ResNet18 IMAGENET1K_V1 weight hash mismatch")
         else:
             self.weight_identity = {"enum": self.weights_name, "url": None, "path": None, "sha256": None}
         self.backbone = backbone

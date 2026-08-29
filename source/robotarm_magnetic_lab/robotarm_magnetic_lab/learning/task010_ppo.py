@@ -162,7 +162,13 @@ class Task010PPO:
         valid_advantages = storage.advantages
         normalized_advantages = (valid_advantages - valid_advantages.mean()) / valid_advantages.std(unbiased=False).clamp_min(1.0e-8)
         storage.advantages.copy_(normalized_advantages)
-        totals = {name: 0.0 for name in ("surrogate_loss", "value_loss", "joint_entropy", "joint_kl", "clip_fraction", "gradient_norm")}
+        totals = {
+            name: 0.0 for name in (
+                "surrogate_loss", "value_loss", "categorical_entropy",
+                "conditional_beta_entropy", "joint_entropy", "joint_kl",
+                "clip_fraction", "gradient_norm",
+            )
+        }
         updates = 0
         for batch in storage.recurrent_batches(num_mini_batches=self.num_mini_batches, num_epochs=self.num_learning_epochs):
             logits, raw, _ = self.actor.evaluate_parameters(
@@ -186,6 +192,10 @@ class Task010PPO:
             clipped_values = batch["value"] + value_delta
             value_loss = torch.maximum((values - batch["returns"]).square(), (clipped_values - batch["returns"]).square()).mean()
             entropy = new_distribution.entropy().mean()
+            categorical_entropy = new_distribution.categorical.entropy().mean()
+            conditional_beta_entropy = (
+                new_distribution.categorical.probs[:, 1:] * new_distribution.beta.entropy()
+            ).sum(dim=1).mean()
             loss = surrogate_loss + self.value_loss_coef * value_loss - self.entropy_coef * entropy
             if not torch.isfinite(loss).item():
                 raise RuntimeError("TASK-010 PPO loss is non-finite")
@@ -203,12 +213,18 @@ class Task010PPO:
             clip_fraction = ((ratio - 1.0).abs() > self.clip_param).to(torch.float32).mean()
             for name, value in (
                 ("surrogate_loss", surrogate_loss), ("value_loss", value_loss),
+                ("categorical_entropy", categorical_entropy),
+                ("conditional_beta_entropy", conditional_beta_entropy),
                 ("joint_entropy", entropy), ("joint_kl", joint_kl),
                 ("clip_fraction", clip_fraction), ("gradient_norm", gradient_norm),
             ):
                 totals[name] += float(value.detach().item())
             updates += 1
         diagnostics = {name: value / updates for name, value in totals.items()}
+        returns_variance = storage.returns.var(unbiased=False)
+        diagnostics["value_explained_variance"] = float(
+            (1.0 - (storage.returns - storage.value).var(unbiased=False) / returns_variance.clamp_min(1.0e-12)).item()
+        )
         if diagnostics["joint_kl"] > 2.0 * self.desired_kl:
             for group in self.optimizer.param_groups:
                 group["lr"] = max(1.0e-5, group["lr"] / 1.5)

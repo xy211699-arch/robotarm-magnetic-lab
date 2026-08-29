@@ -53,7 +53,11 @@ def task010_recovery_step(env):
 
 
 def task010_total_reward(env) -> torch.Tensor:
-    return task010_recovery_step(env).total_reward
+    step = task010_recovery_step(env)
+    # Keep the exact reward decomposition alive across the synchronous
+    # horizon reset, whose first observation initializes the next episode.
+    env._task010_last_reward_step = step
+    return step.total_reward
 
 
 def task010_privileged_observation(env) -> torch.Tensor:
