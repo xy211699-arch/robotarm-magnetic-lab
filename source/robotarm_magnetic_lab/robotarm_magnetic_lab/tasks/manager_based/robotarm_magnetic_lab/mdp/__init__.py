@@ -53,5 +53,7 @@ from .task009d0_terms import (  # noqa: F401
 )
 from .task010_terms import (  # noqa: F401
     task010_actor_observation,
+    task010_recovery_step,
+    task010_total_reward,
     task010_visual_encoder,
 )

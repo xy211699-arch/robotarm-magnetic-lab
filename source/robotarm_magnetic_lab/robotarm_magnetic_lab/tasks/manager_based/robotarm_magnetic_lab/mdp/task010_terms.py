@@ -5,6 +5,7 @@ from __future__ import annotations
 import torch
 
 from robotarm_magnetic_lab.runtime.task010_visual_encoder import FrozenResNet18Encoder
+from robotarm_magnetic_lab.runtime.task010_recovery import Task010RecoveryTracker
 
 from .task009d0_terms import task009d0_rgb, task009d0_runtime
 
@@ -26,3 +27,29 @@ def task010_actor_observation(env) -> torch.Tensor:
     if observation.shape != (env.num_envs, 519) or not torch.isfinite(observation).all().item():
         raise RuntimeError("TASK-010 Actor observation must be finite [N,519]")
     return observation
+
+
+def task010_recovery_step(env):
+    boundary = int(env.common_step_counter)
+    if getattr(env, "_task010_recovery_boundary", None) == boundary:
+        return env._task010_recovery_step
+    runtime = task009d0_runtime(env)
+    update = runtime.update_boundary(
+        boundary=boundary,
+        stabilizing=bool(getattr(env, "_task009d0_stabilizing", False)),
+    )
+    tracker = getattr(env, "_task010_recovery_tracker", None)
+    if tracker is None:
+        tracker = Task010RecoveryTracker(env.num_envs, env.device)
+        env._task010_recovery_tracker = tracker
+    pose = env.scene["capsule"].data.root_pose_w.torch
+    step = tracker.update(
+        pose[:, :3], pose[:, 3:7], update.reachable.coverage_fraction, dt_s=0.1
+    )
+    env._task010_recovery_boundary = boundary
+    env._task010_recovery_step = step
+    return step
+
+
+def task010_total_reward(env) -> torch.Tensor:
+    return task010_recovery_step(env).total_reward

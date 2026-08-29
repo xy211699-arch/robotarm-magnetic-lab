@@ -41,6 +41,10 @@ class Task010VectorEnv(Task009D0VectorEnv):
         encoder = getattr(self, "_task010_visual_encoder", None)
         if encoder is not None:
             encoder.reset(torch.arange(self.num_envs, device=self.device))
+        recovery = getattr(self, "_task010_recovery_tracker", None)
+        if recovery is not None:
+            recovery.reset()
+        self._task010_recovery_boundary = None
 
     def _horizon_termination_flags(self):
         terminated = torch.ones(self.num_envs, dtype=torch.bool, device=self.device)
