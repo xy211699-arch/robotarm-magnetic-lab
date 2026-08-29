@@ -83,10 +83,13 @@ def main() -> None:
         config, runner = _build_runner(args, "cpu")
         updates = config.training.max_updates if args.max_updates is None else int(args.max_updates)
         interval = config.checkpoints.rolling_interval if args.save_interval is None else int(args.save_interval)
-        runner.learn_fake(
-            num_updates=updates, rollout_steps=config.ppo.rollout_steps,
-            num_envs=config.training.num_envs, save_interval=interval,
-        )
+        try:
+            runner.learn_fake(
+                num_updates=updates, rollout_steps=config.ppo.rollout_steps,
+                num_envs=config.training.num_envs, save_interval=interval,
+            )
+        finally:
+            runner.close()
         return
 
     from isaaclab.app import AppLauncher
@@ -109,6 +112,7 @@ def main() -> None:
         try:
             runner.learn_environment(env, num_updates=updates, rollout_steps=config.ppo.rollout_steps, save_interval=interval)
         finally:
+            runner.close()
             env.close()
     app.close()
 

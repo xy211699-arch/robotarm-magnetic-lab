@@ -1067,3 +1067,6 @@
   软件版本、驱动/GPU及父checkpoint，状态原子更新。
 - 用户明确授权后，实施分支`feature/TASK-010-cnn-gru-development-seed`已成功推送至双向
   交接仓库`xy211699-arch/robotarm-magnetic-lab`的origin；upstream保持只读且未发生推送。
+- 在未启动`seed=991000`开发种子的前提下，将TensorBoard接入正式训练runner：实时镜像更新级
+  loss、熵、KL、学习率、吞吐、显存、解释方差及回合覆盖/奖励/动作分布；原JSONL仍为权威
+  记录。训练正常结束或异常退出时均刷新并关闭事件写入器。

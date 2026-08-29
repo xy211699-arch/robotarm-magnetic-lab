@@ -12,6 +12,7 @@ from typing import Any
 
 import numpy as np
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from .task010_actor import Task010Actor
 from .task010_critic import Task010Critic
@@ -22,6 +23,7 @@ from robotarm_magnetic_lab.runtime.task010_visual_encoder import RESNET18_IMAGEN
 ACTOR_OBSERVATION_SCHEMA_SHA256 = hashlib.sha256(b"visual_feature_512|previous_actual_action_7").hexdigest()
 ACTION_SCHEMA_SHA256 = hashlib.sha256(b"mode_id_0_5|alpha_0_1|hold_alpha_zero").hexdigest()
 TASK010_TASK_ID = "Template-Robotarm-Magnetic-Task010-CNN-GRU-Coverage-Lab-v0"
+ACTION_MODE_NAMES = ("HOLD", "MOVE_POS", "MOVE_NEG", "VIEW_POS", "VIEW_NEG", "UP")
 
 
 def _finite_metrics(value: dict[str, Any]) -> bool:
@@ -62,6 +64,10 @@ class Task010OnPolicyRunner:
         self.events_path = self.output_dir / "events.jsonl"
         self.boundaries_path = self.output_dir / "boundaries.jsonl"
         self.episodes_path = self.output_dir / "episodes.jsonl"
+        self.tensorboard_dir = self.output_dir / "tensorboard"
+        self.tensorboard_writer = SummaryWriter(log_dir=str(self.tensorboard_dir), flush_secs=10)
+        self._tensorboard_closed = False
+        self._completed_episode_batches = 0
         self.config_hash = str(config_hash)
         self.config_snapshot = config_snapshot
         self.dependency_audit_hash = str(dependency_audit_hash)
@@ -78,6 +84,27 @@ class Task010OnPolicyRunner:
         root = Path(__file__).resolve().parents[4]
         self.git_commit = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=root, text=True).strip()
         _append_jsonl(self.events_path, {"event": "runner_initialized", "seed": self.seed, "time_ns": time.time_ns()})
+        self.tensorboard_writer.add_text(
+            "run/identity",
+            json.dumps(
+                {
+                    "task_id": TASK010_TASK_ID,
+                    "seed": self.seed,
+                    "git_commit": self.git_commit,
+                    "config_hash": self.config_hash,
+                    "dependency_audit_hash": self.dependency_audit_hash,
+                },
+                sort_keys=True,
+            ),
+            global_step=0,
+        )
+
+    def close(self) -> None:
+        """Flush and close the TensorBoard mirror without changing JSONL authority."""
+        if not self._tensorboard_closed:
+            self.tensorboard_writer.flush()
+            self.tensorboard_writer.close()
+            self._tensorboard_closed = True
 
     def _rng_state(self) -> dict[str, Any]:
         return {
@@ -151,6 +178,7 @@ class Task010OnPolicyRunner:
         _append_jsonl(self.events_path, {"event": "checkpoint_loaded", "path": str(path), "update": self.current_update, "time_ns": time.time_ns()})
 
     def _record_update(self, diagnostics: dict[str, Any], elapsed_s: float) -> None:
+        diagnostics = dict(diagnostics)
         payload = {
             "schema": "robotarm_magnetic_lab.task010_update_metric",
             "update": self.current_update,
@@ -168,6 +196,26 @@ class Task010OnPolicyRunner:
             **diagnostics,
         }
         _append_jsonl(self.metrics_path, payload)
+        tags = {
+            "train/total_transitions": payload["total_transitions"],
+            "time/update_elapsed_s": payload["elapsed_s"],
+            "performance/transitions_per_second": payload["transitions_per_second"],
+            "system/cuda_peak_memory_bytes": payload["cuda_peak_memory_bytes"],
+            "loss/surrogate": payload.get("surrogate_loss"),
+            "loss/value": payload.get("value_loss"),
+            "policy/categorical_entropy": payload.get("categorical_entropy"),
+            "policy/conditional_beta_entropy": payload.get("conditional_beta_entropy"),
+            "policy/joint_entropy": payload.get("joint_entropy"),
+            "policy/joint_kl": payload.get("joint_kl"),
+            "policy/clip_fraction": payload.get("clip_fraction"),
+            "optimization/gradient_norm": payload.get("gradient_norm"),
+            "optimization/learning_rate": payload.get("learning_rate"),
+            "value/explained_variance": payload.get("value_explained_variance"),
+        }
+        for tag, value in tags.items():
+            if value is not None and np.isfinite(float(value)):
+                self.tensorboard_writer.add_scalar(tag, float(value), self.current_update)
+        self.tensorboard_writer.flush()
 
     @staticmethod
     def _tensor_list(value: torch.Tensor) -> list:
@@ -246,13 +294,12 @@ class Task010OnPolicyRunner:
 
     def _record_episodes(self, accumulator: dict[str, Any], c120: torch.Tensor) -> None:
         steps = int(accumulator["steps"])
+        records: list[dict[str, Any]] = []
         for row, pose_id in enumerate(accumulator["pose_ids"]):
             counts = accumulator["mode_counts"][row]
             alpha_counts = accumulator["alpha_count"][row]
             alpha_mean = accumulator["alpha_sum"][row] / alpha_counts.clamp_min(1)
-            _append_jsonl(
-                self.episodes_path,
-                {
+            record = {
                     "schema": "robotarm_magnetic_lab.task010_episode",
                     "time_ns": time.time_ns(),
                     "pose_id": pose_id,
@@ -266,8 +313,29 @@ class Task010OnPolicyRunner:
                     "stagnation_count": int(accumulator["stagnation_count"][row].item()),
                     "recovery_success_count": int(accumulator["recovery_success_count"][row].item()),
                     "fault_type": None,
-                },
+                }
+            _append_jsonl(self.episodes_path, record)
+            records.append(record)
+        self._completed_episode_batches += 1
+        scalar_fields = (
+            "c0", "c120", "nauc120", "total_reward",
+            "stagnation_count", "recovery_success_count",
+        )
+        for field in scalar_fields:
+            mean = float(np.mean([float(record[field]) for record in records]))
+            self.tensorboard_writer.add_scalar(
+                f"episode/{field}_mean", mean, self._completed_episode_batches
             )
+        for mode_id, mode_name in enumerate(ACTION_MODE_NAMES):
+            fraction = float(np.mean([record["action_proportions"][mode_id] for record in records]))
+            alpha = float(np.mean([record["alpha_mean_by_mode"][mode_id] for record in records]))
+            self.tensorboard_writer.add_scalar(
+                f"episode/action_fraction/{mode_name}", fraction, self._completed_episode_batches
+            )
+            self.tensorboard_writer.add_scalar(
+                f"episode/alpha_mean/{mode_name}", alpha, self._completed_episode_batches
+            )
+        self.tensorboard_writer.flush()
 
     def learn_fake(self, *, num_updates: int, rollout_steps: int, num_envs: int, save_interval: int | None = None) -> None:
         """CPU contract backend; exercises real GRU/PPO without simulation claims."""

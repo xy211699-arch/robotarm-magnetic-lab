@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import torch
+from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 from robotarm_magnetic_lab.learning.task010_actor import Task010Actor
 from robotarm_magnetic_lab.learning.task010_critic import Task010Critic
@@ -62,6 +63,17 @@ def test_fake_training_writes_one_fsynced_metric_per_update(tmp_path: Path):
     assert all("value_explained_variance" in row for row in metrics)
     events = [json.loads(line) for line in (tmp_path / "events.jsonl").read_text().splitlines()]
     assert events[0]["event"] == "runner_initialized"
+    runner.close()
+    accumulator = EventAccumulator(str(tmp_path / "tensorboard"))
+    accumulator.Reload()
+    scalar_tags = set(accumulator.Tags()["scalars"])
+    assert {
+        "loss/surrogate", "loss/value", "optimization/learning_rate",
+        "policy/joint_entropy", "performance/transitions_per_second",
+        "train/total_transitions",
+    } <= scalar_tags
+    assert len(accumulator.Scalars("loss/surrogate")) == 2
+    assert accumulator.Scalars("train/total_transitions")[-1].value == pytest.approx(32.0)
 
 
 def test_checkpoint_contains_required_contract_fields(tmp_path: Path):
