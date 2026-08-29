@@ -26,6 +26,15 @@ class Task010VectorEnv(Task009D0VectorEnv):
     ) -> torch.Tensor:
         return torch.isfinite(reachable) & torch.isfinite(raw) & (raw > 0)
 
+    def _prepare_task_reset(self, all_rows: torch.Tensor) -> None:
+        encoder = getattr(self, "_task010_visual_encoder", None)
+        if encoder is not None:
+            encoder.reset(all_rows)
+        recovery = getattr(self, "_task010_recovery_tracker", None)
+        if recovery is not None:
+            recovery.reset(all_rows)
+        self._task010_recovery_boundary = None
+
     def _validate_task_reset(self, initial) -> None:
         _assert_finite_tree(initial.reachable.coverage_fraction, "reachable coverage")
         _assert_finite_tree(initial.raw.coverage_fraction, "raw coverage")
@@ -38,13 +47,6 @@ class Task010VectorEnv(Task009D0VectorEnv):
         _assert_finite_tree(robot.data.joint_vel, "robot joint velocity")
         camera = self.scene["capsule_camera"]
         _assert_finite_tree(camera.data.output, "RGB observation")
-        encoder = getattr(self, "_task010_visual_encoder", None)
-        if encoder is not None:
-            encoder.reset(torch.arange(self.num_envs, device=self.device))
-        recovery = getattr(self, "_task010_recovery_tracker", None)
-        if recovery is not None:
-            recovery.reset()
-        self._task010_recovery_boundary = None
 
     def _horizon_termination_flags(self):
         terminated = torch.ones(self.num_envs, dtype=torch.bool, device=self.device)

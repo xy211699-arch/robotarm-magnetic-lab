@@ -50,6 +50,7 @@ class RobotarmMagneticTask010EnvCfg(RobotarmMagneticTask009D0EnvCfg):
         self.scene.num_envs = _TASK010.training.num_envs
         self.sim.dt = 1.0 / _TASK010.clocks.physics_hz
         self.decimation = _TASK010.clocks.physics_steps_per_action
+        self.sim.render_interval = self.decimation
         self.scene.capsule_camera.update_period = 1.0 / _TASK010.camera.hz
         self.scene.capsule_camera.width = _TASK010.camera.width
         self.scene.capsule_camera.height = _TASK010.camera.height

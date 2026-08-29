@@ -71,6 +71,10 @@ class Task009D0VectorEnv(ManagerBasedRLEnv):
         """Task-specific finite-state validation hook."""
         del initial
 
+    def _prepare_task_reset(self, all_rows: torch.Tensor) -> None:
+        """Task hook invoked before the base reset computes observations."""
+        del all_rows
+
     def _horizon_termination_flags(self):
         """D0 retains its historical truncation-at-horizon semantics."""
         terminated = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
@@ -106,6 +110,7 @@ class Task009D0VectorEnv(ManagerBasedRLEnv):
         runtime = getattr(self, "_task009d0_coverage_runtime", None)
         if runtime is not None:
             runtime.reset_rows(all_rows)
+        self._prepare_task_reset(all_rows)
         observation, extras = super().reset(seed=seed, env_ids=all_rows, options=options)
         pose_batch = self._sample_pose_batch()
         poses = torch.as_tensor(
