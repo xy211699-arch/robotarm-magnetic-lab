@@ -6,6 +6,7 @@ import torch
 
 from robotarm_magnetic_lab.runtime.task010_visual_encoder import FrozenResNet18Encoder
 from robotarm_magnetic_lab.runtime.task010_recovery import Task010RecoveryTracker
+from robotarm_magnetic_lab.runtime.task010_privileged import Task010PrivilegedBuilder
 
 from .task009d0_terms import task009d0_rgb, task009d0_runtime
 
@@ -53,3 +54,11 @@ def task010_recovery_step(env):
 
 def task010_total_reward(env) -> torch.Tensor:
     return task010_recovery_step(env).total_reward
+
+
+def task010_privileged_observation(env) -> torch.Tensor:
+    builder = getattr(env, "_task010_privileged_builder", None)
+    if builder is None:
+        builder = Task010PrivilegedBuilder()
+        env._task010_privileged_builder = builder
+    return builder.build(env, task010_recovery_step(env))

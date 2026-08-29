@@ -169,6 +169,14 @@ class Task009D0CoverageRuntime:
         )
         self.latest_update: Task009D0CoverageBoundary | None = None
         self._latest_boundary: int | None = None
+        minimum = self.vertices_local.amin(dim=0)
+        span = (self.vertices_local.amax(dim=0) - minimum).clamp_min(1.0e-12)
+        coordinates = ((self.vertices_local - minimum) / span * 3.0).floor().to(torch.int64).clamp(0, 2)
+        self._coverage_grid_cell = coordinates[:, 0] * 9 + coordinates[:, 1] * 3 + coordinates[:, 2]
+        self._coverage_grid_total_area = torch.zeros(27, device=self.device, dtype=torch.float64)
+        self._coverage_grid_total_area.scatter_add_(
+            0, self._coverage_grid_cell, self.reachable_accumulator.weights
+        )
 
     @classmethod
     def from_environment(
@@ -444,3 +452,18 @@ class Task009D0CoverageRuntime:
         self.rgb_sync.reset_rows(rows)
         self._latest_boundary = None
         self.latest_update = None
+
+    def coverage_grid_3x3x3(self) -> torch.Tensor:
+        """Return per-row area-weighted cumulative reachable coverage in 27 cells."""
+        weighted = (
+            self.reachable_accumulator.mask.to(torch.float64)
+            * self.reachable_accumulator.weights.unsqueeze(0)
+        )
+        result = torch.zeros((self.num_envs, 27), device=self.device, dtype=torch.float64)
+        result.scatter_add_(
+            1,
+            self._coverage_grid_cell.unsqueeze(0).expand(self.num_envs, -1),
+            weighted,
+        )
+        denominator = self._coverage_grid_total_area.unsqueeze(0)
+        return torch.where(denominator > 0.0, result / denominator.clamp_min(1.0e-30), torch.zeros_like(result))
