@@ -1065,3 +1065,5 @@
 - Gate 4最终后台smoke完成update 2，独立恢复生成update 3；受控失败按预期保留完整
   traceback并返回`failed/exit 23`。监督清单记录并复核干净Git HEAD、配置哈希、主机、PID、
   软件版本、驱动/GPU及父checkpoint，状态原子更新。
+- 用户明确授权后，实施分支`feature/TASK-010-cnn-gru-development-seed`已成功推送至双向
+  交接仓库`xy211699-arch/robotarm-magnetic-lab`的origin；upstream保持只读且未发生推送。
