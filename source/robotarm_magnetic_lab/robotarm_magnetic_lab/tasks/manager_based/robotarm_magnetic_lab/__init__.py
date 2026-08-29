@@ -165,5 +165,8 @@ gym.register(
             f"{__name__}.robotarm_magnetic_task010_env_cfg:"
             "RobotarmMagneticTask010EnvCfg"
         ),
+        "rsl_rl_cfg_entry_point": (
+            f"{agents.__name__}.task010_rsl_rl_ppo_cfg:Task010RslRlPpoCfg"
+        ),
     },
 )

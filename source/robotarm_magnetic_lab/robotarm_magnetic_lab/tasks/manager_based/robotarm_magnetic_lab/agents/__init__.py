@@ -2,3 +2,7 @@
 # All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
+
+from .task010_rsl_rl_ppo_cfg import Task010RslRlPpoCfg
+
+__all__ = ["Task010RslRlPpoCfg"]
