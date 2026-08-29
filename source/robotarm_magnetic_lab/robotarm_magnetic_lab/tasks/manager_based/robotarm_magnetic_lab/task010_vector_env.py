@@ -38,6 +38,9 @@ class Task010VectorEnv(Task009D0VectorEnv):
         _assert_finite_tree(robot.data.joint_vel, "robot joint velocity")
         camera = self.scene["capsule_camera"]
         _assert_finite_tree(camera.data.output, "RGB observation")
+        encoder = getattr(self, "_task010_visual_encoder", None)
+        if encoder is not None:
+            encoder.reset(torch.arange(self.num_envs, device=self.device))
 
     def _horizon_termination_flags(self):
         terminated = torch.ones(self.num_envs, dtype=torch.bool, device=self.device)

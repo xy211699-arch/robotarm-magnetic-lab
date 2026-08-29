@@ -51,3 +51,7 @@ from .task009d0_terms import (  # noqa: F401
     task009d0_rgb,
     task009d0_runtime,
 )
+from .task010_terms import (  # noqa: F401
+    task010_actor_observation,
+    task010_visual_encoder,
+)
