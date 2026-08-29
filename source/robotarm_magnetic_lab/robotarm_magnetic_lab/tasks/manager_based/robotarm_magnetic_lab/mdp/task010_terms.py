@@ -57,6 +57,8 @@ def task010_total_reward(env) -> torch.Tensor:
 
 
 def task010_privileged_observation(env) -> torch.Tensor:
+    if task009d0_runtime(env).latest_update is None:
+        return torch.zeros((env.num_envs, 65), device=env.device, dtype=torch.float32)
     builder = getattr(env, "_task010_privileged_builder", None)
     if builder is None:
         builder = Task010PrivilegedBuilder()
