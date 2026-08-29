@@ -334,7 +334,8 @@ def _resume(args) -> dict:
     launch.output_root = parent_dir.parent
     launch.worker_command = None; launch.worker_arg = []
     launch.config = original[config_index]
-    launch.max_updates = int(args.additional_updates); launch.save_interval = 1
+    launch.max_updates = int(args.additional_updates)
+    launch.save_interval = int(manifest["save_interval"])
     launch.validation = "disabled"
     launch.seed = int(original[original.index("--seed") + 1]) if "--seed" in original else None
     launch.resume_checkpoint = checkpoint
