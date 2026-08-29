@@ -71,3 +71,12 @@ def test_checkpoint_contains_required_contract_fields(tmp_path: Path):
         "dependency_audit_hash", "actor_observation_schema_sha256", "action_schema_sha256",
     ):
         assert key in record
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires CUDA map-location regression")
+def test_rng_restore_accepts_checkpoint_state_mapped_to_cuda(tmp_path: Path):
+    runner = _runner(tmp_path)
+    state = runner._rng_state()
+    state["torch_cpu"] = state["torch_cpu"].cuda()
+    state["torch_cuda"] = [item.cuda() for item in state["torch_cuda"]]
+    runner._restore_rng(state)

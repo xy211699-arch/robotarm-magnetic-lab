@@ -99,7 +99,7 @@ def _command_from_args(args, run_dir: Path) -> list[str]:
         "--max-updates", str(args.max_updates),
         "--save-interval", str(args.save_interval),
         "--validation", str(args.validation),
-        "--backend", "isaac", "--device", "cuda:0", "--headless",
+        "--backend", "isaac", "--device", "cuda:0",
     ]
     if args.seed is not None:
         command += ["--seed", str(args.seed)]

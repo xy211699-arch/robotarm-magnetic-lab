@@ -70,7 +70,6 @@ def _parser() -> argparse.ArgumentParser:
         default=Path("/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_cnn_gru/gate0/prerequisites.json"),
     )
     parser.add_argument("--seed", type=int, help=argparse.SUPPRESS)
-    parser.add_argument("--kit_args", help=argparse.SUPPRESS)
     return parser
 
 
@@ -78,7 +77,9 @@ def main() -> None:
     parser = _parser()
     preliminary, _ = parser.parse_known_args()
     if preliminary.backend == "fake":
-        args = parser.parse_args()
+        args, unknown = parser.parse_known_args()
+        if any(not item.startswith("--kit_args") for item in unknown):
+            parser.error(f"unrecognized arguments: {' '.join(unknown)}")
         config, runner = _build_runner(args, "cpu")
         updates = config.training.max_updates if args.max_updates is None else int(args.max_updates)
         interval = config.checkpoints.rolling_interval if args.save_interval is None else int(args.save_interval)
