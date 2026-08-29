@@ -155,3 +155,15 @@ gym.register(
         ),
     },
 )
+
+gym.register(
+    id="Template-Robotarm-Magnetic-Task010-CNN-GRU-Coverage-Lab-v0",
+    entry_point=f"{__name__}.task010_vector_env:Task010VectorEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": (
+            f"{__name__}.robotarm_magnetic_task010_env_cfg:"
+            "RobotarmMagneticTask010EnvCfg"
+        ),
+    },
+)

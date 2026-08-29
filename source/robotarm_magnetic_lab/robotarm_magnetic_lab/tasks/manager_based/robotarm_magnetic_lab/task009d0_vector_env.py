@@ -56,6 +56,28 @@ class Task009D0VectorEnv(ManagerBasedRLEnv):
             repository_root=TASK009D0_CONFIG_PATH.parents[2],
         )
 
+    def _initial_reachable_coverage_is_valid(
+        self, reachable: torch.Tensor, raw: torch.Tensor
+    ) -> torch.Tensor:
+        """Return the D0 initial-coverage validity mask.
+
+        TASK-010 overrides this protected policy hook without changing D0 reset
+        ordering or the frozen D0 zero-reachable rejection behavior.
+        """
+        del raw
+        return torch.isfinite(reachable) & (reachable > 0)
+
+    def _validate_task_reset(self, initial) -> None:
+        """Task-specific finite-state validation hook."""
+        del initial
+
+    def _horizon_termination_flags(self):
+        """D0 retains its historical truncation-at-horizon semantics."""
+        terminated = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+        truncated = torch.ones(self.num_envs, dtype=torch.bool, device=self.device)
+        time_outs = torch.ones(self.num_envs, dtype=torch.bool, device=self.device)
+        return terminated, truncated, time_outs
+
     def _sample_pose_batch(self):
         env_ids = np.arange(self.num_envs, dtype=np.int64)
         if self.cfg.pose_split == "train":
@@ -144,7 +166,12 @@ class Task009D0VectorEnv(ManagerBasedRLEnv):
         runtime = self._task009d0_coverage_runtime
         runtime.reset_rows(all_rows)
         initial = runtime.capture_initial(boundary=int(self.common_step_counter))
-        if torch.any(initial.reachable.coverage_fraction <= 0).item():
+        self._validate_task_reset(initial)
+        initial_valid = self._initial_reachable_coverage_is_valid(
+            initial.reachable.coverage_fraction,
+            initial.raw.coverage_fraction,
+        )
+        if not torch.all(initial_valid).item():
             raise RuntimeError("TASK-009D0 reset produced non-positive initial C0")
         self._episode_indices += 1
         self._last_pose_batch = pose_batch
@@ -190,9 +217,8 @@ class Task009D0VectorEnv(ManagerBasedRLEnv):
             extras.update(reset_extras)
             extras["terminal_observation"] = terminal
             extras["task009d0_terminal_audit"] = terminal_audit
-            truncated = torch.ones(
-                self.num_envs, dtype=torch.bool, device=self.device
-            )
+            terminated, truncated, time_outs = self._horizon_termination_flags()
+            extras["time_outs"] = time_outs
         return observation, reward, terminated, truncated, extras
 
     def reset_rows_for_test(self, env_ids: torch.Tensor) -> None:
