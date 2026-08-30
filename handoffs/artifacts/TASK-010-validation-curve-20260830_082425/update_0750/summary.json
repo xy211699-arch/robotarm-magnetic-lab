@@ -1,0 +1,35 @@
+{
+  "all_finite": true,
+  "batch_sizes": [
+    12,
+    8
+  ],
+  "checkpoint_sha256": "8b7b23837f41c1c3bd9e50f3ccb7dfcc61fd1bcf8fc286d8cab838f53b25aaca",
+  "config_sha256": "c497fc430af729e7e6fb09849330de23fdea45e568b657a766cc5e030e1d19d4",
+  "mean_final_coverage": 0.9760159329302068,
+  "mean_total_reward": 9.740059185028077,
+  "pose_count": 20,
+  "pose_ids": [
+    "validation-0006",
+    "validation-0011",
+    "validation-0015",
+    "validation-0017",
+    "validation-0019",
+    "validation-0035",
+    "validation-0040",
+    "validation-0042",
+    "validation-0045",
+    "validation-0046",
+    "validation-0051",
+    "validation-0058",
+    "validation-0060",
+    "validation-0063",
+    "validation-0067",
+    "validation-0068",
+    "validation-0069",
+    "validation-0092",
+    "validation-0095",
+    "validation-0097"
+  ],
+  "schema": "robotarm_magnetic_lab.task010_validation_summary"
+}
