@@ -91,7 +91,18 @@ def main() -> None:
                     actor_totals += reward[: len(batch)]
                     alpha_totals += action[: len(batch), 1]
                     mode_counts.scatter_add_(1, action[: len(batch), :1].long(), torch.ones((len(batch), 1), device=args.device))
-                    terminal_audit = step_extras.get("task009d0_terminal_audit")
+                    terminal_boundary = bool(
+                        torch.any(terminated[: len(batch)] | truncated[: len(batch)]).item()
+                    )
+                    # Manager extras persist across an explicit reset.  A
+                    # terminal-audit key can therefore belong to the previous
+                    # validation batch; consume it only when this step itself
+                    # carries a terminal/truncation flag.
+                    terminal_audit = (
+                        step_extras.get("task009d0_terminal_audit")
+                        if terminal_boundary
+                        else None
+                    )
                     runtime = env._task009d0_coverage_runtime
                     current_coverage = (
                         terminal_audit["reachable_coverage"]
@@ -104,7 +115,7 @@ def main() -> None:
                         ).coverage_fraction
                     )
                     coverage_trajectories[:, step_index + 1] = current_coverage[: len(batch)]
-                    if torch.any(terminated[: len(batch)]).item():
+                    if terminal_boundary:
                         terminal = terminal_audit
                 if terminal is None:
                     raise RuntimeError("TASK-010 validation did not reach true terminal")

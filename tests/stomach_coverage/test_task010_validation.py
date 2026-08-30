@@ -50,6 +50,8 @@ def test_validation_trajectory_uses_authoritative_accumulator_snapshot():
     source = CHECKPOINT_SCRIPT.read_text(encoding="utf-8")
     assert "runtime._snapshot(" in source
     assert "runtime.reachable_accumulator" in source
+    assert "if terminal_boundary" in source
+    assert "terminated[: len(batch)] | truncated[: len(batch)]" in source
     assert "latest = env._task009d0_coverage_runtime.latest_update" not in source
     assert "env._task010_recovery_tracker.previous_coverage" not in source
 

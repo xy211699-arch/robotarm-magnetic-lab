@@ -1084,3 +1084,6 @@
 - 完整update-0250复测发现所有剩余下降仅位于终止边界：terminal audit仍从可能滞后一轮的
   `latest_update`读取标量，而审计mask已是最新状态。终止标量改为直接快照同一累计mask，
   保证轨迹末点、终止摘要和审计mask三者一致；未修改模型、策略、物理或检查点。
+- 第二次完整复测通过逐行对照最终确认主因：Manager `step_extras`在显式reset后保留上一批的
+  terminal-audit键，第二批前1199步因此逐行复用了第一批终值。验证器现仅在当前步实际返回
+  terminated/truncated标志时消费terminal audit，其余边界读取当前累计mask。
