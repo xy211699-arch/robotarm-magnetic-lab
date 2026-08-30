@@ -51,8 +51,10 @@ def main() -> None:
     output = Path(args.output_dir)
     output.mkdir(parents=True, exist_ok=True)
     records_path = output / "pose_records.jsonl"
-    if records_path.exists():
-        records_path.unlink()
+    trajectory_path = output / "coverage_trajectories.jsonl"
+    for stale in (records_path, trajectory_path):
+        if stale.exists():
+            stale.unlink()
 
     cfg = parse_env_cfg(frozen.task_id, device=args.device, num_envs=12)
     cfg.pose_split = "validation"
@@ -71,8 +73,14 @@ def main() -> None:
                 actor_totals = torch.zeros((len(batch),), device=args.device)
                 alpha_totals = torch.zeros_like(actor_totals)
                 mode_counts = torch.zeros((len(batch), 6), device=args.device)
+                coverage_trajectories = torch.empty((len(batch), 1201), device=args.device, dtype=torch.float64)
+                coverage_trajectories[:, 0] = torch.as_tensor(
+                    extras["task009d0_reset"]["initial_coverage"][: len(batch)],
+                    device=args.device,
+                    dtype=torch.float64,
+                )
                 terminal = None
-                for _step in range(1200):
+                for step_index in range(1200):
                     # Keep only the Actor forward pass gradient-free.  Wrapping
                     # env.step() in inference_mode makes mutable coverage state
                     # into inference tensors, which cannot be reset in-place
@@ -83,8 +91,16 @@ def main() -> None:
                     actor_totals += reward[: len(batch)]
                     alpha_totals += action[: len(batch), 1]
                     mode_counts.scatter_add_(1, action[: len(batch), :1].long(), torch.ones((len(batch), 1), device=args.device))
+                    terminal_audit = step_extras.get("task009d0_terminal_audit")
+                    latest = env._task009d0_coverage_runtime.latest_update
+                    current_coverage = (
+                        terminal_audit["reachable_coverage"]
+                        if terminal_audit is not None
+                        else latest.reachable.coverage_fraction
+                    )
+                    coverage_trajectories[:, step_index + 1] = current_coverage[: len(batch)]
                     if torch.any(terminated[: len(batch)]).item():
-                        terminal = step_extras["task009d0_terminal_audit"]
+                        terminal = terminal_audit
                 if terminal is None:
                     raise RuntimeError("TASK-010 validation did not reach true terminal")
                 for row, pose_id in enumerate(batch):
@@ -102,6 +118,16 @@ def main() -> None:
                     }
                     with records_path.open("a", encoding="utf-8") as stream:
                         stream.write(json.dumps(payload, sort_keys=True) + "\n")
+                    trajectory = {
+                        "schema": "robotarm_magnetic_lab.task010_validation_coverage_trajectory",
+                        "pose_id": pose_id,
+                        "checkpoint_sha256": checkpoint_hash,
+                        "config_sha256": frozen.config_sha256,
+                        "control_hz": 10,
+                        "coverage_fraction": coverage_trajectories[row].cpu().tolist(),
+                    }
+                    with trajectory_path.open("a", encoding="utf-8") as stream:
+                        stream.write(json.dumps(trajectory, sort_keys=True) + "\n")
         finally:
             env.close()
     result = summarize(records_path, checkpoint_sha256=checkpoint_hash, config_sha256=frozen.config_sha256)
