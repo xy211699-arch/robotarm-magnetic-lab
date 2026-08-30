@@ -201,14 +201,20 @@ class Task009D0VectorEnv(ManagerBasedRLEnv):
             latest = runtime.latest_update
             if latest is None:
                 raise RuntimeError("TASK-009D0 terminal coverage snapshot is unavailable")
+            # ``latest_update`` is a boundary cache used by manager terms. At
+            # the synchronous horizon it can lag the accumulator mask by one
+            # manager evaluation, so derive terminal values from the same
+            # masks that are frozen into the audit record.
+            terminal_reachable = runtime._snapshot(runtime.reachable_accumulator)
+            terminal_raw = runtime._snapshot(runtime.raw_accumulator)
             capsule = self.scene["capsule"]
             action_term = self.action_manager.get_term("parameterized_force")
             terminal_audit = {
                 "formal_step": int(self._formal_step),
                 "episode_length": self.episode_length_buf.detach().clone(),
                 "frame_ids": latest.frame_ids.detach().clone(),
-                "reachable_coverage": latest.reachable.coverage_fraction.detach().clone(),
-                "raw_coverage": latest.raw.coverage_fraction.detach().clone(),
+                "reachable_coverage": terminal_reachable.coverage_fraction.detach().clone(),
+                "raw_coverage": terminal_raw.coverage_fraction.detach().clone(),
                 "reachable_masks": runtime.reachable_accumulator.mask.detach().clone(),
                 "raw_masks": runtime.raw_accumulator.mask.detach().clone(),
                 "root_pose": capsule.data.root_pose_w.torch.detach().clone(),

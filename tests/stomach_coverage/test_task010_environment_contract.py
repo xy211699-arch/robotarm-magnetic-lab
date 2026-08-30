@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 import torch
 from types import SimpleNamespace
 
@@ -59,6 +60,16 @@ def test_task010_horizon_is_terminal_not_timeout():
     assert terminated.tolist() == [True, True, True]
     assert truncated.tolist() == [False, False, False]
     assert time_outs.tolist() == [False, False, False]
+
+
+def test_terminal_audit_snapshots_authoritative_accumulators():
+    source = Path(
+        "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/"
+        "robotarm_magnetic_lab/task009d0_vector_env.py"
+    ).read_text(encoding="utf-8")
+    assert "terminal_reachable = runtime._snapshot(runtime.reachable_accumulator)" in source
+    assert "terminal_raw = runtime._snapshot(runtime.raw_accumulator)" in source
+    assert '"reachable_coverage": latest.reachable.coverage_fraction' not in source
 
 
 def test_task010_registered_with_independent_task_id():
