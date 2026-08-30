@@ -72,15 +72,19 @@ def main() -> None:
                 alpha_totals = torch.zeros_like(actor_totals)
                 mode_counts = torch.zeros((len(batch), 6), device=args.device)
                 terminal = None
-                with torch.inference_mode():
-                    for _step in range(1200):
+                for _step in range(1200):
+                    # Keep only the Actor forward pass gradient-free.  Wrapping
+                    # env.step() in inference_mode makes mutable coverage state
+                    # into inference tensors, which cannot be reset in-place
+                    # before the second (8-pose) validation batch.
+                    with torch.no_grad():
                         action = actor(observations["policy"], stochastic_output=False)
-                        observations, reward, terminated, truncated, step_extras = env.step(action)
-                        actor_totals += reward[: len(batch)]
-                        alpha_totals += action[: len(batch), 1]
-                        mode_counts.scatter_add_(1, action[: len(batch), :1].long(), torch.ones((len(batch), 1), device=args.device))
-                        if torch.any(terminated[: len(batch)]).item():
-                            terminal = step_extras["task009d0_terminal_audit"]
+                    observations, reward, terminated, truncated, step_extras = env.step(action)
+                    actor_totals += reward[: len(batch)]
+                    alpha_totals += action[: len(batch), 1]
+                    mode_counts.scatter_add_(1, action[: len(batch), :1].long(), torch.ones((len(batch), 1), device=args.device))
+                    if torch.any(terminated[: len(batch)]).item():
+                        terminal = step_extras["task009d0_terminal_audit"]
                 if terminal is None:
                     raise RuntimeError("TASK-010 validation did not reach true terminal")
                 for row, pose_id in enumerate(batch):

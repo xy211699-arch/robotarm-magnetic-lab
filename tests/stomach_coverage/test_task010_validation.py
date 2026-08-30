@@ -8,6 +8,7 @@ import pytest
 
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts/stomach_coverage/summarize_task010_validation.py"
+CHECKPOINT_SCRIPT = Path(__file__).resolve().parents[2] / "scripts/stomach_coverage/validate_task010_checkpoint.py"
 SPEC = importlib.util.spec_from_file_location("task010_validation_summary", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
@@ -35,6 +36,13 @@ def test_validation_uses_exact_twenty_pose_ids():
         "validation-0069", "validation-0092", "validation-0095", "validation-0097",
     )
     assert tuple(map(len, MODULE.validation_batches())) == (12, 8)
+
+
+def test_validation_keeps_mutable_environment_outside_inference_mode():
+    source = CHECKPOINT_SCRIPT.read_text(encoding="utf-8")
+    assert "with torch.inference_mode()" not in source
+    assert "with torch.no_grad():\n                        action = actor(" in source
+    assert "observations, reward, terminated, truncated, step_extras = env.step(action)" in source
 
 
 def test_summary_accepts_only_complete_unique_frozen_set(tmp_path: Path):
