@@ -92,14 +92,16 @@ def main() -> None:
                     alpha_totals += action[: len(batch), 1]
                     mode_counts.scatter_add_(1, action[: len(batch), :1].long(), torch.ones((len(batch), 1), device=args.device))
                     terminal_audit = step_extras.get("task009d0_terminal_audit")
+                    runtime = env._task009d0_coverage_runtime
                     current_coverage = (
                         terminal_audit["reachable_coverage"]
                         if terminal_audit is not None
-                        # The recovery tracker consumed this boundary's coverage
-                        # while computing the reward.  Unlike runtime.latest_update,
-                        # it cannot retain the previous validation batch after an
-                        # explicit reset between the frozen 12- and 8-pose batches.
-                        else env._task010_recovery_tracker.previous_coverage
+                        # Snapshot the authoritative float64 cumulative mask.
+                        # Both latest_update and the reward tracker can retain a
+                        # cached row value across the explicit 12->8 batch reset.
+                        else runtime._snapshot(
+                            runtime.reachable_accumulator
+                        ).coverage_fraction
                     )
                     coverage_trajectories[:, step_index + 1] = current_coverage[: len(batch)]
                     if torch.any(terminated[: len(batch)]).item():

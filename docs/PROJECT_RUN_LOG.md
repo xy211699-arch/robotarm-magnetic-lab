@@ -1078,3 +1078,6 @@
 - 首次独立轨迹补采在update 250后被单调性门禁中止：第二批8位姿的非终点采样错误读取第一批
   遗留的`latest_update`。改为读取奖励状态机已消费、与当前10 Hz边界绑定的coverage；终点仍
   使用reset前冻结的terminal audit。模型、物理、奖励和既有检查点均未修改。
+- 复测表明奖励tracker同样在显式12→8验证批次切换后保留行缓存，且float32会使终点产生约
+  1e-8伪下降；最终改为对权威float64累计覆盖mask逐边界快照。该路径不依赖latest/tracker
+  缓存，并与terminal audit使用同一面积权重定义。

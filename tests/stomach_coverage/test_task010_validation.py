@@ -46,10 +46,12 @@ def test_validation_keeps_mutable_environment_outside_inference_mode():
     assert "observations, reward, terminated, truncated, step_extras = env.step(action)" in source
 
 
-def test_validation_trajectory_uses_boundary_bound_reward_coverage():
+def test_validation_trajectory_uses_authoritative_accumulator_snapshot():
     source = CHECKPOINT_SCRIPT.read_text(encoding="utf-8")
-    assert "env._task010_recovery_tracker.previous_coverage" in source
+    assert "runtime._snapshot(" in source
+    assert "runtime.reachable_accumulator" in source
     assert "latest = env._task009d0_coverage_runtime.latest_update" not in source
+    assert "env._task010_recovery_tracker.previous_coverage" not in source
 
 
 def test_summary_accepts_only_complete_unique_frozen_set(tmp_path: Path):
