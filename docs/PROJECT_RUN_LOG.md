@@ -1096,3 +1096,6 @@
 - 新增TASK-010三正式种子后台协调器：固定按991001/991002/991003依次训练、确定性验证并
   汇总1201点三种子均值/标准差；提供只读status及paused_on_error后的人工continue。CPU
   伪进程定向测试11项、stomach_coverage回归197项通过；未启动任何正式种子或GPU任务。
+- 核查三正式种子流程的TensorBoard状态：训练runner已通过`SummaryWriter`向每次运行目录下
+  的`tensorboard/`写入事件（10秒刷新），但协调器不自动启动TensorBoard网页服务；当前系统
+  也没有TensorBoard服务进程，需在独立终端按需启动观察。
