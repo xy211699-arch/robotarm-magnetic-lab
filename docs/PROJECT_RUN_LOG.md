@@ -1093,3 +1093,6 @@
 - 按用户要求将上述补测的16个原始工件、说明文件和逐文件SHA-256清单复制到
   `handoffs/artifacts/TASK-010-validation-curve-20260830_082425/`，用于Linux/Windows双向
   GitHub交接；原始外部工件保持不变，未重新训练或重新采样。
+- 新增TASK-010三正式种子后台协调器：固定按991001/991002/991003依次训练、确定性验证并
+  汇总1201点三种子均值/标准差；提供只读status及paused_on_error后的人工continue。CPU
+  伪进程定向测试11项、stomach_coverage回归197项通过；未启动任何正式种子或GPU任务。
