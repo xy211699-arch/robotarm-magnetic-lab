@@ -1099,3 +1099,7 @@
 - 核查三正式种子流程的TensorBoard状态：训练runner已通过`SummaryWriter`向每次运行目录下
   的`tensorboard/`写入事件（10秒刷新），但协调器不自动启动TensorBoard网页服务；当前系统
   也没有TensorBoard服务进程，需在独立终端按需启动观察。
+- 诊断三正式种子流程“卡住”：991001训练已正常完成1000 updates，`update_1000.pt`存在且验证
+  进程退出码为0、20/20位姿工件齐全；协调器随后因把原始配置文件SHA-256（`88e8...`）错误
+  地与冻结配置内部规范哈希（`c497...`）比较，在`validation-0006`审计处进入
+  `paused_on_error`，因此没有启动991002。当前无训练/验证进程及Isaac Lab GPU占用。
