@@ -73,7 +73,7 @@ def main() -> int:
         points = 1200 if invalid == "points" else 1201
         checkpoint = args.training_dir / "checkpoints/update_1000.pt"
         checkpoint_hash = sha256(checkpoint)
-        config_hash = sha256(args.config)
+        config_hash = str(config["config_sha256"])
         records_path = args.validation_dir / "pose_records.jsonl"
         trajectories_path = args.validation_dir / "coverage_trajectories.jsonl"
         records_path.unlink(missing_ok=True)

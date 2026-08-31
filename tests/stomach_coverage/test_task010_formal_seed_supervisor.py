@@ -127,6 +127,31 @@ def test_failure_pauses_without_starting_later_seed_and_continue_retries_failed_
     assert invocations[-2:] == [(991003, "training", 1), (991003, "validating", 1)]
 
 
+def test_continue_reuses_complete_validation_evidence_after_audit_only_failure(tmp_path: Path):
+    _, output, run_dir = _start(tmp_path, {"invalid": {"991001:validating": "nonfinite"}})
+    state = _wait(run_dir)
+    assert state["state"] == "paused_on_error"
+    trajectory_path = run_dir / "seeds/seed_991001/validation/coverage_trajectories.jsonl"
+    trajectories = [json.loads(line) for line in trajectory_path.read_text().splitlines()]
+    trajectories[0]["coverage_fraction"][17] = trajectories[0]["coverage_fraction"][16]
+    trajectory_path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in trajectories), encoding="utf-8"
+    )
+    deadline = time.monotonic() + 3.0
+    while MODULE._pid_alive(state["worker_pid"]) and time.monotonic() < deadline:
+        time.sleep(0.05)
+    subprocess.run(
+        [sys.executable, str(SCRIPT), "continue", "--run-dir", str(run_dir), "--output-root", str(output)],
+        check=True, text=True, capture_output=True, env=_environment(),
+    )
+    completed = _wait(run_dir, states=("completed",))
+    assert completed["state"] == "completed"
+    assert (991001, "validating", 2) not in _invocations(run_dir)
+    events = [json.loads(line) for line in (run_dir / "events.jsonl").read_text().splitlines()]
+    reused = [row for row in events if row.get("event") == "validated" and row.get("seed") == 991001]
+    assert reused[-1]["existing_evidence_reused"] is True
+
+
 @pytest.mark.parametrize("invalid", ("points", "pose_count", "nonfinite"))
 def test_invalid_validation_evidence_pauses_before_next_seed(tmp_path: Path, invalid: str):
     _, _, run_dir = _start(tmp_path, {"invalid": {"991001:validating": invalid}})
@@ -225,3 +250,11 @@ def test_production_commands_keep_frozen_contract():
     assert training[training.index("--device") + 1] == "cuda:0"
     assert validation[validation.index("--device") + 1] == "cuda:0"
     assert validation[validation.index("--checkpoint") + 1].endswith("update_1000.pt")
+
+
+def test_manifest_separates_raw_file_hash_from_canonical_config_hash():
+    contract = MODULE._validate_frozen_config(CONFIG)
+    raw = json.loads(CONFIG.read_text())
+    assert contract["sha256"] == MODULE._sha256(CONFIG)
+    assert contract["config_sha256"] == raw["config_sha256"]
+    assert contract["sha256"] != contract["config_sha256"]

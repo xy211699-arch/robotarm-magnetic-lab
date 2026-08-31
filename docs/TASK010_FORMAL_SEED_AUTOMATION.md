@@ -44,7 +44,20 @@ cd /mnt/isaac-linux/robotarm_magnetic_lab_task010
   scripts/stomach_coverage/task010_formal_seed_supervisor.py continue
 ```
 
-`continue`只重试当前暂停种子的失败阶段，不跳过种子、不删除原有日志、不自动选择替代检查点，也不自动恢复训练检查点。
+`continue`不会重训已经完成的种子。若暂停发生在验证后的工件审计阶段，它会先重新审计
+现有20条验证记录和1201点轨迹；审计通过时直接复用这些工件并进入下一种子。只有现有工件
+缺失或仍不符合合同时，才重新启动当前种子的验证阶段。它不跳过种子、不删除原有日志、
+不自动选择替代检查点，也不自动恢复训练检查点。
+
+指定既有运行目录继续时使用：
+
+```bash
+RUN="$(readlink -f artifacts/task010_cnn_gru/formal_seeds/latest)"
+
+./run_isaaclab.sh -p \
+  scripts/stomach_coverage/task010_formal_seed_supervisor.py continue \
+  --run-dir "$RUN"
+```
 
 ## 输出目录
 

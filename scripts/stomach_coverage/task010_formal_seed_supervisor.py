@@ -122,9 +122,19 @@ def _validate_frozen_config(path: Path) -> dict:
         raise ValueError(f"TASK-010 frozen formal contract mismatch: {wrong}")
     if len(set(pose_ids)) != 20:
         raise ValueError("TASK-010 frozen validation pose IDs must be unique")
+    config_sha256 = config.get("config_sha256")
+    if (
+        not isinstance(config_sha256, str)
+        or len(config_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in config_sha256)
+    ):
+        raise ValueError("TASK-010 frozen config must contain a lowercase SHA-256 config_sha256")
     return {
         "path": str(resolved),
+        # File bytes protect an active run from on-disk configuration changes.
         "sha256": _sha256(resolved),
+        # Validation artifacts use the canonical hash embedded in the frozen config.
+        "config_sha256": config_sha256,
         "pose_ids": list(pose_ids),
         "num_envs": NUM_ENVS,
         "rollout_steps": ROLLOUT_STEPS,
@@ -378,7 +388,11 @@ def _load_validation_curves(manifest: dict, record: dict) -> tuple[list[str], li
     validation_dir = Path(record["validation_dir"])
     checkpoint = Path(record["training_dir"]) / "checkpoints/update_1000.pt"
     expected_checkpoint = _sha256(checkpoint)
-    expected_config = manifest["config"]["sha256"]
+    expected_config = manifest["config"].get("config_sha256")
+    if expected_config is None:
+        # Backward compatibility for runs created before the manifest carried both
+        # the raw file hash and the canonical frozen-config hash.
+        expected_config = _read_json(Path(manifest["config"]["path"]))["config_sha256"]
     expected_ids = tuple(manifest["config"]["pose_ids"])
     records = [json.loads(line) for line in (validation_dir / "pose_records.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
     trajectories = [json.loads(line) for line in (validation_dir / "coverage_trajectories.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -421,6 +435,29 @@ def _write_seed_mean(validation_dir: Path, curves: list[list[float]]) -> list[fl
 def _audit_validation(manifest: dict, record: dict) -> list[float]:
     _, curves = _load_validation_curves(manifest, record)
     return _write_seed_mean(Path(record["validation_dir"]), curves)
+
+
+def _mark_validated(run_dir: Path, state: dict, seed: int, record: dict, mean: list[float], *, reused: bool) -> None:
+    record.update(
+        state="validated",
+        validation_complete=True,
+        error_stage=None,
+        error_summary=None,
+        validation_pose_progress=20,
+        mean_curve_points=len(mean),
+        mean_final_coverage=mean[-1],
+    )
+    state.update(state="validated", current_stage=None, heartbeat_epoch_s=time.time(), error_summary=None)
+    _atomic_json(run_dir / "status.json", state)
+    _append_jsonl(
+        run_dir / "events.jsonl",
+        {
+            "event": "validated",
+            "seed": seed,
+            "mean_final_coverage": mean[-1],
+            "existing_evidence_reused": reused,
+        },
+    )
 
 
 def _aggregate(run_dir: Path, state: dict) -> Path:
@@ -509,6 +546,17 @@ def _worker(run_dir: Path, continuation: bool) -> int:
                 record.update(training_complete=True, latest_checkpoint=str(checkpoint), latest_checkpoint_sha256=_sha256(checkpoint))
                 _atomic_json(run_dir / "status.json", state)
 
+            if continuation and record.get("error_stage") == "validating":
+                try:
+                    mean = _audit_validation(manifest, record)
+                except (FileNotFoundError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+                    # Existing evidence is incomplete or still invalid. Preserve the
+                    # established behavior and launch a fresh validation attempt.
+                    pass
+                else:
+                    _mark_validated(run_dir, state, seed, record, mean, reused=True)
+                    continue
+
             stage = "validating"
             record["validation_attempts"] += 1
             attempt = int(record["validation_attempts"])
@@ -522,18 +570,7 @@ def _worker(run_dir: Path, continuation: bool) -> int:
                 mean = _audit_validation(manifest, record)
             except BaseException as error:
                 return _pause(run_dir, state, seed, stage, error)
-            record.update(
-                state="validated",
-                validation_complete=True,
-                error_stage=None,
-                error_summary=None,
-                validation_pose_progress=20,
-                mean_curve_points=len(mean),
-                mean_final_coverage=mean[-1],
-            )
-            state.update(state="validated", current_stage=None, heartbeat_epoch_s=time.time())
-            _atomic_json(run_dir / "status.json", state)
-            _append_jsonl(run_dir / "events.jsonl", {"event": "validated", "seed": seed, "mean_final_coverage": mean[-1]})
+            _mark_validated(run_dir, state, seed, record, mean, reused=False)
 
         output = _aggregate(run_dir, state)
         state.update(
