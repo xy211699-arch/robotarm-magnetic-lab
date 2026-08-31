@@ -1,0 +1,6 @@
+e1e8bf3a7e0bf37adadc6f9e42f674a2ed6f2d51d78d9a30b600bb8a5343b8de  handoffs/artifacts/TASK-010-three-formal-seeds-20260830/task010-three-formal-seeds-20260830T124744.667141Z-fcf8b406.tar.zst.part-00
+f16c1d13b047dad245a4fcc85a30cc2fcf21d1beb97e6318948ababeada06fbf  handoffs/artifacts/TASK-010-three-formal-seeds-20260830/task010-three-formal-seeds-20260830T124744.667141Z-fcf8b406.tar.zst.part-01
+8f6bb33886bda586509425d499d50b4b94777e4871f13d8916a04801126e5111  handoffs/artifacts/TASK-010-three-formal-seeds-20260830/task010-three-formal-seeds-20260830T124744.667141Z-fcf8b406.tar.zst.part-02
+6cbb46442b86814ae11e7cbb2870e311b5ad6cef7e8a7278d421dd0f3f1bed72  handoffs/artifacts/TASK-010-three-formal-seeds-20260830/task010-three-formal-seeds-20260830T124744.667141Z-fcf8b406.tar.zst.part-03
+bb0122756964c17ea03ad1f113e0c0241769784c5efa1067c5e595c172b241c4  handoffs/artifacts/TASK-010-three-formal-seeds-20260830/task010-three-formal-seeds-20260830T124744.667141Z-fcf8b406.tar.zst.part-04
+d2aa5fa54aa694a2f036418340c2754e1b8a5f2b434f8c41a2e12927fd9a5537  handoffs/artifacts/TASK-010-three-formal-seeds-20260830/task010-three-formal-seeds-20260830T124744.667141Z-fcf8b406.tar.zst.part-05
