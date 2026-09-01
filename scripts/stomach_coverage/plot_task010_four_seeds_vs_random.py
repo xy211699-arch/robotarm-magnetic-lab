@@ -22,6 +22,7 @@ POSE_IDS = (
     "validation-0069", "validation-0092", "validation-0095", "validation-0097",
 )
 POINTS = 1201
+LEGACY_POSE_IDS = POSE_IDS[:5]
 
 
 def file_sha256(path: Path) -> str:
@@ -44,18 +45,24 @@ def load_model_mean(path: Path) -> np.ndarray:
     return curves.mean(axis=0)
 
 
-def load_random_mean(run_directory: Path, policy_id: str) -> tuple[np.ndarray, list[Path]]:
+def load_random_mean(
+    run_directory: Path,
+    policy_id: str,
+    *,
+    pose_ids: tuple[str, ...] = POSE_IDS,
+    episode_prefix: str = "comparison-",
+) -> tuple[np.ndarray, list[Path]]:
     files = [
-        Path(run_directory) / "episodes" / f"comparison-{pose_id}-{policy_id.lower()}.jsonl"
-        for pose_id in POSE_IDS
+        Path(run_directory) / "episodes" / f"{episode_prefix}{pose_id}-{policy_id.lower()}.jsonl"
+        for pose_id in pose_ids
     ]
     missing = [str(path) for path in files if not path.is_file()]
     if missing:
         raise ValueError(
-            f"{policy_id} does not yet have all 20 completed episodes; missing {len(missing)}"
+            f"{policy_id} does not yet have all {len(pose_ids)} completed episodes; missing {len(missing)}"
         )
     curves = []
-    for pose_id, path in zip(POSE_IDS, files, strict=True):
+    for pose_id, path in zip(pose_ids, files, strict=True):
         rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
         if len(rows) != 3001:
             raise ValueError(f"random episode must contain C0+3000 boundaries: {path}")
@@ -112,20 +119,46 @@ def main() -> None:
     )
     parser.add_argument(
         "--output-dir", type=Path,
-        default=ROOT / "artifacts/task010_cnn_gru/comparisons/update1000_four_seeds_vs_r1_r3",
+        default=None,
+    )
+    parser.add_argument(
+        "--legacy-five-pose-random", action="store_true",
+        help="temporarily compare against the original five-pose TASK-009C R1/R3 run",
+    )
+    parser.add_argument(
+        "--legacy-random-run-dir", type=Path,
+        default=ROOT.parent / "robotarm_magnetic_lab/artifacts/task009c_random_baseline_preexperiment/formal-20260827_092532_645812Z",
     )
     args = parser.parse_args()
 
     model_paths = default_model_paths()
     curves = {label: load_model_mean(path) for label, path in model_paths.items()}
-    random_run = latest_random_run(args.random_output_root)
+    sample_sizes = {label: 20 for label in curves}
+    if args.legacy_five_pose_random:
+        random_run = args.legacy_random_run_dir
+        random_pose_ids = LEGACY_POSE_IDS
+        episode_prefix = "formal-"
+        random_suffix = " / legacy 5-pose"
+    else:
+        random_run = latest_random_run(args.random_output_root)
+        random_pose_ids = POSE_IDS
+        episode_prefix = "comparison-"
+        random_suffix = ""
     source_paths = list(model_paths.values())
     for policy_id in ("R1", "R3"):
-        curve, paths = load_random_mean(random_run, policy_id)
-        curves[f"Random {policy_id}"] = curve
+        curve, paths = load_random_mean(
+            random_run, policy_id, pose_ids=random_pose_ids, episode_prefix=episode_prefix
+        )
+        label = f"Random {policy_id}{random_suffix}"
+        curves[label] = curve
+        sample_sizes[label] = len(random_pose_ids)
         source_paths.extend(paths)
 
-    output = args.output_dir
+    output = args.output_dir or ROOT / "artifacts/task010_cnn_gru/comparisons" / (
+        "update1000_four_seeds_vs_r1_r3_legacy5"
+        if args.legacy_five_pose_random
+        else "update1000_four_seeds_vs_r1_r3"
+    )
     output.mkdir(parents=True, exist_ok=True)
     time_s = np.arange(POINTS, dtype=np.float64) / 10.0
     csv_path = output / "update1000_four_seeds_vs_r1_r3.csv"
@@ -144,7 +177,7 @@ def main() -> None:
     for (label, curve), (color, linestyle, marker) in zip(curves.items(), styles, strict=True):
         axis.plot(
             time_s, 100.0 * curve, color=color, linestyle=linestyle, linewidth=2.2,
-            marker=marker, markevery=60, markersize=5, label=f"{label} (n=20)",
+            marker=marker, markevery=60, markersize=5, label=f"{label} (n={sample_sizes[label]})",
         )
     axis.set_xlabel("Simulation time (s)", fontsize=13)
     axis.set_ylabel("Mean reachable area-weighted cumulative coverage (%)", fontsize=13)
@@ -167,6 +200,9 @@ def main() -> None:
         "points_per_curve": POINTS,
         "pose_ids": list(POSE_IDS),
         "curves": list(curves),
+        "curve_sample_sizes": sample_sizes,
+        "random_pose_ids": list(random_pose_ids),
+        "legacy_five_pose_random": bool(args.legacy_five_pose_random),
         "random_run_directory": str(random_run.resolve()),
         "sources": [
             {"path": str(path.resolve()), "bytes": path.stat().st_size, "sha256": file_sha256(path)}

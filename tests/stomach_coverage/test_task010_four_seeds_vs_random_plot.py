@@ -49,3 +49,20 @@ def test_random_loader_uses_exact_first_1201_of_3001_boundaries(tmp_path: Path):
     curve, paths = MODULE.load_random_mean(tmp_path, "R1")
     assert len(paths) == 20 and curve.shape == (1201,)
     assert curve[-1] == pytest.approx(0.4)
+
+
+def test_random_loader_accepts_explicit_legacy_five_pose_set(tmp_path: Path):
+    episodes = tmp_path / "episodes"
+    episodes.mkdir()
+    for pose_id in MODULE.LEGACY_POSE_IDS:
+        path = episodes / f"formal-{pose_id}-r3.jsonl"
+        rows = [
+            {"policy_id": "R3", "pose_id": pose_id, "boundary_index": index,
+             "sim_time_s": index / 10.0, "reachable_coverage_fraction": index / 3000.0}
+            for index in range(3001)
+        ]
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    curve, paths = MODULE.load_random_mean(
+        tmp_path, "R3", pose_ids=MODULE.LEGACY_POSE_IDS, episode_prefix="formal-"
+    )
+    assert len(paths) == 5 and curve[-1] == pytest.approx(0.4)
