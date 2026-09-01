@@ -120,14 +120,29 @@ def validate_manifest(
 
 def aggregate_formal(curves: dict[str, list[dict]], config: dict) -> dict[str, dict[str, np.ndarray]]:
     grouped: dict[str, dict[str, np.ndarray]] = {}
-    expected_counts = {**{policy: 5 for policy in POLICY_IDS}, "HOLD": 2}
+    comparison = config.get("schema") == "robotarm_magnetic_lab.task009c_random_baseline_20pose_comparison"
+    if comparison:
+        expected_counts = {policy: len(config["validation_pose_ids"]) for policy in POLICY_IDS}
+        configured_points = {
+            policy: {
+                int(row["action_cycles"]) + 1
+                for row in config["formal_episodes"]
+                if row["policy_id"] == policy
+            }
+            for policy in POLICY_IDS
+        }
+    else:
+        expected_counts = {**{policy: 5 for policy in POLICY_IDS}, "HOLD": 2}
+        configured_points = {policy: {3001} for policy in expected_counts}
     for policy, count in expected_counts.items():
         selected = [rows for rows in curves.values() if rows[0]["policy_id"] == policy]
         if len(selected) != count:
             raise EpisodeProtocolError(f"{policy} requires exactly {count} aligned formal episodes")
         times = np.asarray([row["sim_time_s"] for row in selected[0]], dtype=np.float64)
-        if len(times) != 3001:
-            raise EpisodeProtocolError(f"{policy} curve does not contain 3001 points")
+        if configured_points[policy] != {len(times)}:
+            raise EpisodeProtocolError(
+                f"{policy} curve length differs from the configured 10 Hz episode"
+            )
         for rows in selected[1:]:
             other = np.asarray([row["sim_time_s"] for row in rows], dtype=np.float64)
             if not np.array_equal(times, other):
@@ -158,7 +173,13 @@ def aggregate_formal(curves: dict[str, list[dict]], config: dict) -> dict[str, d
 def write_formal_outputs(output: Path, grouped: dict, config: dict, summaries: dict) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     curves_path = output / "mean_curves_10hz.csv"
-    policies = [*POLICY_IDS, "HOLD"]
+    policies = list(grouped)
+    sample_counts = {
+        policy: len(config.get("validation_pose_ids", ()))
+        if policy != "HOLD" and config.get("schema") == "robotarm_magnetic_lab.task009c_random_baseline_20pose_comparison"
+        else 2 if policy == "HOLD" else 5
+        for policy in policies
+    }
     fields = ["time_s"]
     metrics = (
         "reachable_mean", "reachable_std", "reachable_min", "reachable_max",
@@ -190,7 +211,7 @@ def write_formal_outputs(output: Path, grouped: dict, config: dict, summaries: d
                 writer.writerow(
                     {
                         "policy_id": policy,
-                        "n": 2 if policy == "HOLD" else 5,
+                        "n": sample_counts[policy],
                         "time_s": candidate,
                         "mean": grouped[policy]["reachable_mean"][index],
                         "std": grouped[policy]["reachable_std"][index],
@@ -210,13 +231,20 @@ def write_formal_outputs(output: Path, grouped: dict, config: dict, summaries: d
 def write_figures(output: Path, grouped: dict, config: dict) -> dict:
     import matplotlib.pyplot as plt
 
-    policies = [*POLICY_IDS, "HOLD"]
+    policies = list(grouped)
+    comparison = config.get("schema") == "robotarm_magnetic_lab.task009c_random_baseline_20pose_comparison"
+    sample_counts = {
+        policy: len(config["validation_pose_ids"])
+        if comparison and policy != "HOLD"
+        else 2 if policy == "HOLD" else 5
+        for policy in policies
+    }
     figure, axis = plt.subplots(figsize=(12, 7))
     audit, audit_axis = plt.subplots(figsize=(12, 7))
     for policy in policies:
         style = config["curve_styles"][policy]
         sample = slice(None, None, 10)
-        label = f"{policy} (n={2 if policy == 'HOLD' else 5})"
+        label = f"{policy} (n={sample_counts[policy]})"
         kwargs = {
             "color": style["color"],
             "linestyle": style["linestyle"],

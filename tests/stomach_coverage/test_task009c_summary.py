@@ -98,3 +98,28 @@ def test_candidate_tables_reject_non_boundary_time(tmp_path):
     config = {"candidate_times_s": [30.05]}
     with pytest.raises(EpisodeProtocolError, match="not an exact boundary"):
         write_formal_outputs(tmp_path, grouped, config, {})
+
+
+def test_twenty_pose_comparison_uses_configured_1501_points_without_hold():
+    times = np.arange(1501, dtype=np.float64) / 10.0
+    curves = {}
+    episodes = []
+    pose_ids = [f"validation-{index:04d}" for index in range(20)]
+    for policy in POLICIES:
+        for pose_id in pose_ids:
+            episode_id = f"{policy}-{pose_id}"
+            episodes.append({"policy_id": policy, "action_cycles": 1500})
+            curves[episode_id] = [
+                {"policy_id": policy, "sim_time_s": float(time_s),
+                 "reachable_coverage_fraction": float(time_s / 150.0),
+                 "raw_coverage_fraction": float(time_s / 150.0)}
+                for time_s in times
+            ]
+    config = {
+        "schema": "robotarm_magnetic_lab.task009c_random_baseline_20pose_comparison",
+        "validation_pose_ids": pose_ids,
+        "formal_episodes": episodes,
+    }
+    grouped = aggregate_formal(curves, config)
+    assert tuple(grouped) == POLICIES
+    assert all(len(row["time_s"]) == 1501 for row in grouped.values())
