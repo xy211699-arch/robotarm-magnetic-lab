@@ -17,6 +17,16 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.controllers
 
 CONFIG_SCHEMA = "robotarm_magnetic_lab.task009c_random_baseline_preexperiment"
 CONFIG_VERSION = 1
+COMPARISON_CONFIG_SCHEMA = "robotarm_magnetic_lab.task009c_random_baseline_20pose_comparison"
+COMPARISON_CONFIG_VERSION = 1
+FROZEN_VALIDATION_POSE_IDS = (
+    "validation-0006", "validation-0011", "validation-0015", "validation-0017",
+    "validation-0019", "validation-0035", "validation-0040", "validation-0042",
+    "validation-0045", "validation-0046", "validation-0051", "validation-0058",
+    "validation-0060", "validation-0063", "validation-0067", "validation-0068",
+    "validation-0069", "validation-0092", "validation-0095", "validation-0097",
+)
+COMPARISON_SNAPSHOT_TIMES_S = tuple(range(0, 301, 30))
 POLICY_IDS = tuple(f"R{index}" for index in range(1, 8))
 ALL_MODE_VALUES = np.asarray([int(mode) for mode in ParameterizedForceMode], dtype=np.int64)
 MOVE_BIASED_PROBABILITIES = np.asarray(
@@ -41,10 +51,64 @@ def _hash_payload(payload: dict[str, Any]) -> str:
     ).hexdigest()
 
 
+def _load_comparison_config(source: Path, record: dict[str, Any]) -> dict[str, Any]:
+    if record.get("version") != COMPARISON_CONFIG_VERSION:
+        raise ValueError("20-pose comparison configuration version mismatch")
+    expected = str(record.get("config_sha256", ""))
+    payload = {key: value for key, value in record.items() if key != "config_sha256"}
+    if _hash_payload(payload) != expected:
+        raise ValueError("20-pose comparison configuration hash mismatch")
+    root = source.resolve().parents[2]
+    base_path = root / str(record["base_config_path"])
+    base = load_random_baseline_config(base_path)
+    if base["config_sha256"] != record["base_config_sha256"]:
+        raise ValueError("20-pose comparison base configuration hash mismatch")
+    pose_ids = tuple(str(value) for value in record["validation_pose_ids"])
+    if pose_ids != FROZEN_VALIDATION_POSE_IDS:
+        raise ValueError("20-pose comparison must use the frozen validation pose order")
+    policy_ids = tuple(str(value).upper() for value in record["policy_ids"])
+    if policy_ids != POLICY_IDS:
+        raise ValueError("20-pose comparison must contain R1 through R7 exactly once")
+    snapshot_times = tuple(int(value) for value in record["snapshot_times_s"])
+    if snapshot_times != COMPARISON_SNAPSHOT_TIMES_S:
+        raise ValueError("comparison snapshots must be taken every 30 seconds from 0 to 300")
+    duration_s = float(record["episode_duration_s"])
+    if duration_s != 300.0:
+        raise ValueError("20-pose comparison episodes must remain 300 seconds")
+    expanded = dict(base)
+    expanded.update(record)
+    expanded["environment_seeds"] = {
+        pose_id: 950000 + int(pose_id.rsplit("-", 1)[1]) for pose_id in pose_ids
+    }
+    expanded["candidate_times_s"] = list(snapshot_times)
+    expanded["smoke_episodes"] = []
+    expanded["formal_episodes"] = []
+    for pose_id in pose_ids:
+        suffix = int(pose_id.rsplit("-", 1)[1])
+        for policy_id in policy_ids:
+            expanded["formal_episodes"].append(
+                {
+                    "episode_id": f"comparison-{pose_id}-{policy_id.lower()}",
+                    "kind": "formal",
+                    "policy_id": policy_id,
+                    "pose_id": pose_id,
+                    "environment_seed": 950000 + suffix,
+                    "policy_seed": 960000 + 1000 * int(policy_id[1:]) + suffix,
+                    "duration_s": duration_s,
+                    "action_cycles": 3000,
+                }
+            )
+    if len(expanded["formal_episodes"]) != 140:
+        raise AssertionError("20-pose comparison expansion did not produce 140 episodes")
+    return expanded
+
+
 def load_random_baseline_config(path: str | Path) -> dict[str, Any]:
     """Load and validate the single versioned TASK-009C configuration."""
     source = Path(path)
     record = json.loads(source.read_text(encoding="utf-8"))
+    if record.get("schema") == COMPARISON_CONFIG_SCHEMA:
+        return _load_comparison_config(source, record)
     if record.get("schema") != CONFIG_SCHEMA or record.get("version") != CONFIG_VERSION:
         raise ValueError("TASK-009C configuration schema/version mismatch")
     expected = str(record.get("config_sha256", ""))

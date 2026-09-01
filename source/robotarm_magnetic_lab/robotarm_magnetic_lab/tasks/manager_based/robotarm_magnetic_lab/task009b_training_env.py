@@ -51,7 +51,7 @@ def _stable_rgb_digest(rgb: torch.Tensor) -> str:
 
 
 def _load_task009c_pose_records(config_path: Path = TASK009C_CONFIG_PATH):
-    """Load the frozen manifest and only the five authorized validation poses."""
+    """Load the frozen manifest and the validation poses authorized by the config."""
     config = load_random_baseline_config(config_path)
     root = Path(config_path).resolve().parents[2]
     pose_config = config["pose_library"]
@@ -134,7 +134,15 @@ class Task009BTrainingEnv(ManagerBasedRLEnv):
         if task009c_request is not None:
             if env_ids is not None:
                 raise ValueError("TASK-009C single-environment pose reset does not accept env_ids")
-            config, manifest, allowed = _load_task009c_pose_records()
+            requested_config_path = Path(
+                task009c_request.get("config_path", TASK009C_CONFIG_PATH)
+            ).resolve()
+            if TASK009C_CONFIG_PATH.parent.resolve() not in requested_config_path.parents:
+                raise ValueError("TASK-009C requested configuration must be under configs/task009c")
+            config, manifest, allowed = _load_task009c_pose_records(requested_config_path)
+            supplied_config_hash = task009c_request.get("config_sha256")
+            if supplied_config_hash is not None and supplied_config_hash != config["config_sha256"]:
+                raise ValueError("TASK-009C requested configuration hash mismatch")
             pose_id, requested_pose = _validate_task009c_pose_record(
                 task009c_request,
                 config=config,

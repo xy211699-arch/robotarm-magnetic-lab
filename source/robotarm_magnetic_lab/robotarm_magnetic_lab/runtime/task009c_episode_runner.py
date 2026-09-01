@@ -7,7 +7,7 @@ import json
 import math
 import os
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 import numpy as np
 import torch
@@ -259,6 +259,7 @@ class SynchronousEpisodeRunner:
         policy,
         initial_observation: dict,
         output_path: str | Path,
+        boundary_callback: Callable[[int, dict[str, Any]], None] | None = None,
     ) -> tuple[Path, dict[str, Any]]:
         if self.base.num_envs != 1:
             raise EpisodeProtocolError("TASK-009C only supports one sequential environment")
@@ -294,6 +295,8 @@ class SynchronousEpisodeRunner:
             base=self.base,
         )
         rows.append(initial)
+        if boundary_callback is not None:
+            boundary_callback(0, initial)
         with partial.open("w", encoding="utf-8") as stream:
             stream.write(json.dumps(initial, sort_keys=True, separators=(",", ":")) + "\n")
             for boundary in range(1, spec.action_cycles + 1):
@@ -332,6 +335,8 @@ class SynchronousEpisodeRunner:
                 stream.write(json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n")
                 stream.flush()
                 rows.append(row)
+                if boundary_callback is not None:
+                    boundary_callback(boundary, row)
                 if term or trunc:
                     raise EpisodeProtocolError(f"episode ended early at boundary {boundary}")
         validate_episode_records(rows, expected_cycles=spec.action_cycles, expected_episode_id=spec.episode_id)

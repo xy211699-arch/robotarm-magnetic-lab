@@ -32,6 +32,11 @@ parser.add_argument(
     default=ROOT / "configs/task009c/random_baseline_preexperiment_v1.json",
 )
 parser.add_argument(
+    "--save_best_pose_snapshots",
+    action="store_true",
+    help="capture 30-second candidates and retain per-policy plus overall best pose images",
+)
+parser.add_argument(
     "--output_root",
     type=Path,
     default=artifact_root(ROOT) / "task009c_random_baseline_preexperiment",
@@ -52,6 +57,9 @@ import robotarm_magnetic_lab.tasks  # noqa: F401
 from isaaclab.app import launch_simulation
 from isaaclab_tasks.utils import parse_env_cfg
 from robotarm_magnetic_lab.baselines.random_policies import build_policy, load_random_baseline_config
+from robotarm_magnetic_lab.baselines.random_baseline_comparison import (
+    preserve_best_snapshot_images,
+)
 from robotarm_magnetic_lab.coverage.entry_pose_library import file_sha256
 from robotarm_magnetic_lab.coverage.simulator_runtime import P0CoverageRuntime
 from robotarm_magnetic_lab.runtime.task009c_episode_runner import (
@@ -100,12 +108,14 @@ def _artifact(path: Path) -> dict:
     return {"path": str(path.resolve()), "bytes": path.stat().st_size, "sha256": _sha256(path)}
 
 
-def _pose_request(record: dict, manifest_hash: str) -> dict:
+def _pose_request(record: dict, manifest_hash: str, config: dict) -> dict:
     return {
         "pose_id": record["pose_id"],
         "split": record["split"],
         "pose_world_xyzw": record["pose_world_xyzw"],
         "pose_library_manifest_config_sha256": manifest_hash,
+        "config_path": str(args_cli.config.resolve()),
+        "config_sha256": config["config_sha256"],
     }
 
 
@@ -221,7 +231,7 @@ def _run_reset_only(env, output: Path, config: dict, manifest: dict, allowed: di
         record = allowed[pose_id]
         observation, extras = env.reset(
             seed=int(config["environment_seeds"][pose_id]),
-            options={TASK009C_OPTION_KEY: _pose_request(record, manifest["config_sha256"])},
+            options={TASK009C_OPTION_KEY: _pose_request(record, manifest["config_sha256"], config)},
         )
         info = extras[TASK009C_OPTION_KEY]
         trace = info["hold_cycles"]
@@ -356,7 +366,7 @@ def _run_episode_batch(
             seed=spec.environment_seed,
             options={
                 TASK009C_OPTION_KEY: _pose_request(
-                    allowed[spec.pose_id], pose_manifest["config_sha256"]
+                    allowed[spec.pose_id], pose_manifest["config_sha256"], config
                 )
             },
         )
@@ -381,11 +391,22 @@ def _run_episode_batch(
         summary_path = output / "episode_summaries" / f"{spec.episode_id}.json"
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         try:
+            snapshot_boundaries = {
+                int(round(float(second) / 0.1)): int(second)
+                for second in config["candidate_times_s"]
+            }
+
+            def capture_candidate(boundary: int, _row: dict) -> None:
+                second = snapshot_boundaries.get(boundary)
+                if args_cli.save_best_pose_snapshots and second is not None:
+                    evaluator.snapshot(f"candidate_{second:03d}s")
+
             _, episode_summary = runner.run(
                 spec=spec,
                 policy=build_policy(spec.policy_id, spec.policy_seed, config),
                 initial_observation=observation,
                 output_path=boundary_path,
+                boundary_callback=capture_candidate,
             )
             coverage_directory = evaluator.finalize("task009c_episode_complete")
         except Exception as exc:
@@ -450,6 +471,13 @@ def _run_episode_batch(
         )
     if passed != len(specs):
         raise EpisodeProtocolError(f"only {passed}/{len(specs)} configured episodes passed")
+    best_snapshot_manifest = None
+    if args_cli.save_best_pose_snapshots:
+        best_snapshot_manifest = preserve_best_snapshot_images(
+            output,
+            completed_entries.values(),
+            [int(value) for value in config["candidate_times_s"]],
+        )
     _append_run_record(
         manifest_path,
         output_root,
@@ -463,7 +491,7 @@ def _run_episode_batch(
             "completed_at_utc": datetime.now(timezone.utc).isoformat(),
         },
     )
-    return {
+    result = {
         "status": "pass",
         "gate": 4 if kind == "smoke" else 5,
         "run_id": run_id,
@@ -473,6 +501,9 @@ def _run_episode_batch(
         "run_manifest": _artifact(manifest_path),
         "stable_pointer": _artifact(_latest_pointer_path(output_root, kind)),
     }
+    if best_snapshot_manifest is not None:
+        result["best_pose_snapshot_manifest"] = _artifact(best_snapshot_manifest)
+    return result
 
 
 def main() -> int:
