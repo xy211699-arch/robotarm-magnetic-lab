@@ -66,3 +66,18 @@ def test_random_loader_accepts_explicit_legacy_five_pose_set(tmp_path: Path):
         tmp_path, "R3", pose_ids=MODULE.LEGACY_POSE_IDS, episode_prefix="formal-"
     )
     assert len(paths) == 5 and curve[-1] == pytest.approx(0.4)
+
+
+def test_random_loader_accepts_150_second_twenty_pose_records(tmp_path: Path):
+    episodes = tmp_path / "episodes"
+    episodes.mkdir()
+    for pose_id in MODULE.POSE_IDS:
+        path = episodes / f"comparison-{pose_id}-r1.jsonl"
+        rows = [
+            {"policy_id": "R1", "pose_id": pose_id, "boundary_index": index,
+             "sim_time_s": index / 10.0, "reachable_coverage_fraction": index / 1500.0}
+            for index in range(1501)
+        ]
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    curve, paths = MODULE.load_random_mean(tmp_path, "R1")
+    assert len(paths) == 20 and curve.shape == (1201,)

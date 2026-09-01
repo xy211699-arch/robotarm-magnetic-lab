@@ -1,0 +1,17 @@
+{
+  "schema": "robotarm_magnetic_lab.task009c_random_baseline_20pose_comparison",
+  "version": 1,
+  "config_sha256": "e0d5b77444fadf7b886d9c9c3a8d48f4e02bc7f815300629e2682dd6cb2f9a0b",
+  "base_config_path": "configs/task009c/random_baseline_preexperiment_v1.json",
+  "base_config_sha256": "ee734310b167cab3d89622b80c3390a4b143d2d034770a80bd9d35de1eccc1c4",
+  "episode_duration_s": 150,
+  "policy_ids": ["R1", "R2", "R3", "R4", "R5", "R6", "R7"],
+  "snapshot_times_s": [0, 30, 60, 90, 120, 150],
+  "validation_pose_ids": [
+    "validation-0006", "validation-0011", "validation-0015", "validation-0017",
+    "validation-0019", "validation-0035", "validation-0040", "validation-0042",
+    "validation-0045", "validation-0046", "validation-0051", "validation-0058",
+    "validation-0060", "validation-0063", "validation-0067", "validation-0068",
+    "validation-0069", "validation-0092", "validation-0095", "validation-0097"
+  ]
+}

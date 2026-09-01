@@ -19,6 +19,7 @@ from robotarm_magnetic_lab.baselines.random_policies import (
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "configs/task009c/random_baseline_20pose_comparison_v1.json"
+CONFIG_150S = ROOT / "configs/task009c/random_baseline_20pose_comparison_150s_v1.json"
 
 
 def _entries():
@@ -53,6 +54,14 @@ def test_config_uses_original_deterministic_seed_mapping():
     )
     assert row["environment_seed"] == 950097
     assert row["policy_seed"] == 966097
+
+
+def test_150_second_config_preserves_matrix_and_ten_hz_contract():
+    config = load_random_baseline_config(CONFIG_150S)
+    assert len(config["formal_episodes"]) == 140
+    assert config["candidate_times_s"] == [0, 30, 60, 90, 120, 150]
+    assert {row["duration_s"] for row in config["formal_episodes"]} == {150.0}
+    assert {row["action_cycles"] for row in config["formal_episodes"]} == {1500}
 
 
 def test_best_selection_is_per_policy_and_overall():

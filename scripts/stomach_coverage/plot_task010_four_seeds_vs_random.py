@@ -64,8 +64,8 @@ def load_random_mean(
     curves = []
     for pose_id, path in zip(pose_ids, files, strict=True):
         rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
-        if len(rows) != 3001:
-            raise ValueError(f"random episode must contain C0+3000 boundaries: {path}")
+        if len(rows) not in (1501, 3001):
+            raise ValueError(f"random episode must contain C0+1500 or C0+3000 boundaries: {path}")
         if any(
             row.get("policy_id") != policy_id
             or row.get("pose_id") != pose_id

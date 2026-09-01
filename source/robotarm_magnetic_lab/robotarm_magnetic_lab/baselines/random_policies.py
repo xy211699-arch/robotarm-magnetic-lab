@@ -69,12 +69,13 @@ def _load_comparison_config(source: Path, record: dict[str, Any]) -> dict[str, A
     policy_ids = tuple(str(value).upper() for value in record["policy_ids"])
     if policy_ids != POLICY_IDS:
         raise ValueError("20-pose comparison must contain R1 through R7 exactly once")
-    snapshot_times = tuple(int(value) for value in record["snapshot_times_s"])
-    if snapshot_times != COMPARISON_SNAPSHOT_TIMES_S:
-        raise ValueError("comparison snapshots must be taken every 30 seconds from 0 to 300")
     duration_s = float(record["episode_duration_s"])
-    if duration_s != 300.0:
-        raise ValueError("20-pose comparison episodes must remain 300 seconds")
+    if not duration_s.is_integer() or duration_s <= 0.0 or int(duration_s) % 30 != 0:
+        raise ValueError("20-pose comparison duration must be a positive whole multiple of 30 seconds")
+    snapshot_times = tuple(int(value) for value in record["snapshot_times_s"])
+    expected_snapshot_times = tuple(range(0, int(duration_s) + 1, 30))
+    if snapshot_times != expected_snapshot_times:
+        raise ValueError("comparison snapshots must cover the full episode every 30 seconds")
     expanded = dict(base)
     expanded.update(record)
     expanded["environment_seeds"] = {
@@ -95,7 +96,7 @@ def _load_comparison_config(source: Path, record: dict[str, Any]) -> dict[str, A
                     "environment_seed": 950000 + suffix,
                     "policy_seed": 960000 + 1000 * int(policy_id[1:]) + suffix,
                     "duration_s": duration_s,
-                    "action_cycles": 3000,
+                    "action_cycles": int(duration_s * 10),
                 }
             )
     if len(expanded["formal_episodes"]) != 140:

@@ -47,6 +47,8 @@ def query_status(output_root: Path) -> dict:
     ]
     failures = [row for row in rows if row.get("record_type") == "episode_failure"]
     completed = any(row.get("record_type") == "run_complete" for row in rows)
+    pause_marker = manifest_path.parent / "pause_summary.json"
+    paused = pause_marker.is_file()
     per_policy = {
         f"R{index}": sum(row.get("policy_id") == f"R{index}" for row in episodes)
         for index in range(1, 8)
@@ -58,7 +60,7 @@ def query_status(output_root: Path) -> dict:
         elapsed_s = max(0.0, (datetime.now(timezone.utc) - started).total_seconds())
     latest = None if not episodes else episodes[-1]
     return {
-        "state": "completed" if completed else "failed" if failures else "running",
+        "state": "completed" if completed else "failed" if failures else "paused" if paused else "running",
         "run_id": pointer.get("run_id"),
         "completed_episodes": len(episodes),
         "expected_episodes": EXPECTED_EPISODES,
@@ -74,6 +76,7 @@ def query_status(output_root: Path) -> dict:
         "latest_failure": None if not failures else failures[-1],
         "elapsed_s": elapsed_s,
         "manifest_path": str(manifest_path.resolve()),
+        "pause_summary_path": str(pause_marker.resolve()) if paused else None,
     }
 
 

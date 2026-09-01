@@ -38,3 +38,17 @@ def test_reports_verified_progress_and_completion(tmp_path: Path):
     assert result["completed_episodes"] == 1
     assert result["per_policy_completed"]["R1"] == 1
     assert result["latest_final_reachable_coverage"] == 0.5
+
+
+def test_pause_marker_changes_incomplete_run_state(tmp_path: Path):
+    run = tmp_path / "formal-run"
+    run.mkdir()
+    manifest = run / "run_manifest.jsonl"
+    manifest.write_text(json.dumps({"record_type": "run_start"}) + "\n")
+    digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    (tmp_path / "latest_formal_manifest.json").write_text(json.dumps({
+        "run_id": "formal-run", "manifest_path": str(manifest),
+        "manifest_bytes": manifest.stat().st_size, "manifest_sha256": digest,
+    }))
+    (run / "pause_summary.json").write_text("{}")
+    assert MODULE.query_status(tmp_path)["state"] == "paused"
