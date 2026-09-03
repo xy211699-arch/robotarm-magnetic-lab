@@ -172,22 +172,93 @@ def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def _condition_and_update_from_path(path: Path) -> tuple[str, int, int] | None:
+    parts = path.parts
+    if "validation" not in parts:
+        return None
+    validation_index = parts.index("validation")
+    if len(parts) < validation_index + 5:
+        return None
+    update_part = parts[validation_index + 1]
+    condition = parts[validation_index + 2]
+    seed_part = parts[validation_index + 3]
+    if not update_part.startswith("update") or not seed_part.startswith("seed_"):
+        return None
+    try:
+        update = int(update_part.removeprefix("update"))
+        seed = int(seed_part.removeprefix("seed_"))
+    except ValueError:
+        return None
+    return condition, update, seed
+
+
+def _load_summary_rows(run_dir: Path) -> list[dict[str, Any]]:
+    input_path = run_dir / "summary_input.jsonl"
+    if input_path.is_file():
+        return [
+            json.loads(line)
+            for line in input_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+    rows = []
+    for trajectory_path in sorted(run_dir.glob("validation/*/*/seed_*/coverage_trajectories.jsonl")):
+        parsed = _condition_and_update_from_path(trajectory_path)
+        if parsed is None:
+            raise ValueError(f"cannot parse visual-dependence path: {trajectory_path}")
+        condition, update, seed = parsed
+        trajectories = [
+            json.loads(line)
+            for line in trajectory_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        for trajectory in trajectories:
+            rows.append(
+                {
+                    "condition": condition,
+                    "seed": seed,
+                    "pose_id": trajectory["pose_id"],
+                    "update": update,
+                    "coverage_fraction": trajectory["coverage_fraction"],
+                }
+            )
+    return rows
+
+
+def _validate_summary_rows(rows: list[dict[str, Any]], config: VisualDependenceConfig) -> None:
+    required = {"condition", "seed", "pose_id", "update", "coverage_fraction"}
+    if any(not required <= set(row) for row in rows):
+        raise ValueError("visual-dependence summary rows are missing required fields")
+    keys = [
+        (row["condition"], int(row["seed"]), str(row["pose_id"]), int(row["update"]))
+        for row in rows
+    ]
+    if len(keys) != len(set(keys)):
+        raise ValueError("visual-dependence summary contains duplicate condition/seed/pose/update rows")
+    primary = [row for row in rows if int(row["update"]) == config.primary_update]
+    sensitivity = [row for row in rows if int(row["update"]) == config.sensitivity_update]
+    if len(primary) != 240 or len(sensitivity) != 120:
+        raise ValueError(
+            f"expected 240 primary and 120 sensitivity rows, got {len(primary)}/{len(sensitivity)}"
+        )
+    primary_conditions = {row["condition"] for row in primary}
+    sensitivity_conditions = {row["condition"] for row in sensitivity}
+    if primary_conditions != set(config.primary_conditions):
+        raise ValueError("primary visual-dependence condition set mismatch")
+    if sensitivity_conditions != set(config.sensitivity_conditions):
+        raise ValueError("sensitivity visual-dependence condition set mismatch")
+    for row in rows:
+        episode_metrics(row["coverage_fraction"])
+
+
 def summarize_visual_dependence(
     run_dir: Path,
     config: VisualDependenceConfig,
 ) -> Mapping[str, object]:
     run_dir = Path(run_dir)
-    input_path = run_dir / "summary_input.jsonl"
-    if not input_path.is_file():
+    rows = _load_summary_rows(run_dir)
+    if not rows:
         raise FileNotFoundError("visual-dependence summary input is missing")
-    rows = [
-        json.loads(line)
-        for line in input_path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
-    required = {"condition", "seed", "pose_id", "update", "coverage_fraction"}
-    if any(not required <= set(row) for row in rows):
-        raise ValueError("visual-dependence summary rows are missing required fields")
+    _validate_summary_rows(rows, config)
 
     primary_rows = [row for row in rows if int(row["update"]) == config.primary_update]
     sensitivity_rows = [row for row in rows if int(row["update"]) == config.sensitivity_update]

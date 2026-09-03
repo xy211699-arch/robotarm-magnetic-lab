@@ -231,11 +231,11 @@ def stamp_visual_dependence_config(path: Path) -> str:
     raw = json.loads(source.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError("TASK-010 visual-dependence config must be an object")
+    original_hash = raw.get("config_sha256")
     raw.pop("config_sha256", None)
     provisional = dict(raw)
     provisional["config_sha256"] = ""
     expected = canonical_visual_dependence_sha256(provisional)
-    original_hash = raw.get("config_sha256")
     if original_hash is not None and original_hash != expected:
         raise ValueError("refusing to overwrite a non-canonical config_sha256")
     raw["config_sha256"] = expected

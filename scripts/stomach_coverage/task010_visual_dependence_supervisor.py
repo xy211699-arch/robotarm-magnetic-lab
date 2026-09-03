@@ -258,8 +258,7 @@ def _stage_command(manifest: dict, stage: str, run_dir: Path, attempt: int) -> l
             manifest["config"],
             "--output",
             str(run_dir / "gates" / "gate_report.json"),
-            "--run-dir",
-            str(run_dir),
+            "--self-check",
         ]
     raise ValueError(f"unknown visual-dependence stage: {stage}")
 
@@ -343,7 +342,12 @@ def _worker(run_dir: Path, continuation: bool) -> int:
                 continue
             record["attempts"] += 1
             attempt = int(record["attempts"])
-            record.update(state="running", error_summary=None)
+            record.update(
+                state="running",
+                error_summary=None,
+                started_at=time.time(),
+                finished_at=None,
+            )
             state.update(state=stage, current_stage=stage, error_summary=None)
             _atomic_json(run_dir / "status.json", state)
             if _run_child(run_dir, manifest, state, stage, attempt) != 0:

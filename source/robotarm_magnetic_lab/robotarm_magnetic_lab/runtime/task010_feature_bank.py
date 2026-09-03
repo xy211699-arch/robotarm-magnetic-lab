@@ -38,6 +38,9 @@ def _validated_metadata(metadata: Mapping[str, Any]) -> dict[str, Any]:
     missing = required - set(metadata)
     if missing:
         raise ValueError(f"feature-bank metadata missing fields: {sorted(missing)}")
+    unknown = set(metadata) - required
+    if unknown:
+        raise ValueError(f"feature-bank metadata unknown fields: {sorted(unknown)}")
     if int(metadata["feature_steps"]) != FEATURE_STEPS:
         raise ValueError("feature-bank metadata feature_steps must be 1200")
     if int(metadata["feature_dim"]) != FEATURE_DIM:
