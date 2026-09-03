@@ -1,0 +1,78 @@
+{
+  "base_config": {
+    "path": "cnn_gru_development_v1.json",
+    "sha256": "88e8b43d905d72a50e1b78eddee94943d4b7809ea5432f8c82acaede918bf65e"
+  },
+  "bootstrap_replicates": 10000,
+  "bootstrap_seed": 20260903,
+  "config_sha256": "66f8889e5ee3795d065239ded4284a9de2cef983b26cbc3fc22201ea2b0b35e1",
+  "coverage_points": 1201,
+  "donor_pose_by_target": {
+    "validation-0006": "validation-0011",
+    "validation-0011": "validation-0015",
+    "validation-0015": "validation-0017",
+    "validation-0017": "validation-0019",
+    "validation-0019": "validation-0035",
+    "validation-0035": "validation-0040",
+    "validation-0040": "validation-0042",
+    "validation-0042": "validation-0045",
+    "validation-0045": "validation-0046",
+    "validation-0046": "validation-0051",
+    "validation-0051": "validation-0058",
+    "validation-0058": "validation-0060",
+    "validation-0060": "validation-0063",
+    "validation-0063": "validation-0067",
+    "validation-0067": "validation-0068",
+    "validation-0068": "validation-0069",
+    "validation-0069": "validation-0092",
+    "validation-0092": "validation-0095",
+    "validation-0095": "validation-0097",
+    "validation-0097": "validation-0006"
+  },
+  "episode_steps": 1200,
+  "formal_seeds": [
+    991001,
+    991002,
+    991003
+  ],
+  "primary_conditions": [
+    "normal",
+    "blind",
+    "donor",
+    "first_frame"
+  ],
+  "primary_update": 750,
+  "schema_version": 1,
+  "sensitivity_conditions": [
+    "normal",
+    "blind"
+  ],
+  "sensitivity_update": 1000,
+  "training_conditions": [
+    "blind"
+  ],
+  "training_failure_after_s": 900,
+  "training_stall_after_s": 300,
+  "validation_pose_ids": [
+    "validation-0006",
+    "validation-0011",
+    "validation-0015",
+    "validation-0017",
+    "validation-0019",
+    "validation-0035",
+    "validation-0040",
+    "validation-0042",
+    "validation-0045",
+    "validation-0046",
+    "validation-0051",
+    "validation-0058",
+    "validation-0060",
+    "validation-0063",
+    "validation-0067",
+    "validation-0068",
+    "validation-0069",
+    "validation-0092",
+    "validation-0095",
+    "validation-0097"
+  ]
+}
