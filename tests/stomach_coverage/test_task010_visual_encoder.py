@@ -8,6 +8,9 @@ from robotarm_magnetic_lab.runtime.task010_visual_encoder import (
     center_crop_circular_rgb,
     preprocess_task010_rgb,
 )
+from robotarm_magnetic_lab.runtime.task010_visual_intervention import (
+    replace_actor_visual_features,
+)
 
 
 class TinyFrozenBackbone(nn.Module):
@@ -56,3 +59,10 @@ def test_encoder_reset_invalidates_only_selected_rows():
     encoder.reset(torch.tensor([0]))
     encoder(rgb, torch.tensor([1, 1]))
     assert encoder.forward_image_count == 3
+
+
+def test_visual_feature_replacement_never_touches_action_slice():
+    target = torch.randn((2, 519))
+    replacement = torch.randn((2, 512))
+    changed = replace_actor_visual_features(target, replacement)
+    assert torch.equal(changed[:, 512:], target[:, 512:])

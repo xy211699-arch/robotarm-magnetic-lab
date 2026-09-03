@@ -7,6 +7,10 @@ import torch
 from robotarm_magnetic_lab.runtime.task010_visual_encoder import FrozenResNet18Encoder
 from robotarm_magnetic_lab.runtime.task010_recovery import Task010RecoveryTracker
 from robotarm_magnetic_lab.runtime.task010_privileged import Task010PrivilegedBuilder
+from robotarm_magnetic_lab.runtime.task010_visual_intervention import (
+    VALID_TRAINING_VISUAL_CONDITIONS,
+    replace_actor_visual_features,
+)
 
 from .task009d0_terms import task009d0_rgb, task009d0_runtime
 
@@ -23,8 +27,21 @@ def task010_actor_observation(env) -> torch.Tensor:
     rgb = task009d0_rgb(env)
     frame_ids = task009d0_runtime(env).rgb_sync.latest
     features = task010_visual_encoder(env)(rgb, frame_ids)
+    condition = getattr(env.cfg, "task010_visual_condition", "normal")
+    if condition not in VALID_TRAINING_VISUAL_CONDITIONS:
+        raise ValueError(
+            "donor and first_frame are validation-only visual conditions; "
+            "the training environment accepts only normal or blind"
+        )
+    if condition == "blind":
+        features = torch.zeros_like(features)
+    elif condition == "normal":
+        features = features.clone()
     previous = env.action_manager.get_term("parameterized_force").previous_action_features
-    observation = torch.cat((features, previous.to(dtype=torch.float32)), dim=1)
+    observation = replace_actor_visual_features(
+        torch.cat((features, previous.to(dtype=torch.float32)), dim=1),
+        features,
+    )
     if observation.shape != (env.num_envs, 519) or not torch.isfinite(observation).all().item():
         raise RuntimeError("TASK-010 Actor observation must be finite [N,519]")
     return observation
