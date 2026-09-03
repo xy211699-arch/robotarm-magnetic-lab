@@ -14,11 +14,18 @@ from robotarm_magnetic_lab.learning.task010_critic import Task010Critic
 from robotarm_magnetic_lab.learning.task010_runner import Task010OnPolicyRunner
 
 
-def _runner(tmp_path: Path, *, seed: int = 991000, config_hash: str = "config"):
+def _runner(
+    tmp_path: Path,
+    *,
+    seed: int = 991000,
+    config_hash: str = "config",
+    experiment_metadata=None,
+):
     return Task010OnPolicyRunner(
         Task010Actor(), Task010Critic(), output_dir=tmp_path,
         config_hash=config_hash, config_snapshot={"seed": seed},
         dependency_audit_hash="dependency", seed=seed, device="cpu",
+        experiment_metadata=experiment_metadata,
     )
 
 
@@ -88,6 +95,45 @@ def test_checkpoint_contains_required_contract_fields(tmp_path: Path):
         "visual_weight_identity_sha256",
     ):
         assert key in record
+
+
+def test_runner_round_trip_preserves_visual_condition(tmp_path: Path):
+    runner = _runner(
+        tmp_path / "blind",
+        experiment_metadata={
+            "visual_condition": "blind",
+            "visual_dependence_config_sha256": "a" * 64,
+            "base_config_sha256": "config",
+        },
+    )
+    path = tmp_path / "blind.pt"
+    runner.save(path)
+    record = torch.load(path, map_location="cpu", weights_only=False)
+    assert record["experiment_metadata"]["visual_condition"] == "blind"
+    restored = _runner(
+        tmp_path / "restored",
+        experiment_metadata=record["experiment_metadata"],
+    )
+    restored.load(path)
+
+
+def test_blind_resume_rejects_normal_checkpoint(tmp_path: Path):
+    normal = _runner(
+        tmp_path / "normal",
+        experiment_metadata={"visual_condition": "normal", "base_config_sha256": "config"},
+    )
+    path = tmp_path / "normal.pt"
+    normal.save(path)
+    blind = _runner(
+        tmp_path / "blind",
+        experiment_metadata={
+            "visual_condition": "blind",
+            "visual_dependence_config_sha256": "a" * 64,
+            "base_config_sha256": "config",
+        },
+    )
+    with pytest.raises(ValueError, match="visual condition mismatch"):
+        blind.load(path, strict=True)
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="requires CUDA map-location regression")

@@ -8,7 +8,7 @@ from pathlib import Path
 import random
 import subprocess
 import time
-from typing import Any
+from typing import Any, Mapping
 
 import numpy as np
 import torch
@@ -53,6 +53,7 @@ class Task010OnPolicyRunner:
         seed: int,
         device: str | torch.device,
         ppo_kwargs: dict[str, Any] | None = None,
+        experiment_metadata: Mapping[str, object] | None = None,
     ) -> None:
         self.device = torch.device(device)
         self.actor = actor.to(self.device)
@@ -76,6 +77,16 @@ class Task010OnPolicyRunner:
         self.total_transitions = 0
         self.init_at_random_ep_len = False
         self.visual_weight_identity_sha256 = RESNET18_IMAGENET1K_V1_SHA256
+        self.experiment_metadata = dict(experiment_metadata or {})
+        self.visual_condition = str(
+            self.experiment_metadata.get("visual_condition", "normal")
+        )
+        self.visual_dependence_config_sha256 = self.experiment_metadata.get(
+            "visual_dependence_config_sha256"
+        )
+        self.base_config_sha256 = self.experiment_metadata.get(
+            "base_config_sha256", self.config_hash
+        )
         random.seed(self.seed)
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
@@ -83,7 +94,15 @@ class Task010OnPolicyRunner:
             torch.cuda.manual_seed_all(self.seed)
         root = Path(__file__).resolve().parents[4]
         self.git_commit = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=root, text=True).strip()
-        _append_jsonl(self.events_path, {"event": "runner_initialized", "seed": self.seed, "time_ns": time.time_ns()})
+        _append_jsonl(
+            self.events_path,
+            {
+                "event": "runner_initialized",
+                "seed": self.seed,
+                "time_ns": time.time_ns(),
+                "experiment_metadata": self.experiment_metadata,
+            },
+        )
         self.tensorboard_writer.add_text(
             "run/identity",
             json.dumps(
@@ -93,6 +112,7 @@ class Task010OnPolicyRunner:
                     "git_commit": self.git_commit,
                     "config_hash": self.config_hash,
                     "dependency_audit_hash": self.dependency_audit_hash,
+                    "experiment_metadata": self.experiment_metadata,
                 },
                 sort_keys=True,
             ),
@@ -137,6 +157,9 @@ class Task010OnPolicyRunner:
             "rng": self._rng_state(),
             "config_hash": self.config_hash,
             "config_snapshot": self.config_snapshot,
+            "experiment_metadata": self.experiment_metadata,
+            "visual_dependence_config_sha256": self.visual_dependence_config_sha256,
+            "base_config_sha256": self.base_config_sha256,
             "git_commit": self.git_commit,
             "dependency_audit_hash": self.dependency_audit_hash,
             "visual_weight_identity_sha256": self.visual_weight_identity_sha256,
@@ -164,10 +187,30 @@ class Task010OnPolicyRunner:
             "Actor observation schema": (record.get("actor_observation_schema_sha256"), ACTOR_OBSERVATION_SCHEMA_SHA256),
             "action schema": (record.get("action_schema_sha256"), ACTION_SCHEMA_SHA256),
         }
+        record_metadata = record.get("experiment_metadata")
+        if record_metadata is None:
+            record_visual_condition = "normal"
+            record_visual_dependence_sha256 = None
+        else:
+            record_visual_condition = str(
+                record_metadata.get("visual_condition", "normal")
+            )
+            record_visual_dependence_sha256 = record_metadata.get(
+                "visual_dependence_config_sha256"
+            )
         if strict:
             for name, (actual, expected) in checks.items():
                 if actual != expected:
                     raise ValueError(f"TASK-010 {name} mismatch")
+            if record_visual_condition != self.visual_condition:
+                raise ValueError("TASK-010 visual condition mismatch")
+            if (
+                record_visual_dependence_sha256 is not None
+                and self.visual_dependence_config_sha256 is not None
+                and record_visual_dependence_sha256
+                != self.visual_dependence_config_sha256
+            ):
+                raise ValueError("TASK-010 visual dependence config hash mismatch")
         self.actor.load_state_dict(record["actor"], strict=True)
         self.critic.load_state_dict(record["critic"], strict=True)
         self.algorithm.optimizer.load_state_dict(record["optimizer"])

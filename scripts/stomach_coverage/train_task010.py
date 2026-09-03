@@ -27,6 +27,10 @@ def _build_runner(args, device):
     from robotarm_magnetic_lab.learning.task010_critic import Task010Critic
     from robotarm_magnetic_lab.learning.task010_runner import Task010OnPolicyRunner
     from robotarm_magnetic_lab.runtime.task010_config import load_task010_config
+    from robotarm_magnetic_lab.runtime.task010_visual_dependence_config import (
+        VISUAL_DEPENDENCE_CONFIG_PATH,
+        load_visual_dependence_config,
+    )
 
     config = load_task010_config(args.config)
     snapshot = json.loads(Path(args.config).read_text(encoding="utf-8"))
@@ -34,6 +38,14 @@ def _build_runner(args, device):
     if not audit.is_file():
         raise FileNotFoundError(f"TASK-010 dependency audit not found: {audit}")
     dependency_hash = _sha256(audit)
+    experiment_metadata = {
+        "visual_condition": args.visual_condition,
+        "base_config_sha256": config.config_sha256,
+    }
+    if args.visual_condition == "blind":
+        experiment_metadata["visual_dependence_config_sha256"] = (
+            load_visual_dependence_config(VISUAL_DEPENDENCE_CONFIG_PATH).config_sha256
+        )
     ppo_kwargs = {
         "num_learning_epochs": config.ppo.num_learning_epochs,
         "num_mini_batches": config.ppo.num_mini_batches,
@@ -50,6 +62,7 @@ def _build_runner(args, device):
         dependency_audit_hash=dependency_hash,
         seed=int(config.training.seed if args.seed is None else args.seed),
         device=device, ppo_kwargs=ppo_kwargs,
+        experiment_metadata=experiment_metadata,
     )
     if args.resume_checkpoint is not None:
         runner.load(args.resume_checkpoint)
@@ -65,6 +78,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--validation", choices=("enabled", "disabled"), default="enabled")
     parser.add_argument("--resume-checkpoint", type=Path)
     parser.add_argument("--backend", choices=("fake", "isaac"), default="isaac")
+    parser.add_argument(
+        "--visual-condition",
+        choices=("normal", "blind"),
+        default="normal",
+    )
     parser.add_argument(
         "--dependency-audit", type=Path,
         default=Path("/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_cnn_gru/gate0/prerequisites.json"),
@@ -105,6 +123,7 @@ def main() -> None:
 
     config, runner = _build_runner(args, args.device)
     cfg = parse_env_cfg(config.task_id, device=args.device, num_envs=config.training.num_envs)
+    cfg.task010_visual_condition = args.visual_condition
     updates = config.training.max_updates if args.max_updates is None else int(args.max_updates)
     interval = config.checkpoints.rolling_interval if args.save_interval is None else int(args.save_interval)
     with launch_simulation(app, cfg):
