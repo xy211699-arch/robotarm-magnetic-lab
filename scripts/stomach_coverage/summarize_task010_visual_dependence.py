@@ -311,3 +311,24 @@ def summarize_visual_dependence(
         "effects": effects,
         "artifact_audit": audit,
     }
+
+
+def main() -> int:
+    import argparse
+
+    from robotarm_magnetic_lab.runtime.task010_visual_dependence_config import (
+        load_visual_dependence_config,
+    )
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run-dir", type=Path, required=True)
+    parser.add_argument("--config", type=Path, required=True)
+    args = parser.parse_args()
+    config = load_visual_dependence_config(args.config)
+    result = summarize_visual_dependence(args.run_dir, config)
+    print(json.dumps(result, indent=2, sort_keys=True), flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
