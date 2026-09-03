@@ -64,6 +64,22 @@ def test_fake_pipeline_has_exact_frozen_stage_order():
     assert names == tuple(expected)
 
 
+def test_start_accepts_launcher_kit_args():
+    args = supervisor._parser().parse_args(
+        [
+            "start",
+            "--config",
+            str(ROOT / "configs/task010/visual_dependence_v1.json"),
+            "--b0-run-dir",
+            "/tmp/unused-b0",
+            "--artifact-root",
+            "/tmp/unused-artifacts",
+            "--kit_args=--/UJITSO/enabled=false",
+        ]
+    )
+    assert args.command == "start"
+
+
 def test_start_returns_while_worker_remains_alive(tmp_path, monkeypatch):
     started = _start(tmp_path, monkeypatch, delay="1.0")
     assert started["state"] == "queued"
