@@ -20,6 +20,15 @@ def parser():
     result.add_argument("--config", type=Path, required=True)
     result.add_argument("--checkpoint", type=Path, required=True)
     result.add_argument("--output-dir", type=Path, required=True)
+    result.add_argument(
+        "--visual-condition",
+        choices=("normal", "blind", "donor", "first_frame"),
+        default="normal",
+    )
+    result.add_argument("--experiment-config", type=Path)
+    result.add_argument("--training-seed", type=int)
+    result.add_argument("--save-feature-bank", type=Path)
+    result.add_argument("--donor-bank", type=Path)
     return result
 
 
@@ -39,12 +48,52 @@ def main() -> None:
     from isaaclab_tasks.utils import parse_env_cfg
     from robotarm_magnetic_lab.learning.task010_actor import Task010Actor
     from robotarm_magnetic_lab.runtime.task010_config import load_task010_config
+    from robotarm_magnetic_lab.runtime.task010_feature_bank import (
+        load_pose_feature_sequence,
+        manifest_sha256,
+        save_pose_feature_sequence,
+    )
+    from robotarm_magnetic_lab.runtime.task010_visual_dependence_config import (
+        VISUAL_DEPENDENCE_CONFIG_PATH,
+        load_visual_dependence_config,
+    )
+    from robotarm_magnetic_lab.runtime.task010_visual_intervention import (
+        Task010VisualIntervention,
+    )
 
     frozen = load_task010_config(args.config)
+    experiment = None
+    experiment_config_path = args.experiment_config
+    if experiment_config_path is None and args.visual_condition != "normal":
+        experiment_config_path = VISUAL_DEPENDENCE_CONFIG_PATH
+    if experiment_config_path is not None:
+        experiment = load_visual_dependence_config(experiment_config_path)
+    if args.visual_condition == "donor" and args.donor_bank is None:
+        raise RuntimeError("donor condition requires --donor-bank")
+    if args.visual_condition != "donor" and args.donor_bank is not None:
+        raise RuntimeError("--donor-bank is only valid with donor condition")
+    if args.visual_condition != "normal" and args.save_feature_bank is not None:
+        raise RuntimeError("--save-feature-bank is only valid with normal condition")
+    if args.save_feature_bank is not None and experiment is None:
+        raise RuntimeError("--save-feature-bank requires --experiment-config")
     record = torch.load(args.checkpoint, map_location=args.device, weights_only=False)
     if record.get("config_hash") != frozen.config_sha256:
         raise RuntimeError("TASK-010 validation checkpoint/config mismatch")
     checkpoint_hash = file_sha256(args.checkpoint)
+    training_seed = args.training_seed
+    if training_seed is None:
+        training_seed = record.get("seed")
+    checkpoint_update = record.get("current_update")
+    if experiment is not None and checkpoint_update not in (750, 1000):
+        raise RuntimeError("visual-dependence validation requires update 750 or 1000")
+    experiment_config_sha256 = (
+        experiment.config_sha256 if experiment is not None else None
+    )
+    donor_manifest_sha256 = None
+    if args.donor_bank is not None:
+        donor_manifest_sha256 = manifest_sha256(Path(args.donor_bank))
+    if args.visual_condition == "donor" and experiment is None:
+        raise RuntimeError("donor condition requires --experiment-config")
     actor = Task010Actor().to(args.device)
     actor.load_state_dict(record["actor"], strict=True)
     actor.eval()
@@ -70,6 +119,37 @@ def main() -> None:
                 if actual[: len(batch)] != tuple(batch):
                     raise RuntimeError("TASK-010 validation reset returned different pose IDs")
                 actor.reset()
+                first_frame = Task010VisualIntervention(
+                    "first_frame", num_envs=len(batch), feature_dim=512
+                )
+                saved_features = None
+                if args.save_feature_bank is not None:
+                    saved_features = torch.empty(
+                        (len(batch), 1200, 512), dtype=torch.float32
+                    )
+                donor_features = None
+                if args.visual_condition == "donor":
+                    assert experiment is not None
+                    donor_tensors = []
+                    for pose_id in batch:
+                        donor_pose_id = experiment.donor_pose_by_target[pose_id]
+                        donor_tensors.append(
+                            load_pose_feature_sequence(
+                                Path(args.donor_bank),
+                                donor_pose_id,
+                                {
+                                    "pose_id": donor_pose_id,
+                                    "training_seed": training_seed,
+                                    "checkpoint_update": checkpoint_update,
+                                    "checkpoint_sha256": checkpoint_hash,
+                                    "base_config_sha256": frozen.config_sha256,
+                                    "visual_dependence_config_sha256": experiment_config_sha256,
+                                    "feature_steps": 1200,
+                                    "feature_dim": 512,
+                                },
+                            )
+                        )
+                    donor_features = torch.stack(donor_tensors, dim=0)
                 actor_totals = torch.zeros((len(batch),), device=args.device)
                 alpha_totals = torch.zeros_like(actor_totals)
                 mode_counts = torch.zeros((len(batch), 6), device=args.device)
@@ -81,12 +161,32 @@ def main() -> None:
                 )
                 terminal = None
                 for step_index in range(1200):
+                    target_observation = observations["policy"][: len(batch)]
+                    actor_input = observations["policy"].clone()
+                    if args.visual_condition == "normal":
+                        replacement = target_observation[:, :512]
+                    elif args.visual_condition == "blind":
+                        replacement = torch.zeros_like(target_observation[:, :512])
+                    elif args.visual_condition == "donor":
+                        assert donor_features is not None
+                        replacement = donor_features[:, step_index, :].to(args.device)
+                    elif args.visual_condition == "first_frame":
+                        replacement = first_frame.apply(target_observation[:, :512])
+                    else:
+                        raise AssertionError(args.visual_condition)
+                    actor_input[: len(batch), :512] = replacement.to(
+                        device=actor_input.device, dtype=actor_input.dtype
+                    )
+                    if saved_features is not None:
+                        saved_features[:, step_index, :] = (
+                            target_observation[:, :512].detach().cpu()
+                        )
                     # Keep only the Actor forward pass gradient-free.  Wrapping
                     # env.step() in inference_mode makes mutable coverage state
                     # into inference tensors, which cannot be reset in-place
                     # before the second (8-pose) validation batch.
                     with torch.no_grad():
-                        action = actor(observations["policy"], stochastic_output=False)
+                        action = actor(actor_input, stochastic_output=False)
                     observations, reward, terminated, truncated, step_extras = env.step(action)
                     actor_totals += reward[: len(batch)]
                     alpha_totals += action[: len(batch), 1]
@@ -119,6 +219,27 @@ def main() -> None:
                         terminal = terminal_audit
                 if terminal is None:
                     raise RuntimeError("TASK-010 validation did not reach true terminal")
+                feature_bank_manifest_sha256 = None
+                if args.save_feature_bank is not None and saved_features is not None:
+                    assert experiment is not None
+                    for row, pose_id in enumerate(batch):
+                        save_pose_feature_sequence(
+                            Path(args.save_feature_bank),
+                            {
+                                "pose_id": pose_id,
+                                "training_seed": training_seed,
+                                "checkpoint_update": checkpoint_update,
+                                "checkpoint_sha256": checkpoint_hash,
+                                "base_config_sha256": frozen.config_sha256,
+                                "visual_dependence_config_sha256": experiment_config_sha256,
+                                "feature_steps": 1200,
+                                "feature_dim": 512,
+                            },
+                            saved_features[row],
+                        )
+                    feature_bank_manifest_sha256 = manifest_sha256(
+                        Path(args.save_feature_bank)
+                    )
                 for row, pose_id in enumerate(batch):
                     payload = {
                         "schema": "robotarm_magnetic_lab.task010_validation_pose",
@@ -126,6 +247,21 @@ def main() -> None:
                         "formal_steps": 1200,
                         "checkpoint_sha256": checkpoint_hash,
                         "config_sha256": frozen.config_sha256,
+                        "visual_condition": args.visual_condition,
+                        "training_seed": training_seed,
+                        "checkpoint_update": checkpoint_update,
+                        "donor_pose_id": (
+                            experiment.donor_pose_by_target[pose_id]
+                            if args.visual_condition == "donor" and experiment is not None
+                            else None
+                        ),
+                        "previous_action_source": "target_environment",
+                        "feature_bank_manifest_sha256": (
+                            feature_bank_manifest_sha256
+                            if args.save_feature_bank is not None
+                            else donor_manifest_sha256
+                        ),
+                        "experiment_config_sha256": experiment_config_sha256,
                         "final_coverage": float(terminal["reachable_coverage"][row].item()),
                         "total_reward": float(actor_totals[row].item()),
                         "mean_alpha": float(alpha_totals[row].item() / 1200.0),
@@ -139,6 +275,10 @@ def main() -> None:
                         "pose_id": pose_id,
                         "checkpoint_sha256": checkpoint_hash,
                         "config_sha256": frozen.config_sha256,
+                        "visual_condition": args.visual_condition,
+                        "training_seed": training_seed,
+                        "checkpoint_update": checkpoint_update,
+                        "experiment_config_sha256": experiment_config_sha256,
                         "control_hz": 10,
                         "coverage_fraction": coverage_trajectories[row].cpu().tolist(),
                     }

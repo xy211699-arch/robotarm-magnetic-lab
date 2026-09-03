@@ -97,3 +97,25 @@ def test_validation_curve_loader_requires_twenty_monotonic_1201_point_rows(tmp_p
     _write(path, rows)
     with pytest.raises(ValueError, match="not monotonic"):
         plot_module.load_mean(path)
+
+
+def test_checkpoint_validator_exposes_four_visual_conditions():
+    source = CHECKPOINT_SCRIPT.read_text(encoding="utf-8")
+    assert "--visual-condition" in source
+    assert "normal" in source
+    assert "blind" in source
+    assert "donor" in source
+    assert "first_frame" in source
+
+
+def test_donor_validation_uses_cyclic_other_pose_and_target_actions():
+    source = CHECKPOINT_SCRIPT.read_text(encoding="utf-8")
+    assert "experiment.donor_pose_by_target[pose_id]" in source
+    assert '"previous_action_source": "target_environment"' in source
+    assert '"donor_pose_id"' in source
+
+
+def test_first_frame_intervention_is_created_per_validation_batch():
+    source = CHECKPOINT_SCRIPT.read_text(encoding="utf-8")
+    assert "Task010VisualIntervention(" in source
+    assert '"first_frame", num_envs=len(batch)' in source
