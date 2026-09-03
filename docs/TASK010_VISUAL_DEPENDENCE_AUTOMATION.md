@@ -8,7 +8,10 @@ Codex 之外人工执行 `start`。
 ## 正式启动
 
 ```bash
-python3 scripts/stomach_coverage/task010_visual_dependence_supervisor.py start \
+cd /mnt/isaac-linux/robotarm_magnetic_lab_task010
+
+./run_isaaclab.sh -p \
+  scripts/stomach_coverage/task010_visual_dependence_supervisor.py start \
   --config configs/task010/visual_dependence_v1.json \
   --b0-run-dir /mnt/isaac-linux/robotarm_magnetic_lab_task010/artifacts/task010_cnn_gru/formal_seeds/20260830T124744.667141Z-fcf8b406
 ```
@@ -18,13 +21,19 @@ python3 scripts/stomach_coverage/task010_visual_dependence_supervisor.py start \
 ## 只读状态
 
 ```bash
-python3 scripts/stomach_coverage/task010_visual_dependence_supervisor.py status
+cd /mnt/isaac-linux/robotarm_magnetic_lab_task010
+
+./run_isaaclab.sh -p \
+  scripts/stomach_coverage/task010_visual_dependence_supervisor.py status
 ```
 
 ## 只读观察
 
 ```bash
-python3 scripts/stomach_coverage/task010_visual_dependence_supervisor.py watch --interval 60
+cd /mnt/isaac-linux/robotarm_magnetic_lab_task010
+
+./run_isaaclab.sh -p \
+  scripts/stomach_coverage/task010_visual_dependence_supervisor.py watch --interval 60
 ```
 
 `watch` 可以随时 Ctrl-C 中断，不影响后台 worker。
@@ -32,9 +41,12 @@ python3 scripts/stomach_coverage/task010_visual_dependence_supervisor.py watch -
 ## 错误后人工继续
 
 ```bash
+cd /mnt/isaac-linux/robotarm_magnetic_lab_task010
+
 TASK010V_RUN_DIR="$(cat /mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_visual_dependence/latest_run_path.txt)"
 
-python3 scripts/stomach_coverage/task010_visual_dependence_supervisor.py continue \
+./run_isaaclab.sh -p \
+  scripts/stomach_coverage/task010_visual_dependence_supervisor.py continue \
   --run-dir "${TASK010V_RUN_DIR}"
 ```
 
