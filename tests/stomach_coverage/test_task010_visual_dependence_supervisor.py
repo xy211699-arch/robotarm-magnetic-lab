@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import signal
+import subprocess
 import sys
 import time
 
@@ -78,6 +79,45 @@ def test_start_accepts_launcher_kit_args():
         ]
     )
     assert args.command == "start"
+
+
+def test_formal_start_rejects_tracked_worktree_modifications(monkeypatch):
+    monkeypatch.setattr(
+        subprocess,
+        "check_output",
+        lambda *args, **kwargs: " M docs/PROJECT_RUN_LOG.md\n?? scripts/unrelated.py\n",
+    )
+    with pytest.raises(RuntimeError, match="clean tracked worktree"):
+        supervisor._require_clean_tracked_worktree()
+
+
+def test_validation_stage_uses_b0_for_normal_and_b1_for_blind(tmp_path):
+    run_dir = tmp_path / "run"
+    b0 = tmp_path / "b0"
+    manifest = {
+        "config": str(ROOT / "configs/task010/visual_dependence_v1.json"),
+        "base_config": str(ROOT / "configs/task010/cnn_gru_development_v1.json"),
+        "b0_run_dir": str(b0),
+    }
+    normal = supervisor._stage_command(manifest, "validate_update750_normal_seed_991001", run_dir, 1)
+    blind = supervisor._stage_command(manifest, "validate_update750_blind_seed_991001", run_dir, 1)
+    assert "--checkpoint" in normal and "--checkpoint" in blind
+    assert normal[normal.index("--checkpoint") + 1].startswith(str(b0))
+    assert blind[blind.index("--checkpoint") + 1].startswith(str(run_dir / "training" / "blind"))
+
+
+def test_sensitivity_validation_uses_b0_for_normal_and_b1_for_blind(tmp_path):
+    run_dir = tmp_path / "run"
+    b0 = tmp_path / "b0"
+    manifest = {
+        "config": str(ROOT / "configs/task010/visual_dependence_v1.json"),
+        "base_config": str(ROOT / "configs/task010/cnn_gru_development_v1.json"),
+        "b0_run_dir": str(b0),
+    }
+    normal = supervisor._stage_command(manifest, "validate_update1000_normal_seed_991002", run_dir, 1)
+    blind = supervisor._stage_command(manifest, "validate_update1000_blind_seed_991002", run_dir, 1)
+    assert normal[normal.index("--checkpoint") + 1].startswith(str(b0))
+    assert blind[blind.index("--checkpoint") + 1].startswith(str(run_dir / "training" / "blind"))
 
 
 def test_start_returns_while_worker_remains_alive(tmp_path, monkeypatch):

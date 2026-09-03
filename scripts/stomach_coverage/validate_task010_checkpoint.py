@@ -94,6 +94,29 @@ def main() -> None:
         donor_manifest_sha256 = manifest_sha256(Path(args.donor_bank))
     if args.visual_condition == "donor" and experiment is None:
         raise RuntimeError("donor condition requires --experiment-config")
+    if experiment is not None:
+        expected_checkpoint_condition = (
+            "blind" if args.visual_condition == "blind" else "normal"
+        )
+        checkpoint_condition = (
+            record.get("experiment_metadata", {}).get("visual_condition", "normal")
+        )
+        if checkpoint_condition != expected_checkpoint_condition:
+            raise RuntimeError(
+                "TASK-010 checkpoint visual condition does not match requested validation"
+            )
+        checkpoint_visual_config = (
+            record.get("experiment_metadata", {}).get(
+                "visual_dependence_config_sha256"
+            )
+        )
+        if (
+            checkpoint_visual_config is not None
+            and checkpoint_visual_config != experiment.config_sha256
+        ):
+            raise RuntimeError(
+                "TASK-010 checkpoint visual-dependence config hash mismatch"
+            )
     actor = Task010Actor().to(args.device)
     actor.load_state_dict(record["actor"], strict=True)
     actor.eval()

@@ -8,9 +8,13 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import sys
 from typing import Any, Mapping, Sequence
 
 import numpy as np
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "source" / "robotarm_magnetic_lab"))
 
 from robotarm_magnetic_lab.runtime.task010_visual_dependence_config import (
     VisualDependenceConfig,
@@ -246,6 +250,24 @@ def _validate_summary_rows(rows: list[dict[str, Any]], config: VisualDependenceC
         raise ValueError("primary visual-dependence condition set mismatch")
     if sensitivity_conditions != set(config.sensitivity_conditions):
         raise ValueError("sensitivity visual-dependence condition set mismatch")
+    if {int(row["seed"]) for row in rows} != set(config.formal_seeds):
+        raise ValueError("visual-dependence summary seed set mismatch")
+    if {int(row["update"]) for row in rows} != {
+        config.primary_update,
+        config.sensitivity_update,
+    }:
+        raise ValueError("visual-dependence summary update set mismatch")
+    for condition in set(config.primary_conditions) | set(config.sensitivity_conditions):
+        for seed in config.formal_seeds:
+            pose_ids = {
+                str(row["pose_id"])
+                for row in rows
+                if row["condition"] == condition and int(row["seed"]) == seed
+            }
+            if pose_ids != set(config.validation_pose_ids):
+                raise ValueError(
+                    f"visual-dependence pose set mismatch for {condition}/{seed}"
+                )
     for row in rows:
         episode_metrics(row["coverage_fraction"])
 
@@ -278,7 +300,6 @@ def summarize_visual_dependence(
     primary_normal = [row for row in primary_rows if row["condition"] == "normal"]
     primary_blind = [row for row in primary_rows if row["condition"] == "blind"]
     primary_donor = [row for row in primary_rows if row["condition"] == "donor"]
-    primary_first_frame = [row for row in primary_rows if row["condition"] == "first_frame"]
     effects = {}
     for name, comparison_rows in (("B0-B1", primary_blind), ("B0-I1", primary_donor)):
         bootstrap = hierarchical_paired_bootstrap(
@@ -320,7 +341,7 @@ def summarize_visual_dependence(
             assert base is not None and treat is not None
             paired_differences.append(
                 {
-                    "comparison": f"B0-{condition.upper() if condition != 'blind' else 'B1'}",
+                    "comparison": "B0-B1" if condition == "blind" else "B0-I1",
                     "seed": key[0],
                     "pose_id": key[1],
                     "update": config.primary_update,

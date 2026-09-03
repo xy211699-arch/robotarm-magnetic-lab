@@ -24,6 +24,8 @@ CONFIG_PATH = (
     ROOT
     / "configs/task010/visual_dependence_v1.json"
 )
+_CONFIG = load_visual_dependence_config(CONFIG_PATH)
+_POSE_IDS = _CONFIG.validation_pose_ids
 
 
 def test_episode_metrics_use_1200_post_action_points():
@@ -45,8 +47,7 @@ def test_unreached_threshold_is_retained():
 def _rows(comparison: str):
     rows = []
     for seed in (991001, 991002, 991003):
-        for pose_index in range(20):
-            pose_id = f"validation-{pose_index:04d}"
+        for pose_id in _POSE_IDS:
             base = np.linspace(0.1, 0.95, 1201)
             if comparison == "blind":
                 treatment = np.linspace(0.1, 0.70, 1201)
@@ -91,8 +92,7 @@ def test_summarize_visual_dependence_writes_audited_outputs(tmp_path):
     primary = normal + blind + donor + first_frame
     sensitivity = []
     for seed in (991001, 991002, 991003):
-        for pose_index in range(20):
-            pose_id = f"validation-{pose_index:04d}"
+        for pose_id in _POSE_IDS:
             sensitivity.append(
                 {
                     "condition": "normal",

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -29,6 +30,28 @@ ACTIVE_STATES = {"queued", "running", "validating", "summarizing", "auditing"}
 
 def _read_json(path: Path) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _require_clean_tracked_worktree() -> None:
+    output = subprocess.check_output(
+        ("git", "status", "--porcelain"),
+        cwd=REPOSITORY,
+        text=True,
+    )
+    dirty = [line for line in output.splitlines() if line and not line.startswith("??")]
+    if dirty:
+        raise RuntimeError(
+            "visual-dependence formal start requires a clean tracked worktree; "
+            "commit or stash tracked modifications first"
+        )
 
 
 def _atomic_json(path: Path, payload: dict) -> None:
@@ -185,12 +208,18 @@ def _stage_command(manifest: dict, stage: str, run_dir: Path, attempt: int) -> l
             "cuda:0",
         ]
     if stage.startswith("validate_update750_"):
-        _, _, _, condition, _, seed = parts
-        update = "750"
-        checkpoint = (
-            Path(manifest["b0_run_dir"])
-            / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update:04d}.pt"
-        )
+        _, _, condition, _, seed = parts
+        update = 750
+        if condition == "blind":
+            checkpoint = (
+                run_dir
+                / "training" / "blind" / f"seed_{seed}" / "checkpoints" / f"update_{update:04d}.pt"
+            )
+        else:
+            checkpoint = (
+                Path(manifest["b0_run_dir"])
+                / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update:04d}.pt"
+            )
         output = run_dir / "validation" / "update750" / condition / f"seed_{seed}"
         command = [
             sys.executable,
@@ -220,11 +249,18 @@ def _stage_command(manifest: dict, stage: str, run_dir: Path, attempt: int) -> l
             ]
         return command
     if stage.startswith("validate_update1000_"):
-        _, _, _, condition, _, seed = parts
-        checkpoint = (
-            Path(manifest["b0_run_dir"])
-            / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / "update_1000.pt"
-        )
+        _, _, condition, _, seed = parts
+        update = 1000
+        if condition == "blind":
+            checkpoint = (
+                run_dir
+                / "training" / "blind" / f"seed_{seed}" / "checkpoints" / f"update_{update:04d}.pt"
+            )
+        else:
+            checkpoint = (
+                Path(manifest["b0_run_dir"])
+                / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update:04d}.pt"
+            )
         return [
             sys.executable,
             str(REPOSITORY / "scripts/stomach_coverage/validate_task010_checkpoint.py"),
@@ -348,7 +384,17 @@ def _worker(run_dir: Path, continuation: bool) -> int:
                 started_at=time.time(),
                 finished_at=None,
             )
-            state.update(state=stage, current_stage=stage, error_summary=None)
+            if stage.startswith("train_"):
+                active_state = "running"
+            elif stage.startswith("validate_"):
+                active_state = "validating"
+            elif stage == "summarize":
+                active_state = "summarizing"
+            elif stage == "audit_artifacts":
+                active_state = "auditing"
+            else:
+                active_state = "running"
+            state.update(state=active_state, current_stage=stage, error_summary=None)
             _atomic_json(run_dir / "status.json", state)
             if _run_child(run_dir, manifest, state, stage, attempt) != 0:
                 return _pause(run_dir, state, stage, "stage process failed")
@@ -397,6 +443,21 @@ def _start(args) -> dict:
     config = _read_json(config_path)
     if config.get("schema_version") != 1:
         raise ValueError("visual-dependence config schema mismatch")
+    config_hash = config.get("config_sha256")
+    if (
+        not isinstance(config_hash, str)
+        or len(config_hash) != 64
+        or any(character not in "0123456789abcdef" for character in config_hash)
+    ):
+        raise ValueError("visual-dependence config_sha256 is invalid")
+    base_config = config.get("base_config")
+    if not isinstance(base_config, dict):
+        raise ValueError("visual-dependence base_config is invalid")
+    base_path = config_path.parent / str(base_config.get("path", ""))
+    if not base_path.is_file() or _sha256(base_path) != base_config.get("sha256"):
+        raise ValueError("visual-dependence base_config file hash mismatch")
+    if not args.test_driver:
+        _require_clean_tracked_worktree()
     b0_run_dir = Path(args.b0_run_dir).resolve(strict=True)
     for seed in FORMAL_SEEDS:
         for update in (750, 1000):
