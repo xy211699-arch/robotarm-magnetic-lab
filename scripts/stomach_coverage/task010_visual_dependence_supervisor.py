@@ -189,7 +189,7 @@ def _stage_command(manifest: dict, stage: str, run_dir: Path, attempt: int) -> l
         update = "750"
         checkpoint = (
             Path(manifest["b0_run_dir"])
-            / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update}.pt"
+            / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update:04d}.pt"
         )
         output = run_dir / "validation" / "update750" / condition / f"seed_{seed}"
         command = [
@@ -401,7 +401,7 @@ def _start(args) -> dict:
     for seed in FORMAL_SEEDS:
         for update in (750, 1000):
             checkpoint = (
-                b0_run_dir / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update}.pt"
+                b0_run_dir / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update:04d}.pt"
             )
             if not checkpoint.is_file():
                 raise FileNotFoundError(f"missing B0 checkpoint: {checkpoint}")

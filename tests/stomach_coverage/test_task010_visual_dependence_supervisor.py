@@ -22,7 +22,7 @@ def _b0_run_dir(tmp_path):
     root = tmp_path / "b0"
     for seed in (991001, 991002, 991003):
         for update in (750, 1000):
-            path = root / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update}.pt"
+            path = root / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update:04d}.pt"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"checkpoint")
     return root
