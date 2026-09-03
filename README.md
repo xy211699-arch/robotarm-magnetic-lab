@@ -31,6 +31,14 @@ three-axis magnetic ball assembly, and the external capsule magnet.
   replay the old Script Editor trajectory
 - Asset source: `/home/multirobo/Desktop/sim of FF/Stage.usd`
 
+## TASK-010 visual-dependence validation
+
+The visual-dependence implementation is complete and awaits manual V3 execution. Do not start
+the formal three-seed experiment from Codex.
+
+Manual start, read-only status, watch, and error-recovery commands are documented in
+[`docs/TASK010_VISUAL_DEPENDENCE_AUTOMATION.md`](docs/TASK010_VISUAL_DEPENDENCE_AUTOMATION.md).
+
 The training asset
 [`assets/robotarm_magnetic_training.usda`](assets/robotarm_magnetic_training.usda)
 is a non-destructive compatibility layer. It leaves the source stage unchanged
