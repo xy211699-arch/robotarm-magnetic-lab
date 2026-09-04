@@ -143,6 +143,31 @@ def test_training_retry_uses_latest_checkpoint(tmp_path):
     assert command[command.index("--resume-checkpoint") + 1] == str(checkpoint)
 
 
+def test_training_completion_requires_update_1000(tmp_path):
+    run_dir = tmp_path / "run"
+    metric = run_dir / "training" / "blind" / "seed_991001" / "metrics.jsonl"
+    metric.parent.mkdir(parents=True)
+    metric.write_text(
+        '{"update": 950}\n',
+        encoding="utf-8",
+    )
+    assert not supervisor._training_stage_is_complete(run_dir, "991001")
+
+
+def test_repair_reopens_completed_training_without_update_1000(tmp_path):
+    run_dir = tmp_path / "run"
+    state = {
+        "stages": {
+            "train_blind_seed_991001": {
+                "state": "completed",
+                "attempts": 1,
+            }
+        }
+    }
+    assert supervisor._repair_training_stage_states(run_dir, state)
+    assert state["stages"]["train_blind_seed_991001"]["state"] == "paused_on_error"
+
+
 def test_start_returns_while_worker_remains_alive(tmp_path, monkeypatch):
     started = _start(tmp_path, monkeypatch, delay="1.0")
     assert started["state"] == "queued"

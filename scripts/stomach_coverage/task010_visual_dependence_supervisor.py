@@ -180,6 +180,40 @@ def _latest_training_checkpoint(run_dir: Path, seed: str) -> Path | None:
     return checkpoints[-1]
 
 
+def _last_json_line(path: Path) -> dict | None:
+    if not path.is_file():
+        return None
+    lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return json.loads(lines[-1]) if lines else None
+
+
+def _training_stage_is_complete(run_dir: Path, seed: str) -> bool:
+    checkpoint = (
+        run_dir / "training" / "blind" / f"seed_{seed}" / "checkpoints" / "update_1000.pt"
+    )
+    if not checkpoint.is_file():
+        return False
+    metric = _last_json_line(run_dir / "training" / "blind" / f"seed_{seed}" / "metrics.jsonl")
+    return metric is not None and int(metric.get("update", -1)) >= 1000
+
+
+def _repair_training_stage_states(run_dir: Path, state: dict) -> bool:
+    changed = False
+    for stage, record in state.get("stages", {}).items():
+        if not stage.startswith("train_blind_seed_") or record.get("state") != "completed":
+            continue
+        seed = stage.rsplit("_", 1)[-1]
+        if not _training_stage_is_complete(run_dir, seed):
+            record.update(
+                state="paused_on_error",
+                error_summary="missing update_1000 checkpoint or metric",
+                exit_code=None,
+                finished_at=None,
+            )
+            changed = True
+    return changed
+
+
 def _stage_command(
     manifest: dict,
     stage: str,
@@ -396,6 +430,14 @@ def _worker(run_dir: Path, continuation: bool) -> int:
     manifest = _read_json(run_dir / "manifest.json")
     state = _read_json(run_dir / "status.json")
     state.update(worker_pid=os.getpid(), heartbeat_epoch_s=time.time(), error_summary=None)
+    if not manifest.get("test_driver") and _repair_training_stage_states(run_dir, state):
+        state.update(state="paused_on_error", current_stage="train_blind_seed_991001")
+        _atomic_json(run_dir / "status.json", state)
+        _append_jsonl(
+            run_dir / "events.jsonl",
+            {"event": "training_stage_repaired", "reason": "missing update_1000 checkpoint or metric"},
+        )
+        return 1
     _atomic_json(run_dir / "status.json", state)
     _append_jsonl(
         run_dir / "events.jsonl",
@@ -428,6 +470,12 @@ def _worker(run_dir: Path, continuation: bool) -> int:
             _atomic_json(run_dir / "status.json", state)
             if _run_child(run_dir, manifest, state, stage, attempt) != 0:
                 return _pause(run_dir, state, stage, "stage process failed")
+            if (
+                not manifest.get("test_driver")
+                and stage.startswith("train_blind_seed_")
+                and not _training_stage_is_complete(run_dir, stage.rsplit("_", 1)[-1])
+            ):
+                return _pause(run_dir, state, stage, "training exited without update_1000 checkpoint")
             record.update(state="completed", exit_code=0, finished_at=time.time())
             state.update(heartbeat_epoch_s=time.time(), current_stage=None)
             _atomic_json(run_dir / "status.json", state)
