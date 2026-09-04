@@ -170,7 +170,24 @@ def _spawn_worker(run_dir: Path, state: dict, *, continuation: bool) -> int:
     return process.pid
 
 
-def _stage_command(manifest: dict, stage: str, run_dir: Path, attempt: int) -> list[str]:
+def _latest_training_checkpoint(run_dir: Path, seed: str) -> Path | None:
+    checkpoint_dir = run_dir / "training" / "blind" / f"seed_{seed}" / "checkpoints"
+    if not checkpoint_dir.is_dir():
+        return None
+    checkpoints = sorted(checkpoint_dir.glob("update_*.pt"))
+    if not checkpoints:
+        return None
+    return checkpoints[-1]
+
+
+def _stage_command(
+    manifest: dict,
+    stage: str,
+    run_dir: Path,
+    attempt: int,
+    *,
+    resume_checkpoint: Path | None = None,
+) -> list[str]:
     if manifest.get("test_driver"):
         return [
             sys.executable,
@@ -185,7 +202,7 @@ def _stage_command(manifest: dict, stage: str, run_dir: Path, attempt: int) -> l
     parts = stage.split("_")
     if stage.startswith("train_blind_seed_"):
         seed = parts[-1]
-        return [
+        command = [
             sys.executable,
             str(REPOSITORY / "scripts/stomach_coverage/train_task010.py"),
             "--config",
@@ -207,6 +224,9 @@ def _stage_command(manifest: dict, stage: str, run_dir: Path, attempt: int) -> l
             "--device",
             "cuda:0",
         ]
+        if resume_checkpoint is not None:
+            command += ["--resume-checkpoint", str(resume_checkpoint)]
+        return command
     if stage.startswith("validate_update750_"):
         _, _, condition, _, seed = parts
         update = 750
@@ -300,7 +320,17 @@ def _stage_command(manifest: dict, stage: str, run_dir: Path, attempt: int) -> l
 
 
 def _run_child(run_dir: Path, manifest: dict, state: dict, stage: str, attempt: int) -> int:
-    command = _stage_command(manifest, stage, run_dir, attempt)
+    resume_checkpoint = None
+    if stage.startswith("train_blind_seed_") and attempt > 1:
+        seed = stage.rsplit("_", 1)[-1]
+        resume_checkpoint = _latest_training_checkpoint(run_dir, seed)
+    command = _stage_command(
+        manifest,
+        stage,
+        run_dir,
+        attempt,
+        resume_checkpoint=resume_checkpoint,
+    )
     log = run_dir / "logs" / f"{stage}_attempt_{attempt:02d}.log"
     log.parent.mkdir(parents=True, exist_ok=True)
     _append_jsonl(

@@ -120,6 +120,29 @@ def test_sensitivity_validation_uses_b0_for_normal_and_b1_for_blind(tmp_path):
     assert blind[blind.index("--checkpoint") + 1].startswith(str(run_dir / "training" / "blind"))
 
 
+def test_training_retry_uses_latest_checkpoint(tmp_path):
+    run_dir = tmp_path / "run"
+    checkpoint = (
+        run_dir / "training" / "blind" / "seed_991001" / "checkpoints" / "update_0950.pt"
+    )
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_bytes(b"checkpoint")
+    manifest = {
+        "config": str(ROOT / "configs/task010/visual_dependence_v1.json"),
+        "base_config": str(ROOT / "configs/task010/cnn_gru_development_v1.json"),
+        "b0_run_dir": "/tmp/unused-b0",
+    }
+    command = supervisor._stage_command(
+        manifest,
+        "train_blind_seed_991001",
+        run_dir,
+        2,
+        resume_checkpoint=checkpoint,
+    )
+    assert "--resume-checkpoint" in command
+    assert command[command.index("--resume-checkpoint") + 1] == str(checkpoint)
+
+
 def test_start_returns_while_worker_remains_alive(tmp_path, monkeypatch):
     started = _start(tmp_path, monkeypatch, delay="1.0")
     assert started["state"] == "queued"
