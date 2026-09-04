@@ -101,6 +101,26 @@ def test_mixed_batch_writes_only_intended_rows_and_up_uses_position():
     assert up_call["forces"][0, 0, 2].item() > 0.0
 
 
+def test_vertical_lateral_mode_falls_back_to_hold_for_only_that_row():
+    action, composer = _fake_action(2)
+    action.process_actions(
+        torch.tensor([[1.0, 0.5], [3.0, 0.5]])
+    )
+    action.capsule.data.root_link_quat_w = _Proxy(
+        torch.tensor(
+            [
+                [0.0, 2.0**-0.5, 0.0, 2.0**-0.5],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        )
+    )
+    action.apply_actions()
+    assert len(composer.set_calls) == 1
+    assert composer.set_calls[0]["env_ids"].tolist() == [0]
+    assert action.previous_action_features[1, 0].item() == 1.0
+    assert action.previous_action_features[1, 6].item() == 0.0
+
+
 def test_mode_change_to_hold_clears_selected_composer_rows_before_substep():
     action, composer = _fake_action(2)
     action.process_actions(torch.tensor([[1.0, 0.5], [3.0, 0.5]]))

@@ -142,9 +142,27 @@ class VectorizedParameterizedForceAction(ActionTerm):
         camera = link_pos + math_utils.quat_apply(link_quat, camera_local)
         other = link_pos + math_utils.quat_apply(link_quat, other_local)
         axes = camera - other
+        world_up = torch.tensor(
+            [0.0, 0.0, 1.0],
+            device=axes.device,
+            dtype=axes.dtype,
+        )
+        lateral = torch.linalg.cross(world_up.expand_as(axes), axes)
+        lateral_norm = torch.linalg.vector_norm(lateral, dim=1)
+        lateral_modes = (self._modes >= 1) & (self._modes <= 4)
+        undefined = lateral_modes & (lateral_norm <= 1.0e-12)
+        modes = self._modes
+        alpha = self._alpha
+        if torch.any(undefined).item():
+            modes = self._modes.clone()
+            alpha = self._alpha.clone()
+            modes[undefined] = 0
+            alpha[undefined] = 0.0
+            self._previous_action_features[undefined] = 0.0
+            self._previous_action_features[undefined, 0] = 1.0
         command = batched_parameterized_endpoint_forces(
-            self._modes,
-            self._alpha,
+            modes,
+            alpha,
             self.mass_kg,
             axes,
             self.config,
@@ -164,7 +182,7 @@ class VectorizedParameterizedForceAction(ActionTerm):
         self.last_resultant_forces_world.copy_(resultant)
         self.last_resultant_torques_world.copy_(torque)
         com_rows = torch.nonzero(
-            (self._modes >= 1) & (self._modes <= 4), as_tuple=False
+            (modes >= 1) & (modes <= 4), as_tuple=False
         ).reshape(-1)
         if com_rows.numel():
             self.capsule.permanent_wrench_composer.set_forces_and_torques_index(
@@ -175,7 +193,7 @@ class VectorizedParameterizedForceAction(ActionTerm):
                 env_ids=com_rows,
                 is_global=True,
             )
-        up_rows = torch.nonzero(self._modes == 5, as_tuple=False).reshape(-1)
+        up_rows = torch.nonzero(modes == 5, as_tuple=False).reshape(-1)
         if up_rows.numel():
             # Keep UP as a true point force at the camera-side hemisphere.
             self.capsule.permanent_wrench_composer.set_forces_and_torques_index(
