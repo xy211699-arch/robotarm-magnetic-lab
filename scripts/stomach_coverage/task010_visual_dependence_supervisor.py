@@ -437,7 +437,6 @@ def _worker(run_dir: Path, continuation: bool) -> int:
             run_dir / "events.jsonl",
             {"event": "training_stage_repaired", "reason": "missing update_1000 checkpoint or metric"},
         )
-        return 1
     _atomic_json(run_dir / "status.json", state)
     _append_jsonl(
         run_dir / "events.jsonl",
