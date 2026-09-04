@@ -511,6 +511,8 @@ def _status_payload(run_dir: Path) -> dict:
     result = json.loads(json.dumps(state))
     result["runtime_s"] = max(0.0, now - float(state.get("started_epoch_s", now)))
     result["heartbeat_age_s"] = max(0.0, now - float(state.get("heartbeat_epoch_s", 0.0)))
+    current_stage = state.get("current_stage")
+    result["training_progress"] = _training_progress(run_dir, current_stage)
     if state.get("state") in ACTIVE_STATES and (
         result["heartbeat_age_s"] > STALE_AFTER_S or not _pid_alive(state.get("worker_pid"))
     ):
@@ -520,6 +522,22 @@ def _status_payload(run_dir: Path) -> dict:
             f"worker_pid={state.get('worker_pid')}"
         )
     return result
+
+
+def _training_progress(run_dir: Path, stage: str | None) -> dict | None:
+    if not stage or not stage.startswith("train_blind_seed_"):
+        return None
+    seed = stage.rsplit("_", 1)[-1]
+    training_dir = run_dir / "training" / "blind" / f"seed_{seed}"
+    metric = _last_json_line(training_dir / "metrics.jsonl")
+    checkpoints = sorted((training_dir / "checkpoints").glob("update_*.pt"))
+    return {
+        "seed": int(seed),
+        "update": int(metric.get("update", 0)) if metric else 0,
+        "total_transitions": int(metric.get("total_transitions", 0)) if metric else 0,
+        "transitions_per_second": float(metric.get("transitions_per_second", 0.0)) if metric else 0.0,
+        "latest_checkpoint": str(checkpoints[-1]) if checkpoints else None,
+    }
 
 
 def _start(args) -> dict:

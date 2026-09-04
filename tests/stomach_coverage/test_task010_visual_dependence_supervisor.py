@@ -169,6 +169,27 @@ def test_repair_reopens_completed_training_without_update_1000(tmp_path):
     assert state["stages"]["train_blind_seed_991001"]["state"] == "paused_on_error"
 
 
+def test_training_progress_reads_latest_metric_and_checkpoint(tmp_path):
+    run_dir = tmp_path / "run"
+    training_dir = run_dir / "training" / "blind" / "seed_991001"
+    training_dir.mkdir(parents=True)
+    (training_dir / "metrics.jsonl").write_text(
+        '{"update": 958, "total_transitions": 735360, "transitions_per_second": 36.2}\n',
+        encoding="utf-8",
+    )
+    checkpoint = training_dir / "checkpoints" / "update_0950.pt"
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_bytes(b"checkpoint")
+    progress = supervisor._training_progress(run_dir, "train_blind_seed_991001")
+    assert progress == {
+        "seed": 991001,
+        "update": 958,
+        "total_transitions": 735360,
+        "transitions_per_second": 36.2,
+        "latest_checkpoint": str(checkpoint),
+    }
+
+
 def test_start_returns_while_worker_remains_alive(tmp_path, monkeypatch):
     started = _start(tmp_path, monkeypatch, delay="1.0")
     assert started["state"] == "queued"
