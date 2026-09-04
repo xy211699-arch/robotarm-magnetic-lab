@@ -141,6 +141,7 @@ def test_training_retry_uses_latest_checkpoint(tmp_path):
     )
     assert "--resume-checkpoint" in command
     assert command[command.index("--resume-checkpoint") + 1] == str(checkpoint)
+    assert command[command.index("--max-updates") + 1] == "50"
 
 
 def test_training_completion_requires_update_1000(tmp_path):

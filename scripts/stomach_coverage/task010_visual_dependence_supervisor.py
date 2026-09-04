@@ -180,6 +180,13 @@ def _latest_training_checkpoint(run_dir: Path, seed: str) -> Path | None:
     return checkpoints[-1]
 
 
+def _checkpoint_update(checkpoint: Path) -> int:
+    try:
+        return int(checkpoint.stem.split("_", 1)[1])
+    except (IndexError, ValueError) as error:
+        raise ValueError(f"cannot parse checkpoint update: {checkpoint}") from error
+
+
 def _last_json_line(path: Path) -> dict | None:
     if not path.is_file():
         return None
@@ -246,7 +253,7 @@ def _stage_command(
             "--seed",
             seed,
             "--max-updates",
-            "1000",
+            str(1000 - _checkpoint_update(resume_checkpoint) if resume_checkpoint is not None else 1000),
             "--save-interval",
             "50",
             "--validation",
