@@ -592,8 +592,100 @@ def diagnose(args) -> dict:
     return result
 
 
+def _validate_resume_checkpoint(checkpoint: Path, manifest: dict, seed: int) -> dict:
+    checkpoint = Path(checkpoint).resolve(strict=True)
+    from robotarm_magnetic_lab.runtime.task010_training_health import parse_checkpoint_update
+
+    update = parse_checkpoint_update(checkpoint)
+    if update >= TARGET_UPDATE:
+        raise RuntimeError(f"resume checkpoint update {update} is already at the target")
+    try:
+        import torch
+
+        payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    except BaseException as error:
+        raise RuntimeError(
+            f"resume checkpoint cannot be loaded: {type(error).__name__}: {error}"
+        ) from error
+    metadata = payload.get("experiment_metadata") if isinstance(payload, dict) else None
+    if not isinstance(payload, dict) or not isinstance(metadata, dict):
+        raise RuntimeError("resume checkpoint has an invalid payload")
+    expected = {
+        "current_update": update,
+        "git_commit": manifest["git"]["commit"],
+        "base_config_sha256": manifest["base_config_sha256"],
+        "visual_dependence_config_sha256": manifest["visual_config_sha256"],
+        "visual_condition": "blind",
+    }
+    actual = {
+        "current_update": payload.get("current_update"),
+        "git_commit": payload.get("git_commit"),
+        "base_config_sha256": payload.get("base_config_sha256", payload.get("config_hash")),
+        "visual_dependence_config_sha256": payload.get("visual_dependence_config_sha256"),
+        "visual_condition": metadata.get("visual_condition"),
+    }
+    mismatches = [name for name, value in actual.items() if value != expected[name]]
+    if mismatches:
+        raise RuntimeError("resume checkpoint identity mismatch: " + ", ".join(mismatches))
+    return {
+        "path": str(checkpoint),
+        "update": update,
+        "remaining_updates": remaining_updates(update, TARGET_UPDATE),
+        "sha256": _sha256(checkpoint),
+        "seed": int(seed),
+    }
+
+
 def continue_run(args) -> dict:
-    raise RuntimeError("continue is implemented after failure-path tests")
+    run_dir = _resolve_run(args.run_dir, args.artifact_root)
+    manifest = _read_json(run_dir / "manifest.json")
+    state = _read_json(run_dir / "status.json")
+    if state.get("state") != "paused_on_error":
+        raise RuntimeError("continue requires persisted state paused_on_error")
+    if pid_alive(state.get("worker_pid")) or pid_alive(state.get("child_pid")):
+        raise RuntimeError("cannot continue while the previous worker or child PID is alive")
+    stage = state.get("current_stage")
+    if stage not in stage_names():
+        raise RuntimeError("paused run does not identify a valid current training stage")
+    seed = SEEDS[stage_names().index(stage)]
+    if not _identity_matches(manifest):
+        raise RuntimeError("cannot continue because Git or frozen input identity changed")
+    snapshot = progress_snapshot(_training_dir(run_dir, seed))
+    latest = snapshot.get("latest_checkpoint")
+    if not latest:
+        raise RuntimeError("cannot continue because no complete checkpoint is available")
+    checkpoint_audit = _validate_resume_checkpoint(Path(latest), manifest, seed)
+    previous_error = state.get("error")
+    state["stages"][stage]["state"] = "queued"
+    state.update(
+        state="queued",
+        child_pid=None,
+        heartbeat_epoch_s=time.time(),
+        progress=snapshot,
+        error=None,
+    )
+    _atomic_json(run_dir / "status.json", state)
+    _append_event(
+        run_dir,
+        {
+            "event": "continue_authorized",
+            "stage": stage,
+            "seed": seed,
+            "previous_error": previous_error,
+            "resume_checkpoint": checkpoint_audit,
+        },
+    )
+    worker_pid = _spawn_worker(run_dir, state, continuation=True)
+    result = {
+        "run_id": state["run_id"],
+        "run_dir": str(run_dir),
+        "worker_pid": worker_pid,
+        "state": "queued",
+        "stage": stage,
+        "resume_checkpoint": checkpoint_audit,
+    }
+    print(json.dumps(result, sort_keys=True), flush=True)
+    return result
 
 
 def parser() -> argparse.ArgumentParser:

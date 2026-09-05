@@ -31,7 +31,17 @@ def main() -> int:
     args = parser.parse_args()
 
     trace = Path(os.environ["TASK010_V2_FAKE_TRACE"])
-    _append(trace, {"event": "start", "seed": args.seed, "pid": os.getpid(), "time_ns": time.time_ns()})
+    _append(
+        trace,
+        {
+            "event": "start",
+            "seed": args.seed,
+            "pid": os.getpid(),
+            "time_ns": time.time_ns(),
+            "max_updates": args.max_updates,
+            "resume_checkpoint": str(args.resume_checkpoint) if args.resume_checkpoint else None,
+        },
+    )
     delay = float(os.environ.get("TASK010_V2_FAKE_DELAY", "0.01"))
     time.sleep(delay)
 
