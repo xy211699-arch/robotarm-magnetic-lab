@@ -227,6 +227,8 @@ def training_command(
             manifest["base_config_sha256"],
             "--visual-config-sha256",
             manifest["visual_config_sha256"],
+            "--dependency-audit-sha256",
+            manifest["dependency_audit"]["sha256"],
         ]
     else:
         command = [
@@ -471,6 +473,7 @@ def _run_child(run_dir: Path, manifest: dict, state: dict, stage: str, seed: int
         "base_config_sha256": manifest["base_config_sha256"],
         "visual_dependence_config_sha256": manifest["visual_config_sha256"],
         "visual_condition": "blind",
+        "dependency_audit_hash": manifest["dependency_audit"]["sha256"],
     }
     audit = audit_completion(training_dir, expected, child_exit_code=int(child.returncode))
     audit["console_tail"] = _console_tail(log)
@@ -616,6 +619,7 @@ def _validate_resume_checkpoint(checkpoint: Path, manifest: dict, seed: int) -> 
         "base_config_sha256": manifest["base_config_sha256"],
         "visual_dependence_config_sha256": manifest["visual_config_sha256"],
         "visual_condition": "blind",
+        "dependency_audit_hash": manifest["dependency_audit"]["sha256"],
     }
     actual = {
         "current_update": payload.get("current_update"),
@@ -623,6 +627,7 @@ def _validate_resume_checkpoint(checkpoint: Path, manifest: dict, seed: int) -> 
         "base_config_sha256": payload.get("base_config_sha256", payload.get("config_hash")),
         "visual_dependence_config_sha256": payload.get("visual_dependence_config_sha256"),
         "visual_condition": metadata.get("visual_condition"),
+        "dependency_audit_hash": payload.get("dependency_audit_hash"),
     }
     mismatches = [name for name, value in actual.items() if value != expected[name]]
     if mismatches:
@@ -640,6 +645,21 @@ def continue_run(args) -> dict:
     run_dir = _resolve_run(args.run_dir, args.artifact_root)
     manifest = _read_json(run_dir / "manifest.json")
     state = _read_json(run_dir / "status.json")
+    effective = _effective_status(run_dir)
+    if state.get("state") in ACTIVE_STATES and effective.get("state") == "paused_on_error":
+        stage = state.get("current_stage")
+        audit = dict(effective["error"])
+        audit.update(state.get("progress") or {})
+        if stage in state.get("stages", {}):
+            state["stages"][stage].update(state="paused_on_error", completion_audit=audit)
+        state.update(
+            state="paused_on_error",
+            child_pid=None,
+            heartbeat_epoch_s=time.time(),
+            error=audit,
+        )
+        _atomic_json(run_dir / "status.json", state)
+        _append_event(run_dir, {"event": "coordinator_stale_materialized", "error": audit})
     if state.get("state") != "paused_on_error":
         raise RuntimeError("continue requires persisted state paused_on_error")
     if pid_alive(state.get("worker_pid")) or pid_alive(state.get("child_pid")):

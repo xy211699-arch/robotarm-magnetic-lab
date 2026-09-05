@@ -229,6 +229,10 @@ def audit_completion(
             expected.get("visual_dependence_config_sha256"),
         ),
         "visual_condition": (metadata.get("visual_condition"), expected.get("visual_condition")),
+        "dependency_audit_hash": (
+            payload.get("dependency_audit_hash"),
+            expected.get("dependency_audit_hash"),
+        ),
     }
     mismatches = [name for name, (actual, wanted) in checks.items() if actual != wanted]
     if mismatches:

@@ -1176,3 +1176,51 @@
   仍显示为excluded；数值覆盖率、可达mask和训练/验证合同均未修改。
 - 复现确认必须保持原正式验证的12环境克隆布局、批次行号及reset seed；单环境复采会改变
   渲染观测并产生不同轨迹，已将相关诊断输出隔离至`_failed_attempts/`，不计入正式结果。
+
+## 2026-09-05 — Codex重新接管与视觉依赖性实验状态审计
+
+- 完整读取`docs/AGENT_HANDOFF_2026-09-05.md`、视觉依赖性合同、设计、自动运行说明及仓库
+  现场状态。当前分支为`feature/TASK-010-visual-dependence-validation`，本地与origin HEAD均为
+  `c791d61`；工作区在本次日志记录前无未提交改动。
+- 正式视觉依赖性运行并非交接快照所写的“running”，权威`status.json`现为
+  `paused_on_error`：Blind-GRU seed 991001已完成1000 updates；seed 991002第三次恢复运行
+  只到update 437，最新完整检查点为update 0400，随后以零退出码提前结束且缺少
+  `update_1000.pt`；seed 991003及全部验证、汇总和工件审计尚未开始。
+- seed 991002最近吞吐约1.166 TPS、单update约658秒，显著低于正常约38 TPS；日志同时提示
+  CPU处于powersave，历史交接还记录awesun显示重连会触发同类降速。沙箱无法观察宿主GPU/PID，
+  后续恢复前须由用户终端确认远程桌面、CPU governor和GPU进程状态。
+- 后续建议采用“先恢复并完成V3证据闭环，再决定视觉模型升级”的顺序；不重新训练已完成的
+  seed 991001，不修改冻结实验合同，也不在未完成统计前声称策略具有视觉依赖性。
+- 用户确认采用方案A：现有视觉依赖性运行保留为试运行，后续在统一最终HEAD下重新训练三个
+  Blind-GRU正式种子。检查当前系统可见文件后，`tmux`、OpenSSH Server的`sshd`及
+  `/etc/ssh/sshd_config`均不存在；须先通过Awesun终端安装并启用`openssh-server`与`tmux`，
+  验证SSH连接后再关闭Awesun并通过SSH+tmux执行稳定性门禁和正式运行。
+- 用户取消SSH/tmux方案，要求重写训练启动与监督代码并自行启动；新监督器范围已明确为只按
+  991001、991002、991003顺序训练三个Blind-GRU种子，全部训练完成后停止，不自动进入验证、
+  汇总或审计。现有运行保留为试运行且不得被新正式运行续接或覆盖。
+- 用户批准训练专用V2监督架构；形成书面设计
+  `docs/superpowers/specs/2026-09-05-task010-blind-training-supervisor-v2-design.md`。当前目录已确认是
+  linked worktree；实施前基线回归为251 passed、1 skipped。设计规定新正式运行从三个种子的
+  update 0开始，严格区分零退出未完成、非零退出、非有限指标、身份变化和性能退化，并在第三
+  个种子完成后停止。检查既有checkpoint结构确认内部进度字段为`current_update`，种子身份由
+  `runner_initialized`事件审计，不虚构checkpoint中不存在的seed字段。
+- 用户决定继续使用Awesun并要求重写训练启动与监督入口。代码审查确认：第二次991002运行的
+  直接故障是环境9横向方向未定义；第三次运行指标均有限、无OOM或Traceback，但在update 437
+  以退出码0提前结束。现入口未捕获/记录`SystemExit`或Kit shutdown来源，监督器虽能以缺少
+  update-1000检查点阻止后续阶段，却未实际使用配置中的5分钟停滞与15分钟失败阈值，也未把
+  统一Git HEAD固化为三种子硬门禁。慢吞吐仍可能包含CPU powersave/远程显示影响，不能仅靠
+  重写监督器消除；新设计应区分训练语义、进程生命周期与主机性能三类状态。
+- 完成训练专用V2监督器：固定按991001、991002、991003顺序执行Blind-GRU训练，冻结12环境、
+  64步rollout、1000 updates、50-update检查点和cuda:0；第三个种子通过严格终态审计后停在
+  `completed_training`，不调用验证、汇总或工件审计。正式运行必须使用干净tracked worktree，
+  manifest固化Git、配置、依赖、主机和GPU身份，旧混合HEAD运行不会被续接。
+- 新增耐久状态与故障处理：原子写入status/manifest、追加式events、进程锁和单GPU顺序门禁；
+  零退出但未到update 1000、非零退出、非有限指标、检查点缺失/损坏及身份变化均进入
+  `paused_on_error`。状态查询给出最近十次update中位TPS、ETA及5/15分钟停滞告警，但不因
+  单纯变慢自动杀死训练；人工`continue`只从内容和身份均通过审计的最新完整检查点继续。
+- 采用测试驱动完成训练健康审计和监督状态机；25项专项测试覆盖三种子固定顺序、禁止并发、
+  不启动验证、未完成零退出拦截、非零退出拦截、死协调器只读识别、断点剩余update计算、
+  损坏检查点拒绝及完成种子不重跑。新增中文操作文档
+  `docs/TASK010_BLIND_TRAINING_SUPERVISOR_V2.md`；本轮未启动三个正式GPU训练。
+- 交付前完整回归结果为277 passed、1 skipped、零失败；额外覆盖协调器意外退出后的状态物化
+  与检查点续跑路径。跳过项及49条警告均为既有Isaac Lab/PhysX弃用提示，不影响本次入口。

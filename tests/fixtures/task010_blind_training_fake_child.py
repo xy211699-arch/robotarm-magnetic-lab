@@ -28,6 +28,7 @@ def main() -> int:
     parser.add_argument("--git-commit", required=True)
     parser.add_argument("--base-config-sha256", required=True)
     parser.add_argument("--visual-config-sha256", required=True)
+    parser.add_argument("--dependency-audit-sha256", required=True)
     args = parser.parse_args()
 
     trace = Path(os.environ["TASK010_V2_FAKE_TRACE"])
@@ -54,8 +55,8 @@ def main() -> int:
     fail_mode = os.environ.get("TASK010_V2_FAKE_FAIL_MODE", "")
     requested_final = start_update + args.max_updates
     if args.seed == fail_seed and fail_mode == "incomplete_zero":
-        metric_update = min(requested_final - 1, start_update + 37)
-        checkpoint_update = start_update
+        metric_update = min(requested_final - 1, max(437, start_update + 37))
+        checkpoint_update = max(start_update, min(400, metric_update))
         exit_code = 0
     elif args.seed == fail_seed and fail_mode == "nonzero":
         _append(trace, {"event": "end", "seed": args.seed, "pid": os.getpid(), "time_ns": time.time_ns()})
@@ -100,6 +101,7 @@ def main() -> int:
             "config_hash": args.base_config_sha256,
             "base_config_sha256": args.base_config_sha256,
             "visual_dependence_config_sha256": args.visual_config_sha256,
+            "dependency_audit_hash": args.dependency_audit_sha256,
             "experiment_metadata": {
                 "visual_condition": "blind",
                 "base_config_sha256": args.base_config_sha256,

@@ -136,7 +136,7 @@ def test_zero_exit_before_update_1000_pauses_and_does_not_start_next_seed(tmp_pa
     assert state["state"] == "paused_on_error"
     assert state["current_stage"] == "train_blind_seed_991002"
     assert state["error"]["error_type"] == "incomplete_zero_exit"
-    assert state["error"]["observed_update"] == 37
+    assert state["error"]["observed_update"] == 437
     assert state["error"]["expected_update"] == 1000
     rows = [json.loads(line) for line in trace.read_text().splitlines()]
     assert not any(row["seed"] == 991003 for row in rows)
@@ -190,6 +190,7 @@ def test_resume_command_from_update_0400_requests_exactly_600_updates(tmp_path):
         "git": {"commit": "a" * 40},
         "base_config_sha256": "b" * 64,
         "visual_config_sha256": "c" * 64,
+        "dependency_audit": {"sha256": "d" * 64},
         "test_driver": str(FAKE_CHILD),
     }
     command = supervisor.training_command(
@@ -222,8 +223,8 @@ def test_continue_resumes_failed_seed_and_never_restarts_completed_seed(tmp_path
     assert completed["state"] == "completed_training"
     starts = [row for row in map(json.loads, trace.read_text().splitlines()) if row["event"] == "start"]
     assert [row["seed"] for row in starts] == [991001, 991002, 991002, 991003]
-    assert starts[2]["resume_checkpoint"].endswith("update_0000.pt")
-    assert starts[2]["max_updates"] == 1000
+    assert starts[2]["resume_checkpoint"].endswith("update_0400.pt")
+    assert starts[2]["max_updates"] == 600
 
 
 def test_continue_refuses_non_paused_run(tmp_path, monkeypatch):
@@ -270,3 +271,47 @@ def test_effective_status_reports_dead_coordinator_without_mutating_status(tmp_p
     assert observed["state"] == "paused_on_error"
     assert observed["error"]["error_type"] == "coordinator_stale"
     assert json.loads(status_path.read_text(encoding="utf-8")) == persisted
+
+
+def test_continue_materializes_dead_coordinator_pause_before_resume(tmp_path, monkeypatch):
+    run_dir = tmp_path / "run"
+    checkpoint = run_dir / "training/blind/seed_991001/checkpoints/update_0400.pt"
+    checkpoint.parent.mkdir(parents=True)
+    checkpoint.write_bytes(b"checkpoint")
+    (checkpoint.parents[1] / "metrics.jsonl").write_text(
+        json.dumps(
+            {
+                "update": 437,
+                "time_ns": time.time_ns(),
+                "transitions_per_second": 38.0,
+                "all_finite": True,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    manifest = {"test_driver": str(FAKE_CHILD), "git": {"commit": "a" * 40}}
+    (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    state = supervisor._initial_state(run_dir, "test-run")
+    stage = supervisor.stage_names()[0]
+    state.update(state="training", current_stage=stage, worker_pid=999_999_999)
+    state["stages"][stage]["state"] = "running"
+    (run_dir / "status.json").write_text(json.dumps(state), encoding="utf-8")
+    monkeypatch.setattr(supervisor, "_identity_matches", lambda value: True)
+    monkeypatch.setattr(
+        supervisor,
+        "_validate_resume_checkpoint",
+        lambda path, value, seed: {
+            "path": str(path),
+            "update": 400,
+            "remaining_updates": 600,
+            "sha256": "f" * 64,
+            "seed": seed,
+        },
+    )
+    monkeypatch.setattr(supervisor, "_spawn_worker", lambda *args, **kwargs: 12345)
+    args = supervisor.parser().parse_args(["continue", "--run-dir", str(run_dir)])
+    result = supervisor.continue_run(args)
+    assert result["worker_pid"] == 12345
+    events = [json.loads(line) for line in (run_dir / "events.jsonl").read_text().splitlines()]
+    assert [row["event"] for row in events] == ["coordinator_stale_materialized", "continue_authorized"]
