@@ -1,0 +1,173 @@
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+
+import pytest
+
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "scripts" / "stomach_coverage"))
+
+import task010_blind_training_supervisor_v2 as supervisor  # noqa: E402
+
+
+FAKE_CHILD = ROOT / "tests/fixtures/task010_blind_training_fake_child.py"
+
+
+def _start(tmp_path, monkeypatch, *, delay="0.01", fail_seed=None, fail_mode=None):
+    trace = tmp_path / "trace.jsonl"
+    monkeypatch.setenv("TASK010_V2_TEST_MODE", "1")
+    monkeypatch.setenv("TASK010_V2_FAKE_TRACE", str(trace))
+    monkeypatch.setenv("TASK010_V2_FAKE_DELAY", delay)
+    if fail_seed is not None:
+        monkeypatch.setenv("TASK010_V2_FAKE_FAIL_SEED", str(fail_seed))
+    if fail_mode is not None:
+        monkeypatch.setenv("TASK010_V2_FAKE_FAIL_MODE", fail_mode)
+    args = supervisor.parser().parse_args(
+        [
+            "start",
+            "--base-config",
+            str(ROOT / "configs/task010/cnn_gru_development_v1.json"),
+            "--visual-config",
+            str(ROOT / "configs/task010/visual_dependence_v1.json"),
+            "--artifact-root",
+            str(tmp_path / "artifacts"),
+            "--test-driver",
+            str(FAKE_CHILD),
+        ]
+    )
+    return supervisor.start(args), trace
+
+
+def _wait_terminal(run_dir: Path, timeout=10.0):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        state = json.loads((run_dir / "status.json").read_text(encoding="utf-8"))
+        if state["state"] in {"completed_training", "paused_on_error"}:
+            return state
+        time.sleep(0.02)
+    raise AssertionError("supervisor did not reach a terminal state")
+
+
+def test_stage_order_contains_only_three_training_seeds():
+    assert supervisor.SEEDS == (991001, 991002, 991003)
+    assert supervisor.stage_names() == (
+        "train_blind_seed_991001",
+        "train_blind_seed_991002",
+        "train_blind_seed_991003",
+    )
+
+
+def test_training_command_is_frozen_and_contains_no_validation(tmp_path):
+    manifest = {
+        "base_config": str(ROOT / "configs/task010/cnn_gru_development_v1.json"),
+        "git": {"commit": "a" * 40},
+        "base_config_sha256": "b" * 64,
+        "visual_config_sha256": "c" * 64,
+        "dependency_audit": {"path": str(ROOT / "artifacts/task010_cnn_gru/gate0/prerequisites.json")},
+        "test_driver": None,
+    }
+    command = supervisor.training_command(manifest, tmp_path, seed=991001, resume_checkpoint=None)
+    joined = " ".join(command)
+    assert command[command.index("--visual-condition") + 1] == "blind"
+    assert command[command.index("--max-updates") + 1] == "1000"
+    assert command[command.index("--save-interval") + 1] == "50"
+    assert command[command.index("--device") + 1] == "cuda:0"
+    assert "validate_task010_checkpoint.py" not in joined
+
+
+def test_start_returns_while_detached_worker_is_alive(tmp_path, monkeypatch):
+    started, _trace = _start(tmp_path, monkeypatch, delay="1.0")
+    try:
+        assert started["state"] == "queued"
+        assert supervisor.pid_alive(started["worker_pid"])
+        assert Path(started["run_dir"], "manifest.json").is_file()
+    finally:
+        os.kill(started["worker_pid"], signal.SIGTERM)
+
+
+def test_fake_pipeline_runs_seeds_sequentially_and_stops_before_validation(tmp_path, monkeypatch):
+    started, trace = _start(tmp_path, monkeypatch)
+    run_dir = Path(started["run_dir"])
+    state = _wait_terminal(run_dir)
+    assert state["state"] == "completed_training"
+    assert [state["stages"][name]["state"] for name in supervisor.stage_names()] == [
+        "completed",
+        "completed",
+        "completed",
+    ]
+    rows = [json.loads(line) for line in trace.read_text().splitlines()]
+    assert [(row["event"], row["seed"]) for row in rows] == [
+        ("start", 991001),
+        ("end", 991001),
+        ("start", 991002),
+        ("end", 991002),
+        ("start", 991003),
+        ("end", 991003),
+    ]
+    events = (run_dir / "events.jsonl").read_text(encoding="utf-8")
+    assert "validate_task010" not in events
+    assert "summarize" not in events
+
+
+def test_zero_exit_before_update_1000_pauses_and_does_not_start_next_seed(tmp_path, monkeypatch):
+    started, trace = _start(
+        tmp_path,
+        monkeypatch,
+        fail_seed=991002,
+        fail_mode="incomplete_zero",
+    )
+    state = _wait_terminal(Path(started["run_dir"]))
+    assert state["state"] == "paused_on_error"
+    assert state["current_stage"] == "train_blind_seed_991002"
+    assert state["error"]["error_type"] == "incomplete_zero_exit"
+    assert state["error"]["observed_update"] == 37
+    assert state["error"]["expected_update"] == 1000
+    rows = [json.loads(line) for line in trace.read_text().splitlines()]
+    assert not any(row["seed"] == 991003 for row in rows)
+
+
+def test_nonzero_exit_pauses_with_child_exit_code(tmp_path, monkeypatch):
+    started, _trace = _start(tmp_path, monkeypatch, fail_seed=991001, fail_mode="nonzero")
+    state = _wait_terminal(Path(started["run_dir"]))
+    assert state["state"] == "paused_on_error"
+    assert state["error"]["error_type"] == "child_nonzero_exit"
+    assert state["error"]["child_exit_code"] == 23
+
+
+def test_start_rejects_a_second_active_run(tmp_path, monkeypatch):
+    started, _trace = _start(tmp_path, monkeypatch, delay="1.0")
+    try:
+        args = supervisor.parser().parse_args(
+            [
+                "start",
+                "--base-config",
+                str(ROOT / "configs/task010/cnn_gru_development_v1.json"),
+                "--visual-config",
+                str(ROOT / "configs/task010/visual_dependence_v1.json"),
+                "--artifact-root",
+                str(tmp_path / "artifacts"),
+                "--test-driver",
+                str(FAKE_CHILD),
+            ]
+        )
+        with pytest.raises(RuntimeError, match="already active"):
+            supervisor.start(args)
+    finally:
+        os.kill(started["worker_pid"], signal.SIGTERM)
+
+
+def test_formal_start_rejects_dirty_tracked_worktree(monkeypatch):
+    monkeypatch.setattr(
+        subprocess,
+        "check_output",
+        lambda *args, **kwargs: " M docs/PROJECT_RUN_LOG.md\n",
+    )
+    with pytest.raises(RuntimeError, match="clean tracked worktree"):
+        supervisor.git_identity(require_clean=True)
