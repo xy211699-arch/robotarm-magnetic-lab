@@ -10,6 +10,10 @@ import numpy as np
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts/stomach_coverage/summarize_task010_validation.py"
 CHECKPOINT_SCRIPT = Path(__file__).resolve().parents[2] / "scripts/stomach_coverage/validate_task010_checkpoint.py"
+CHECKPOINT_SPEC = importlib.util.spec_from_file_location("task010_checkpoint_validation", CHECKPOINT_SCRIPT)
+CHECKPOINT_MODULE = importlib.util.module_from_spec(CHECKPOINT_SPEC)
+assert CHECKPOINT_SPEC.loader is not None
+CHECKPOINT_SPEC.loader.exec_module(CHECKPOINT_MODULE)
 SPEC = importlib.util.spec_from_file_location("task010_validation_summary", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
@@ -119,3 +123,48 @@ def test_first_frame_intervention_is_created_per_validation_batch():
     source = CHECKPOINT_SCRIPT.read_text(encoding="utf-8")
     assert "Task010VisualIntervention(" in source
     assert '"first_frame", num_envs=len(batch)' in source
+
+
+def _telemetry_record(points: int = 1201):
+    return {
+        "pose_id": MODULE.VALIDATION_POSE_IDS[0],
+        "control_hz": 10,
+        "state_points": points,
+        "action_points": 1200,
+        "quaternion_order": "wxyz",
+        "coverage_fraction": np.linspace(0.1, 0.9, points).tolist(),
+        "position_world_m": [[0.0, 0.0, 0.0]] * points,
+        "quaternion_wxyz": [[1.0, 0.0, 0.0, 0.0]] * points,
+        "linear_velocity_world_m_s": [[0.0, 0.0, 0.0]] * points,
+        "angular_velocity_world_rad_s": [[0.0, 0.0, 0.0]] * points,
+        "action_mode": [0] * 1200,
+        "action_alpha": [0.0] * 1200,
+        "reward": [0.0] * 1200,
+    }
+
+
+def test_full_telemetry_contract_accepts_1201_states_and_1200_actions():
+    result = CHECKPOINT_MODULE.validate_full_telemetry_record(_telemetry_record())
+    assert result["pose_id"] == MODULE.VALIDATION_POSE_IDS[0]
+    assert result["state_points"] == 1201
+    assert result["action_points"] == 1200
+
+
+def test_full_telemetry_contract_rejects_wrong_state_horizon():
+    with pytest.raises(ValueError, match="1201"):
+        CHECKPOINT_MODULE.validate_full_telemetry_record(_telemetry_record(points=1200))
+
+
+def test_checkpoint_validator_exposes_full_telemetry_output():
+    source = CHECKPOINT_SCRIPT.read_text(encoding="utf-8")
+    assert "--save-full-telemetry" in source
+    assert '"position_world_m"' in source
+    assert '"quaternion_wxyz"' in source
+    assert '"final_masks"' in source
+
+
+def test_full_telemetry_uses_pre_reset_terminal_snapshot():
+    source = CHECKPOINT_SCRIPT.read_text(encoding="utf-8")
+    assert 'terminal["root_pose"]' in source
+    assert 'terminal["root_velocity"]' in source
+    assert 'terminal["reachable_masks"][row]' in source

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 
@@ -13,6 +14,56 @@ sys.path.insert(0, str(ROOT / "source" / "robotarm_magnetic_lab"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from summarize_task010_validation import VALIDATION_POSE_IDS, file_sha256, summarize, validation_batches
+
+
+def validate_full_telemetry_record(record: dict) -> dict:
+    """Validate one pose's fixed 10 Hz validation telemetry contract."""
+    pose_id = str(record.get("pose_id"))
+    if pose_id not in VALIDATION_POSE_IDS:
+        raise ValueError(f"unknown frozen validation pose: {pose_id}")
+    if int(record.get("control_hz", -1)) != 10:
+        raise ValueError("full telemetry must use 10 Hz control boundaries")
+    if int(record.get("state_points", -1)) != 1201:
+        raise ValueError("full telemetry must contain 1201 state points including C0")
+    if int(record.get("action_points", -1)) != 1200:
+        raise ValueError("full telemetry must contain 1200 action points")
+    if record.get("quaternion_order") != "wxyz":
+        raise ValueError("full telemetry quaternion order must be wxyz")
+
+    state_fields = {
+        "coverage_fraction": None,
+        "position_world_m": 3,
+        "quaternion_wxyz": 4,
+        "linear_velocity_world_m_s": 3,
+        "angular_velocity_world_rad_s": 3,
+    }
+    for name, width in state_fields.items():
+        values = record.get(name)
+        if not isinstance(values, list) or len(values) != 1201:
+            raise ValueError(f"full telemetry {name} must contain 1201 points")
+        if width is not None and any(not isinstance(row, list) or len(row) != width for row in values):
+            raise ValueError(f"full telemetry {name} rows must have width {width}")
+        flattened = values if width is None else (item for row in values for item in row)
+        if any(not math.isfinite(float(value)) for value in flattened):
+            raise ValueError(f"full telemetry {name} contains non-finite values")
+
+    coverage = [float(value) for value in record["coverage_fraction"]]
+    if any(value < 0.0 or value > 1.0 for value in coverage):
+        raise ValueError("full telemetry coverage is outside [0, 1]")
+    if any(after < before - 1.0e-12 for before, after in zip(coverage, coverage[1:])):
+        raise ValueError("full telemetry cumulative coverage is not monotonic")
+
+    for name in ("action_mode", "action_alpha", "reward"):
+        values = record.get(name)
+        if not isinstance(values, list) or len(values) != 1200:
+            raise ValueError(f"full telemetry {name} must contain 1200 points")
+        if any(not math.isfinite(float(value)) for value in values):
+            raise ValueError(f"full telemetry {name} contains non-finite values")
+    if any(int(value) < 0 or int(value) > 5 for value in record["action_mode"]):
+        raise ValueError("full telemetry action mode is outside [0, 5]")
+    if any(float(value) < 0.0 or float(value) > 1.0 for value in record["action_alpha"]):
+        raise ValueError("full telemetry action alpha is outside [0, 1]")
+    return record
 
 
 def parser():
@@ -29,6 +80,11 @@ def parser():
     result.add_argument("--training-seed", type=int)
     result.add_argument("--save-feature-bank", type=Path)
     result.add_argument("--donor-bank", type=Path)
+    result.add_argument(
+        "--save-full-telemetry",
+        action="store_true",
+        help="Save 10 Hz pose/velocity/action/reward telemetry and final reachable masks.",
+    )
     return result
 
 
@@ -124,8 +180,14 @@ def main() -> None:
     output.mkdir(parents=True, exist_ok=True)
     records_path = output / "pose_records.jsonl"
     trajectory_path = output / "coverage_trajectories.jsonl"
-    for stale in (records_path, trajectory_path):
+    telemetry_path = output / "telemetry_10hz.jsonl"
+    final_masks = output / "final_masks"
+    for stale in (records_path, trajectory_path, telemetry_path):
         if stale.exists():
+            stale.unlink()
+    if args.save_full_telemetry:
+        final_masks.mkdir(parents=True, exist_ok=True)
+        for stale in final_masks.glob("*.npz"):
             stale.unlink()
 
     cfg = parse_env_cfg(frozen.task_id, device=args.device, num_envs=12)
@@ -182,6 +244,19 @@ def main() -> None:
                     device=args.device,
                     dtype=torch.float64,
                 )
+                if args.save_full_telemetry:
+                    capsule = env.scene["capsule"]
+                    position_world = torch.empty((len(batch), 1201, 3), device=args.device)
+                    quaternion_wxyz = torch.empty((len(batch), 1201, 4), device=args.device)
+                    linear_velocity_world = torch.empty((len(batch), 1201, 3), device=args.device)
+                    angular_velocity_world = torch.empty((len(batch), 1201, 3), device=args.device)
+                    action_mode = torch.empty((len(batch), 1200), device=args.device, dtype=torch.int64)
+                    action_alpha = torch.empty((len(batch), 1200), device=args.device)
+                    reward_10hz = torch.empty((len(batch), 1200), device=args.device)
+                    position_world[:, 0] = capsule.data.root_pos_w[: len(batch)]
+                    quaternion_wxyz[:, 0] = capsule.data.root_quat_w[: len(batch)]
+                    linear_velocity_world[:, 0] = capsule.data.root_lin_vel_w[: len(batch)]
+                    angular_velocity_world[:, 0] = capsule.data.root_ang_vel_w[: len(batch)]
                 terminal = None
                 for step_index in range(1200):
                     target_observation = observations["policy"][: len(batch)]
@@ -211,6 +286,14 @@ def main() -> None:
                     with torch.no_grad():
                         action = actor(actor_input, stochastic_output=False)
                     observations, reward, terminated, truncated, step_extras = env.step(action)
+                    if args.save_full_telemetry:
+                        position_world[:, step_index + 1] = capsule.data.root_pos_w[: len(batch)]
+                        quaternion_wxyz[:, step_index + 1] = capsule.data.root_quat_w[: len(batch)]
+                        linear_velocity_world[:, step_index + 1] = capsule.data.root_lin_vel_w[: len(batch)]
+                        angular_velocity_world[:, step_index + 1] = capsule.data.root_ang_vel_w[: len(batch)]
+                        action_mode[:, step_index] = action[: len(batch), 0].to(torch.int64)
+                        action_alpha[:, step_index] = action[: len(batch), 1]
+                        reward_10hz[:, step_index] = reward[: len(batch)]
                     actor_totals += reward[: len(batch)]
                     alpha_totals += action[: len(batch), 1]
                     mode_counts.scatter_add_(1, action[: len(batch), :1].long(), torch.ones((len(batch), 1), device=args.device))
@@ -242,6 +325,16 @@ def main() -> None:
                         terminal = terminal_audit
                 if terminal is None:
                     raise RuntimeError("TASK-010 validation did not reach true terminal")
+                if args.save_full_telemetry:
+                    # The formal environment auto-resets inside the terminal
+                    # env.step().  Replace the last state sample with the
+                    # pre-reset snapshot captured by the environment audit.
+                    root_pose = terminal["root_pose"][: len(batch)]
+                    root_velocity = terminal["root_velocity"][: len(batch)]
+                    position_world[:, -1] = root_pose[:, :3]
+                    quaternion_wxyz[:, -1] = root_pose[:, 3:7]
+                    linear_velocity_world[:, -1] = root_velocity[:, :3]
+                    angular_velocity_world[:, -1] = root_velocity[:, 3:6]
                 feature_bank_manifest_sha256 = None
                 if args.save_feature_bank is not None and saved_features is not None:
                     assert experiment is not None
@@ -307,6 +400,46 @@ def main() -> None:
                     }
                     with trajectory_path.open("a", encoding="utf-8") as stream:
                         stream.write(json.dumps(trajectory, sort_keys=True) + "\n")
+                    if args.save_full_telemetry:
+                        import numpy as np
+
+                        mask_path = final_masks / f"{pose_id}.npz"
+                        np.savez_compressed(
+                            mask_path,
+                            reachable_coverage_mask=(
+                                terminal["reachable_masks"][row]
+                                .detach()
+                                .cpu()
+                                .numpy()
+                                .astype(np.bool_)
+                            ),
+                        )
+                        telemetry = {
+                            "schema": "robotarm_magnetic_lab.task010_validation_telemetry_10hz",
+                            "pose_id": pose_id,
+                            "training_seed": training_seed,
+                            "checkpoint_update": checkpoint_update,
+                            "checkpoint_sha256": checkpoint_hash,
+                            "config_sha256": frozen.config_sha256,
+                            "visual_condition": args.visual_condition,
+                            "control_hz": 10,
+                            "state_points": 1201,
+                            "action_points": 1200,
+                            "quaternion_order": "wxyz",
+                            "coverage_fraction": coverage_trajectories[row].cpu().tolist(),
+                            "position_world_m": position_world[row].cpu().tolist(),
+                            "quaternion_wxyz": quaternion_wxyz[row].cpu().tolist(),
+                            "linear_velocity_world_m_s": linear_velocity_world[row].cpu().tolist(),
+                            "angular_velocity_world_rad_s": angular_velocity_world[row].cpu().tolist(),
+                            "action_mode": action_mode[row].cpu().tolist(),
+                            "action_alpha": action_alpha[row].cpu().tolist(),
+                            "reward": reward_10hz[row].cpu().tolist(),
+                            "final_mask_path": str(mask_path.resolve()),
+                            "final_mask_sha256": file_sha256(mask_path),
+                        }
+                        validate_full_telemetry_record(telemetry)
+                        with telemetry_path.open("a", encoding="utf-8") as stream:
+                            stream.write(json.dumps(telemetry, sort_keys=True) + "\n")
         finally:
             env.close()
     result = summarize(records_path, checkpoint_sha256=checkpoint_hash, config_sha256=frozen.config_sha256)
