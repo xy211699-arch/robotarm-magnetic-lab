@@ -117,9 +117,14 @@ def stage_names() -> tuple[str, ...]:
     return tuple(names)
 
 
-def _initial_state(run_dir: Path, run_id: str) -> dict:
+def _initial_state(
+    run_dir: Path,
+    run_id: str,
+    *,
+    reused_blind: dict[str, dict[str, dict[str, str]]] | None = None,
+) -> dict:
     now = time.time()
-    return {
+    state = {
         "schema": "robotarm_magnetic_lab.task010_visual_dependence_status",
         "run_id": run_id,
         "run_dir": str(run_dir),
@@ -142,6 +147,17 @@ def _initial_state(run_dir: Path, run_id: str) -> dict:
             for name in stage_names()
         },
     }
+    if reused_blind is not None:
+        for seed in FORMAL_SEEDS:
+            state["stages"][f"train_blind_seed_{seed}"].update(
+                state="completed",
+                attempts=0,
+                exit_code=0,
+                finished_at=now,
+                reused=True,
+                checkpoints=reused_blind[str(seed)],
+            )
+    return state
 
 
 def _spawn_worker(run_dir: Path, state: dict, *, continuation: bool) -> int:
@@ -192,6 +208,150 @@ def _last_json_line(path: Path) -> dict | None:
         return None
     lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     return json.loads(lines[-1]) if lines else None
+
+
+def audit_completed_b0_run(
+    run_dir: Path,
+) -> dict[str, dict[str, dict[str, str]]]:
+    """Validate and freeze the completed normal-vision B0 training run."""
+    root = Path(run_dir).resolve(strict=True)
+    status_path = root / "status.json"
+    if not status_path.is_file():
+        raise FileNotFoundError(f"completed B0 status is missing: {status_path}")
+    status = _read_json(status_path)
+    if status.get("state") != "completed" or status.get("error_summary") is not None:
+        raise ValueError("B0 source run must have state=completed")
+    result: dict[str, dict[str, dict[str, str]]] = {}
+    for seed in FORMAL_SEEDS:
+        seed_status = status.get("seeds", {}).get(str(seed), {})
+        if (
+            seed_status.get("state") != "validated"
+            or not seed_status.get("training_complete")
+            or not seed_status.get("validation_complete")
+        ):
+            raise ValueError(f"B0 seed {seed} is not completely trained and validated")
+        seed_records: dict[str, dict[str, str]] = {}
+        for update in (750, 1000):
+            checkpoint = (
+                root
+                / "seeds"
+                / f"seed_{seed}"
+                / "training"
+                / "checkpoints"
+                / f"update_{update:04d}.pt"
+            ).resolve(strict=True)
+            seed_records[str(update)] = {
+                "path": str(checkpoint),
+                "sha256": _sha256(checkpoint),
+            }
+        final = seed_records["1000"]
+        if Path(str(seed_status.get("latest_checkpoint", ""))).resolve() != Path(
+            final["path"]
+        ):
+            raise ValueError(f"B0 seed {seed} completion checkpoint path mismatch")
+        if seed_status.get("latest_checkpoint_sha256") != final["sha256"]:
+            raise ValueError(f"B0 seed {seed} completion checkpoint hash mismatch")
+        result[str(seed)] = seed_records
+    return result
+
+
+def audit_completed_blind_run(
+    run_dir: Path,
+) -> dict[str, dict[str, dict[str, str]]]:
+    """Validate and freeze a completed external Blind-GRU training run."""
+    root = Path(run_dir).resolve(strict=True)
+    status_path = root / "status.json"
+    if not status_path.is_file():
+        raise FileNotFoundError(f"completed Blind-GRU status is missing: {status_path}")
+    status = _read_json(status_path)
+    if status.get("state") != "completed_training" or status.get("error") is not None:
+        raise ValueError("Blind-GRU source run must have state=completed_training")
+    result: dict[str, dict[str, dict[str, str]]] = {}
+    for seed in FORMAL_SEEDS:
+        stage = status.get("stages", {}).get(f"train_blind_seed_{seed}", {})
+        completion = stage.get("completion_audit") or {}
+        if (
+            stage.get("state") != "completed"
+            or not completion.get("complete")
+            or int(completion.get("observed_update", -1)) != 1000
+        ):
+            raise ValueError(f"Blind-GRU seed {seed} is not completely audited")
+        seed_records: dict[str, dict[str, str]] = {}
+        for update in (750, 1000):
+            checkpoint = (
+                root
+                / "training"
+                / "blind"
+                / f"seed_{seed}"
+                / "checkpoints"
+                / f"update_{update:04d}.pt"
+            ).resolve(strict=True)
+            seed_records[str(update)] = {
+                "path": str(checkpoint),
+                "sha256": _sha256(checkpoint),
+            }
+        final = seed_records["1000"]
+        if Path(str(completion.get("latest_checkpoint", ""))).resolve() != Path(
+            final["path"]
+        ):
+            raise ValueError(f"Blind-GRU seed {seed} completion checkpoint path mismatch")
+        if completion.get("checkpoint_sha256") != final["sha256"]:
+            raise ValueError(f"Blind-GRU seed {seed} completion checkpoint hash mismatch")
+        result[str(seed)] = seed_records
+    return result
+
+
+def _blind_checkpoint(
+    manifest: dict,
+    run_dir: Path,
+    *,
+    seed: str,
+    update: int,
+) -> Path:
+    if manifest.get("b1_run_dir") is not None:
+        return Path(manifest["b1_checkpoints"][str(seed)][str(update)]["path"])
+    return (
+        run_dir
+        / "training"
+        / "blind"
+        / f"seed_{seed}"
+        / "checkpoints"
+        / f"update_{update:04d}.pt"
+    )
+
+
+def _normal_checkpoint(
+    manifest: dict,
+    *,
+    seed: str,
+    update: int,
+) -> Path:
+    if manifest.get("b0_checkpoints") is not None:
+        return Path(manifest["b0_checkpoints"][str(seed)][str(update)]["path"])
+    return (
+        Path(manifest["b0_run_dir"])
+        / "seeds"
+        / f"seed_{seed}"
+        / "training"
+        / "checkpoints"
+        / f"update_{update:04d}.pt"
+    )
+
+
+def _verify_frozen_source_manifests(manifest: dict) -> None:
+    if manifest.get("b0_run_dir") is not None and manifest.get("b0_status_sha256") is not None:
+        b0_source = Path(manifest["b0_run_dir"])
+        if _sha256(b0_source / "status.json") != manifest["b0_status_sha256"]:
+            raise RuntimeError("B0 status changed after formal start")
+        if audit_completed_b0_run(b0_source) != manifest.get("b0_checkpoints"):
+            raise RuntimeError("B0 checkpoints changed after formal start")
+    if manifest.get("b1_run_dir") is None:
+        return
+    source = Path(manifest["b1_run_dir"])
+    if _sha256(source / "status.json") != manifest.get("b1_status_sha256"):
+        raise RuntimeError("reused Blind-GRU status changed after formal start")
+    if audit_completed_blind_run(source) != manifest.get("b1_checkpoints"):
+        raise RuntimeError("reused Blind-GRU checkpoints changed after formal start")
 
 
 def _training_stage_is_complete(run_dir: Path, seed: str) -> bool:
@@ -272,15 +432,11 @@ def _stage_command(
         _, _, condition, _, seed = parts
         update = 750
         if condition == "blind":
-            checkpoint = (
-                run_dir
-                / "training" / "blind" / f"seed_{seed}" / "checkpoints" / f"update_{update:04d}.pt"
+            checkpoint = _blind_checkpoint(
+                manifest, run_dir, seed=seed, update=update
             )
         else:
-            checkpoint = (
-                Path(manifest["b0_run_dir"])
-                / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update:04d}.pt"
-            )
+            checkpoint = _normal_checkpoint(manifest, seed=seed, update=update)
         output = run_dir / "validation" / "update750" / condition / f"seed_{seed}"
         command = [
             sys.executable,
@@ -297,6 +453,9 @@ def _stage_command(
             manifest["config"],
             "--training-seed",
             seed,
+            "--save-full-telemetry",
+            "--device",
+            "cuda:0",
         ]
         if condition == "normal":
             command += [
@@ -313,15 +472,11 @@ def _stage_command(
         _, _, condition, _, seed = parts
         update = 1000
         if condition == "blind":
-            checkpoint = (
-                run_dir
-                / "training" / "blind" / f"seed_{seed}" / "checkpoints" / f"update_{update:04d}.pt"
+            checkpoint = _blind_checkpoint(
+                manifest, run_dir, seed=seed, update=update
             )
         else:
-            checkpoint = (
-                Path(manifest["b0_run_dir"])
-                / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update:04d}.pt"
-            )
+            checkpoint = _normal_checkpoint(manifest, seed=seed, update=update)
         return [
             sys.executable,
             str(REPOSITORY / "scripts/stomach_coverage/validate_task010_checkpoint.py"),
@@ -337,6 +492,9 @@ def _stage_command(
             manifest["config"],
             "--training-seed",
             seed,
+            "--save-full-telemetry",
+            "--device",
+            "cuda:0",
         ]
     if stage == "summarize":
         return [
@@ -437,7 +595,11 @@ def _worker(run_dir: Path, continuation: bool) -> int:
     manifest = _read_json(run_dir / "manifest.json")
     state = _read_json(run_dir / "status.json")
     state.update(worker_pid=os.getpid(), heartbeat_epoch_s=time.time(), error_summary=None)
-    if not manifest.get("test_driver") and _repair_training_stage_states(run_dir, state):
+    if (
+        not manifest.get("test_driver")
+        and manifest.get("b1_run_dir") is None
+        and _repair_training_stage_states(run_dir, state)
+    ):
         state.update(state="paused_on_error", current_stage="train_blind_seed_991001")
         _atomic_json(run_dir / "status.json", state)
         _append_jsonl(
@@ -450,6 +612,7 @@ def _worker(run_dir: Path, continuation: bool) -> int:
         {"event": "worker_started", "continuation": continuation, "worker_pid": os.getpid()},
     )
     try:
+        _verify_frozen_source_manifests(manifest)
         for stage in stage_names():
             record = state["stages"][stage]
             if record["state"] == "completed":
@@ -513,6 +676,7 @@ def _status_payload(run_dir: Path) -> dict:
     result["heartbeat_age_s"] = max(0.0, now - float(state.get("heartbeat_epoch_s", 0.0)))
     current_stage = state.get("current_stage")
     result["training_progress"] = _training_progress(run_dir, current_stage)
+    result["validation_progress"] = _validation_progress(run_dir, current_stage)
     if state.get("state") in ACTIVE_STATES and (
         result["heartbeat_age_s"] > STALE_AFTER_S or not _pid_alive(state.get("worker_pid"))
     ):
@@ -540,6 +704,36 @@ def _training_progress(run_dir: Path, stage: str | None) -> dict | None:
     }
 
 
+def _validation_progress(run_dir: Path, stage: str | None) -> dict | None:
+    if not stage or not stage.startswith("validate_update"):
+        return None
+    parts = stage.split("_")
+    if len(parts) != 5 or parts[3] != "seed":
+        raise ValueError(f"invalid visual-dependence validation stage: {stage}")
+    update = int(parts[1].removeprefix("update"))
+    condition = parts[2]
+    seed = int(parts[4])
+    records = (
+        Path(run_dir)
+        / "validation"
+        / f"update{update}"
+        / condition
+        / f"seed_{seed}"
+        / "pose_records.jsonl"
+    )
+    poses_complete = 0
+    if records.is_file():
+        with records.open("rb") as stream:
+            poses_complete = sum(1 for line in stream if line.strip())
+    return {
+        "update": update,
+        "condition": condition,
+        "seed": seed,
+        "poses_complete": poses_complete,
+        "poses_total": 20,
+    }
+
+
 def _start(args) -> dict:
     config_path = Path(args.config).resolve()
     config = _read_json(config_path)
@@ -561,13 +755,15 @@ def _start(args) -> dict:
     if not args.test_driver:
         _require_clean_tracked_worktree()
     b0_run_dir = Path(args.b0_run_dir).resolve(strict=True)
-    for seed in FORMAL_SEEDS:
-        for update in (750, 1000):
-            checkpoint = (
-                b0_run_dir / "seeds" / f"seed_{seed}" / "training" / "checkpoints" / f"update_{update:04d}.pt"
-            )
-            if not checkpoint.is_file():
-                raise FileNotFoundError(f"missing B0 checkpoint: {checkpoint}")
+    b0_checkpoints = audit_completed_b0_run(b0_run_dir)
+    b0_status_sha256 = _sha256(b0_run_dir / "status.json")
+    b1_run_dir = None
+    b1_checkpoints = None
+    b1_status_sha256 = None
+    if args.b1_run_dir is not None:
+        b1_run_dir = Path(args.b1_run_dir).resolve(strict=True)
+        b1_checkpoints = audit_completed_blind_run(b1_run_dir)
+        b1_status_sha256 = _sha256(b1_run_dir / "status.json")
     root = Path(args.artifact_root).resolve()
     root.mkdir(parents=True, exist_ok=True)
     latest = root / "latest"
@@ -592,13 +788,27 @@ def _start(args) -> dict:
         "config_sha256": config.get("config_sha256"),
         "base_config": str(config_path.parent / config["base_config"]["path"]),
         "b0_run_dir": str(b0_run_dir),
+        "b0_status_sha256": b0_status_sha256,
+        "b0_checkpoints": b0_checkpoints,
+        "b1_run_dir": str(b1_run_dir) if b1_run_dir is not None else None,
+        "b1_status_sha256": b1_status_sha256,
+        "b1_checkpoints": b1_checkpoints,
         "test_driver": str(Path(args.test_driver).resolve()) if args.test_driver else None,
         "stages": list(stage_names()),
     }
     _atomic_json(run_dir / "manifest.json", manifest)
-    state = _initial_state(run_dir, run_id)
+    state = _initial_state(run_dir, run_id, reused_blind=b1_checkpoints)
     _atomic_json(run_dir / "status.json", state)
     _append_jsonl(run_dir / "events.jsonl", {"event": "queued", "stages": list(stage_names())})
+    if b1_run_dir is not None:
+        _append_jsonl(
+            run_dir / "events.jsonl",
+            {
+                "event": "blind_training_reused",
+                "source_run_dir": str(b1_run_dir),
+                "checkpoints": b1_checkpoints,
+            },
+        )
     pid = _spawn_worker(run_dir, state, continuation=False)
     _update_link(latest, run_dir)
     latest_path = root / "latest_run_path.txt"
@@ -659,6 +869,11 @@ def _parser() -> argparse.ArgumentParser:
     start = subparsers.add_parser("start")
     start.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     start.add_argument("--b0-run-dir", type=Path, required=True)
+    start.add_argument(
+        "--b1-run-dir",
+        type=Path,
+        help="Reuse an audited completed Blind-GRU training run and begin at B0 validation.",
+    )
     start.add_argument("--artifact-root", type=Path, default=DEFAULT_ARTIFACT_ROOT)
     start.add_argument("--test-driver", help=argparse.SUPPRESS)
     start.add_argument("--kit_args", help=argparse.SUPPRESS)
