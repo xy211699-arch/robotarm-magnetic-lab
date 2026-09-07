@@ -245,6 +245,26 @@ def test_validation_stage_uses_reused_b1_checkpoint(tmp_path):
     )
 
 
+def test_first_frame_validation_stage_preserves_two_word_condition(tmp_path):
+    run_dir = tmp_path / "run"
+    b0 = tmp_path / "b0"
+    manifest = {
+        "config": str(ROOT / "configs/task010/visual_dependence_v1.json"),
+        "base_config": str(ROOT / "configs/task010/cnn_gru_development_v1.json"),
+        "b0_run_dir": str(b0),
+    }
+    command = supervisor._stage_command(
+        manifest,
+        "validate_update750_first_frame_seed_991001",
+        run_dir,
+        1,
+    )
+    assert command[command.index("--visual-condition") + 1] == "first_frame"
+    assert command[command.index("--output-dir") + 1] == str(
+        run_dir / "validation/update750/first_frame/seed_991001"
+    )
+
+
 def test_sensitivity_validation_uses_b0_for_normal_and_b1_for_blind(tmp_path):
     run_dir = tmp_path / "run"
     b0 = tmp_path / "b0"
@@ -344,6 +364,25 @@ def test_validation_progress_counts_completed_pose_records(tmp_path):
         "condition": "normal",
         "seed": 991001,
         "poses_complete": 12,
+        "poses_total": 20,
+    }
+
+
+def test_validation_progress_parses_first_frame_condition(tmp_path):
+    run_dir = tmp_path / "run"
+    output = run_dir / "validation/update750/first_frame/seed_991001"
+    output.mkdir(parents=True)
+    (output / "pose_records.jsonl").write_text(
+        '{"pose_id": "validation-0006"}\n', encoding="utf-8"
+    )
+    progress = supervisor._validation_progress(
+        run_dir, "validate_update750_first_frame_seed_991001"
+    )
+    assert progress == {
+        "update": 750,
+        "condition": "first_frame",
+        "seed": 991001,
+        "poses_complete": 1,
         "poses_total": 20,
     }
 

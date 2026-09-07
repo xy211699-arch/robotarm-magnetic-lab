@@ -117,6 +117,24 @@ def stage_names() -> tuple[str, ...]:
     return tuple(names)
 
 
+def _parse_validation_stage(stage: str) -> tuple[int, str, str]:
+    prefix = "validate_update"
+    if not stage.startswith(prefix) or "_seed_" not in stage:
+        raise ValueError(f"invalid visual-dependence validation stage: {stage}")
+    update_and_condition, seed = stage.removeprefix(prefix).rsplit("_seed_", 1)
+    try:
+        update_text, condition = update_and_condition.split("_", 1)
+        update = int(update_text)
+        int(seed)
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            f"invalid visual-dependence validation stage: {stage}"
+        ) from error
+    if not condition:
+        raise ValueError(f"invalid visual-dependence validation stage: {stage}")
+    return update, condition, seed
+
+
 def _initial_state(
     run_dir: Path,
     run_id: str,
@@ -400,9 +418,8 @@ def _stage_command(
             "--attempt",
             str(attempt),
         ]
-    parts = stage.split("_")
     if stage.startswith("train_blind_seed_"):
-        seed = parts[-1]
+        seed = stage.rsplit("_", 1)[-1]
         command = [
             sys.executable,
             str(REPOSITORY / "scripts/stomach_coverage/train_task010.py"),
@@ -429,8 +446,7 @@ def _stage_command(
             command += ["--resume-checkpoint", str(resume_checkpoint)]
         return command
     if stage.startswith("validate_update750_"):
-        _, _, condition, _, seed = parts
-        update = 750
+        update, condition, seed = _parse_validation_stage(stage)
         if condition == "blind":
             checkpoint = _blind_checkpoint(
                 manifest, run_dir, seed=seed, update=update
@@ -469,8 +485,7 @@ def _stage_command(
             ]
         return command
     if stage.startswith("validate_update1000_"):
-        _, _, condition, _, seed = parts
-        update = 1000
+        update, condition, seed = _parse_validation_stage(stage)
         if condition == "blind":
             checkpoint = _blind_checkpoint(
                 manifest, run_dir, seed=seed, update=update
@@ -707,12 +722,8 @@ def _training_progress(run_dir: Path, stage: str | None) -> dict | None:
 def _validation_progress(run_dir: Path, stage: str | None) -> dict | None:
     if not stage or not stage.startswith("validate_update"):
         return None
-    parts = stage.split("_")
-    if len(parts) != 5 or parts[3] != "seed":
-        raise ValueError(f"invalid visual-dependence validation stage: {stage}")
-    update = int(parts[1].removeprefix("update"))
-    condition = parts[2]
-    seed = int(parts[4])
+    update, condition, seed_text = _parse_validation_stage(stage)
+    seed = int(seed_text)
     records = (
         Path(run_dir)
         / "validation"
