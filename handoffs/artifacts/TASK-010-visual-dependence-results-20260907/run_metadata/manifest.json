@@ -1,0 +1,103 @@
+{
+  "b0_checkpoints": {
+    "991001": {
+      "1000": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab_task010/artifacts/task010_cnn_gru/formal_seeds/20260830T124744.667141Z-fcf8b406/seeds/seed_991001/training/checkpoints/update_1000.pt",
+        "sha256": "51c7d56f19a81db949c2ee03df3146b2223cabca9dd31d9ae00a71eb6f571587"
+      },
+      "750": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab_task010/artifacts/task010_cnn_gru/formal_seeds/20260830T124744.667141Z-fcf8b406/seeds/seed_991001/training/checkpoints/update_0750.pt",
+        "sha256": "d621f1673b3dcb9e114b0510068270131d55bf1a9c36919d63f08c407e4a199a"
+      }
+    },
+    "991002": {
+      "1000": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab_task010/artifacts/task010_cnn_gru/formal_seeds/20260830T124744.667141Z-fcf8b406/seeds/seed_991002/training/checkpoints/update_1000.pt",
+        "sha256": "1b8d5636ce6bc7b0c0163866305bc787cc0c23cdcf9c91883aacdef86231c839"
+      },
+      "750": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab_task010/artifacts/task010_cnn_gru/formal_seeds/20260830T124744.667141Z-fcf8b406/seeds/seed_991002/training/checkpoints/update_0750.pt",
+        "sha256": "37a7af729cae2f72a3ad241ceeb1c181d0612ff56d58caaa416183a30c1899a8"
+      }
+    },
+    "991003": {
+      "1000": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab_task010/artifacts/task010_cnn_gru/formal_seeds/20260830T124744.667141Z-fcf8b406/seeds/seed_991003/training/checkpoints/update_1000.pt",
+        "sha256": "5d4c48a300910fa3b65b4d82a5fde0116c421f31fc2e5961832bd90b16c12136"
+      },
+      "750": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab_task010/artifacts/task010_cnn_gru/formal_seeds/20260830T124744.667141Z-fcf8b406/seeds/seed_991003/training/checkpoints/update_0750.pt",
+        "sha256": "58cae4d113264213d6497184fe6516c14f0498db91443fe9c4714af25d7447f4"
+      }
+    }
+  },
+  "b0_run_dir": "/mnt/isaac-linux/robotarm_magnetic_lab_task010/artifacts/task010_cnn_gru/formal_seeds/20260830T124744.667141Z-fcf8b406",
+  "b0_status_sha256": "422712cce9fc8bf6675a7e97af4a4119c359988243e2ec0cb049a882c851f4a9",
+  "b1_checkpoints": {
+    "991001": {
+      "1000": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991001/checkpoints/update_1000.pt",
+        "sha256": "eb52710a1f01ccd55c018f11ba652bce43a4f1b53b1038b71803f69adea3af40"
+      },
+      "750": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991001/checkpoints/update_0750.pt",
+        "sha256": "aa05402a6fddc81643aa666990ee90616c7e5101c48cb4ddf420572083cc848d"
+      }
+    },
+    "991002": {
+      "1000": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991002/checkpoints/update_1000.pt",
+        "sha256": "26e2b177fa7a64e89142476b0540143bf4fc13558bf4680b5790885f9a230dc2"
+      },
+      "750": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991002/checkpoints/update_0750.pt",
+        "sha256": "70209023bd12bafc9ce88e46af80d38b2866905896d543badbb0b0a5e70d619e"
+      }
+    },
+    "991003": {
+      "1000": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991003/checkpoints/update_1000.pt",
+        "sha256": "9678d875e19ff7e0e3135c9b258080b9047e3aa4b4c93c7f8a4d823dbb7789f2"
+      },
+      "750": {
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991003/checkpoints/update_0750.pt",
+        "sha256": "eead286924f1c3bd85de7d060e263fb80c63f4d8fd0367cc2c51228da5539d76"
+      }
+    }
+  },
+  "b1_run_dir": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b",
+  "b1_status_sha256": "6c59638767ea9b74cd94e58fee5fb4d30bbb8bab31564fe62f4d0d4209d203fa",
+  "base_config": "/mnt/isaac-linux/robotarm_magnetic_lab_task010/configs/task010/cnn_gru_development_v1.json",
+  "config": "/mnt/isaac-linux/robotarm_magnetic_lab_task010/configs/task010/visual_dependence_v1.json",
+  "config_sha256": "66f8889e5ee3795d065239ded4284a9de2cef983b26cbc3fc22201ea2b0b35e1",
+  "created_utc": "2026-09-07T04:37:38.212219+00:00",
+  "run_dir": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_visual_dependence/20260907T043738.212135Z-47fe3440",
+  "run_id": "20260907T043738.212135Z-47fe3440",
+  "schema": "robotarm_magnetic_lab.task010_visual_dependence_manifest",
+  "stages": [
+    "train_blind_seed_991001",
+    "train_blind_seed_991002",
+    "train_blind_seed_991003",
+    "validate_update750_normal_seed_991001",
+    "validate_update750_blind_seed_991001",
+    "validate_update750_donor_seed_991001",
+    "validate_update750_first_frame_seed_991001",
+    "validate_update750_normal_seed_991002",
+    "validate_update750_blind_seed_991002",
+    "validate_update750_donor_seed_991002",
+    "validate_update750_first_frame_seed_991002",
+    "validate_update750_normal_seed_991003",
+    "validate_update750_blind_seed_991003",
+    "validate_update750_donor_seed_991003",
+    "validate_update750_first_frame_seed_991003",
+    "validate_update1000_normal_seed_991001",
+    "validate_update1000_blind_seed_991001",
+    "validate_update1000_normal_seed_991002",
+    "validate_update1000_blind_seed_991002",
+    "validate_update1000_normal_seed_991003",
+    "validate_update1000_blind_seed_991003",
+    "summarize",
+    "audit_artifacts"
+  ],
+  "test_driver": null
+}

@@ -1,0 +1,229 @@
+{
+  "child_pid": null,
+  "current_stage": null,
+  "error_summary": null,
+  "finished_epoch_s": 1788779899.823951,
+  "heartbeat_epoch_s": 1788779899.823952,
+  "run_dir": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_visual_dependence/20260907T043738.212135Z-47fe3440",
+  "run_id": "20260907T043738.212135Z-47fe3440",
+  "schema": "robotarm_magnetic_lab.task010_visual_dependence_status",
+  "stages": {
+    "audit_artifacts": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788779899.8215506,
+      "started_at": 1788779897.7095027,
+      "state": "completed"
+    },
+    "summarize": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788779897.7077868,
+      "started_at": 1788779895.197382,
+      "state": "completed"
+    },
+    "train_blind_seed_991001": {
+      "attempts": 0,
+      "checkpoints": {
+        "1000": {
+          "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991001/checkpoints/update_1000.pt",
+          "sha256": "eb52710a1f01ccd55c018f11ba652bce43a4f1b53b1038b71803f69adea3af40"
+        },
+        "750": {
+          "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991001/checkpoints/update_0750.pt",
+          "sha256": "aa05402a6fddc81643aa666990ee90616c7e5101c48cb4ddf420572083cc848d"
+        }
+      },
+      "exit_code": 0,
+      "finished_at": 1788755858.213226,
+      "reused": true,
+      "started_at": null,
+      "state": "completed"
+    },
+    "train_blind_seed_991002": {
+      "attempts": 0,
+      "checkpoints": {
+        "1000": {
+          "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991002/checkpoints/update_1000.pt",
+          "sha256": "26e2b177fa7a64e89142476b0540143bf4fc13558bf4680b5790885f9a230dc2"
+        },
+        "750": {
+          "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991002/checkpoints/update_0750.pt",
+          "sha256": "70209023bd12bafc9ce88e46af80d38b2866905896d543badbb0b0a5e70d619e"
+        }
+      },
+      "exit_code": 0,
+      "finished_at": 1788755858.213226,
+      "reused": true,
+      "started_at": null,
+      "state": "completed"
+    },
+    "train_blind_seed_991003": {
+      "attempts": 0,
+      "checkpoints": {
+        "1000": {
+          "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991003/checkpoints/update_1000.pt",
+          "sha256": "9678d875e19ff7e0e3135c9b258080b9047e3aa4b4c93c7f8a4d823dbb7789f2"
+        },
+        "750": {
+          "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/task010_blind_training_v2/20260905T055703.090461Z-ccadb75b/training/blind/seed_991003/checkpoints/update_0750.pt",
+          "sha256": "eead286924f1c3bd85de7d060e263fb80c63f4d8fd0367cc2c51228da5539d76"
+        }
+      },
+      "exit_code": 0,
+      "finished_at": 1788755858.213226,
+      "reused": true,
+      "started_at": null,
+      "state": "completed"
+    },
+    "validate_update1000_blind_seed_991001": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788777063.1281273,
+      "started_at": 1788776348.2273989,
+      "state": "completed"
+    },
+    "validate_update1000_blind_seed_991002": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788778489.1156156,
+      "started_at": 1788777731.1479652,
+      "state": "completed"
+    },
+    "validate_update1000_blind_seed_991003": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788779895.1966336,
+      "started_at": 1788779172.2789588,
+      "state": "completed"
+    },
+    "validate_update1000_normal_seed_991001": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788776348.2246366,
+      "started_at": 1788775676.9171906,
+      "state": "completed"
+    },
+    "validate_update1000_normal_seed_991002": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788777731.147061,
+      "started_at": 1788777063.129015,
+      "state": "completed"
+    },
+    "validate_update1000_normal_seed_991003": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788779172.2771962,
+      "started_at": 1788778489.1181622,
+      "state": "completed"
+    },
+    "validate_update750_blind_seed_991001": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788757223.9018269,
+      "started_at": 1788756544.0875862,
+      "state": "completed"
+    },
+    "validate_update750_blind_seed_991002": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788771578.2059565,
+      "started_at": 1788770840.7188854,
+      "state": "completed"
+    },
+    "validate_update750_blind_seed_991003": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788774342.9465666,
+      "started_at": 1788773583.371482,
+      "state": "completed"
+    },
+    "validate_update750_donor_seed_991001": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788757902.836698,
+      "started_at": 1788757223.9027026,
+      "state": "completed"
+    },
+    "validate_update750_donor_seed_991002": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788772241.5261478,
+      "started_at": 1788771578.2075386,
+      "state": "completed"
+    },
+    "validate_update750_donor_seed_991003": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788775046.8257954,
+      "started_at": 1788774342.9473891,
+      "state": "completed"
+    },
+    "validate_update750_first_frame_seed_991001": {
+      "attempts": 2,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788770177.6888473,
+      "started_at": 1788769553.5920463,
+      "state": "completed"
+    },
+    "validate_update750_first_frame_seed_991002": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788772870.1884165,
+      "started_at": 1788772241.5276496,
+      "state": "completed"
+    },
+    "validate_update750_first_frame_seed_991003": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788775676.9163322,
+      "started_at": 1788775046.828003,
+      "state": "completed"
+    },
+    "validate_update750_normal_seed_991001": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788756544.0866342,
+      "started_at": 1788755858.3039951,
+      "state": "completed"
+    },
+    "validate_update750_normal_seed_991002": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788770840.7180676,
+      "started_at": 1788770177.6907814,
+      "state": "completed"
+    },
+    "validate_update750_normal_seed_991003": {
+      "attempts": 1,
+      "error_summary": null,
+      "exit_code": 0,
+      "finished_at": 1788773583.3704014,
+      "started_at": 1788772870.1891916,
+      "state": "completed"
+    }
+  },
+  "started_epoch_s": 1788755858.213226,
+  "state": "completed",
+  "worker_pid": 920601
+}

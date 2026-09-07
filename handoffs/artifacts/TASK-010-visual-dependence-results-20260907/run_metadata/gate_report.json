@@ -1,0 +1,24 @@
+{
+  "schema": "robotarm_magnetic_lab.task010_visual_dependence_gate_report",
+  "status": "passed",
+  "v0": {
+    "actor_observation_schema": true,
+    "blind_visual_projection": true,
+    "critic_isolation": true,
+    "identical_trainable_parameters": true,
+    "resnet_forward_count": true
+  },
+  "v1": {
+    "blind_forward_backward_save_restore": true
+  },
+  "v2": {
+    "curve_length": true,
+    "donor_mapping": true,
+    "first_frame_repeat": true,
+    "target_previous_action": true,
+    "unique_variables": true
+  },
+  "v3": {
+    "status": "awaiting_manual_start"
+  }
+}

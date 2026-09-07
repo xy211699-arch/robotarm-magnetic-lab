@@ -1,0 +1,29 @@
+{
+  "artifacts": [
+    {
+      "bytes": 49829,
+      "path": "condition_metrics.csv",
+      "sha256": "0e20fb3b8dbd389b4e70b3310df4955a9520e6ee2e18b4d7aa3f054e53f4b0e5"
+    },
+    {
+      "bytes": 6524,
+      "path": "paired_episode_differences.csv",
+      "sha256": "88df3f2b07f0716a33bfef7e7f6b68e41b40ae72b6a04064907d768141aee888"
+    },
+    {
+      "bytes": 2341,
+      "path": "confirmatory_effects.json",
+      "sha256": "148cd927f66e7ff054bdcc4a124a9187b79db4fc26e2d4cdb2857f429361dbab"
+    },
+    {
+      "bytes": 327406,
+      "path": "mean_curves_10hz.csv",
+      "sha256": "c8630d1fbb4c19a30b50fc68a62f94ce99f3e2d8ea76fe786cb6a9c0abb2411a"
+    }
+  ],
+  "primary_rows": 240,
+  "primary_update": 750,
+  "schema": "robotarm_magnetic_lab.task010_visual_dependence_summary_audit",
+  "sensitivity_rows": 120,
+  "sensitivity_update": 1000
+}
