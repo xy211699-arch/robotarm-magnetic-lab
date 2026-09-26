@@ -118,7 +118,9 @@ class RobotarmMagneticNewStomachSceneCfg(RobotarmMagneticStomachSceneCfg):
         prim_path="{ENV_REGEX_NS}/Stomach",
         init_state=AssetBaseCfg.InitialStateCfg(
             pos=NEW_STOMACH_GEOMETRY.position_world_m,
-            rot=NEW_STOMACH_GEOMETRY.rotation_wxyz,
+            # The project runtime writes this tuple to USD as XYZW. Keep the
+            # version-observed convention used by the accepted legacy poses.
+            rot=NEW_STOMACH_GEOMETRY.rotation_xyzw,
         ),
         spawn=sim_utils.UsdFileCfg(
             usd_path=NEW_STOMACH_ASSET_USD_PATH,
@@ -136,4 +138,3 @@ class RobotarmMagneticNewStomachLabEnvCfg(RobotarmMagneticStomachLabEnvCfg):
         num_envs=1,
         env_spacing=4.0,
     )
-

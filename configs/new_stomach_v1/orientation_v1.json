@@ -29,5 +29,7 @@
   "world_bounds_min_m": [0.9537706254825044, 0.03162520089591625, 0.0],
   "world_bounds_max_m": [1.1678603745174956, 0.19744959910408377, 0.09159797225015082],
   "placement_rule": "center XY at legacy validated contact anchor and set transformed minimum Z to zero",
-  "confirmed": false
+  "confirmed": true,
+  "confirmed_at": "2026-09-26T11:18:00+08:00",
+  "confirmation": "User visually confirmed the front, side and top orientation previews."
 }

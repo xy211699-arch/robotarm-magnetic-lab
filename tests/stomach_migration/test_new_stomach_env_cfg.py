@@ -27,7 +27,9 @@ def test_new_environment_is_isolated_and_preserves_controller_contract():
     assert new_cfg.scene.stomach.spawn.usd_path == NEW_STOMACH_ASSET_USD_PATH
     assert new_cfg.scene.stomach.spawn.scale == (1.0, 1.0, 1.0)
     assert tuple(new_cfg.scene.stomach.init_state.pos) == NEW_STOMACH_GEOMETRY.position_world_m
-    assert tuple(new_cfg.scene.stomach.init_state.rot) == NEW_STOMACH_GEOMETRY.rotation_wxyz
+    # This project's Isaac Lab 3.0 asset-spawn path consumes the authored tuple
+    # as XYZW; the existing accepted stomach constants follow the same rule.
+    assert tuple(new_cfg.scene.stomach.init_state.rot) == NEW_STOMACH_GEOMETRY.rotation_xyzw
     assert new_cfg.scene.capsule_camera.update_period == old_cfg.scene.capsule_camera.update_period
     assert new_cfg.sim.dt == old_cfg.sim.dt
     assert new_cfg.decimation == old_cfg.decimation
