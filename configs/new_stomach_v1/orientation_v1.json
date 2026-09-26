@@ -1,0 +1,33 @@
+{
+  "schema": "robotarm_magnetic_lab.new_stomach_orientation.v1",
+  "asset_usd_sha256": "d89826fc0309840e567d1be6a23a6a59215e6284b265a288523b0e887d5ff58a",
+  "position_world_m": [
+    1.1767840832248901,
+    -0.8666323805012753,
+    0.497086653472885
+  ],
+  "rotation_xyzw": [
+    -0.04977949250905896,
+    0.9846495961421002,
+    -0.16719751061917132,
+    0.00567162987962609
+  ],
+  "scale": [1.0, 1.0, 1.0],
+  "collision_mesh_suffix": "/geometry/mesh",
+  "opening_centers_world_m": [
+    [1.090592287558334, 0.042624199235197446, 0.08059920978572815],
+    [1.053585419240655, 0.19744721470109028, 0.03980783326407228]
+  ],
+  "opening_axes_world": [
+    [1.0, 2.0396575639152993e-18, 2.359263931915685e-18],
+    [0.00023619963014314866, 0.9999999721048669, -5.4353139533447113e-17]
+  ],
+  "opening_elevation_deg": [
+    1.3517586605620874e-16,
+    3.114205498552184e-15
+  ],
+  "world_bounds_min_m": [0.9537706254825044, 0.03162520089591625, 0.0],
+  "world_bounds_max_m": [1.1678603745174956, 0.19744959910408377, 0.09159797225015082],
+  "placement_rule": "center XY at legacy validated contact anchor and set transformed minimum Z to zero",
+  "confirmed": false
+}

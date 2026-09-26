@@ -36,6 +36,19 @@ gym.register(
 )
 
 gym.register(
+    id="Template-Robotarm-Magnetic-New-Stomach-Lab-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": (
+            f"{__name__}.robotarm_magnetic_new_stomach_env_cfg:"
+            "RobotarmMagneticNewStomachLabEnvCfg"
+        ),
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:PPORunnerCfg",
+    },
+)
+
+gym.register(
     id="Template-Robotarm-Magnetic-Table-Lab-v0",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,

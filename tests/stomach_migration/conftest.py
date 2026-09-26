@@ -19,3 +19,18 @@ package_path = str(PACKAGE_DIR)
 if package_path not in robotarm_magnetic_lab.__path__:
     robotarm_magnetic_lab.__path__.insert(0, package_path)
 
+import robotarm_magnetic_lab.tasks
+import robotarm_magnetic_lab.tasks.manager_based
+import robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab
+
+for package, relative in (
+    (robotarm_magnetic_lab.tasks, "tasks"),
+    (robotarm_magnetic_lab.tasks.manager_based, "tasks/manager_based"),
+    (
+        robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab,
+        "tasks/manager_based/robotarm_magnetic_lab",
+    ),
+):
+    candidate = str(PACKAGE_DIR / relative)
+    if candidate not in package.__path__:
+        package.__path__.insert(0, candidate)
