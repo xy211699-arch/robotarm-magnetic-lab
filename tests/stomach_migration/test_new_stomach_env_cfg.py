@@ -3,6 +3,7 @@ import subprocess
 
 import gymnasium as gym
 import numpy as np
+from pxr import Usd, UsdGeom, UsdPhysics, UsdShade
 
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_new_stomach_env_cfg import (
     NEW_STOMACH_ASSET_USD_PATH,
@@ -26,6 +27,7 @@ def test_new_environment_is_isolated_and_preserves_controller_contract():
     assert Path(NEW_STOMACH_ASSET_USD_PATH).resolve().is_relative_to(ROOT)
     assert new_cfg.scene.stomach.spawn.usd_path == NEW_STOMACH_ASSET_USD_PATH
     assert new_cfg.scene.stomach.spawn.scale == (1.0, 1.0, 1.0)
+    assert new_cfg.scene.stomach.spawn.collision_props is None
     assert tuple(new_cfg.scene.stomach.init_state.pos) == NEW_STOMACH_GEOMETRY.position_world_m
     # This project's Isaac Lab 3.0 asset-spawn path consumes the authored tuple
     # as XYZW; the existing accepted stomach constants follow the same rule.
@@ -41,11 +43,27 @@ def test_orientation_config_validates_horizontal_axes_and_unity_scale():
     geometry = NewStomachGeometryConfig.from_json(path)
 
     assert geometry.scale == (1.0, 1.0, 1.0)
-    assert geometry.collision_mesh_suffix == "/geometry/mesh"
+    assert geometry.collision_mesh_suffix == "/geometry/CollisionMesh"
     assert len(geometry.opening_axes_world) == 2
     for axis in geometry.opening_axes_world:
         assert np.degrees(np.arcsin(abs(axis[2]))) <= 1.0
     np.testing.assert_allclose(np.linalg.norm(geometry.rotation_xyzw), 1.0, atol=1.0e-12)
+
+
+def test_new_stomach_keeps_textured_visual_separate_from_inward_collider():
+    stage = Usd.Stage.Open(NEW_STOMACH_ASSET_USD_PATH)
+    visual = stage.GetPrimAtPath("/NewStomach/geometry/mesh")
+    collider = stage.GetPrimAtPath("/NewStomach/geometry/CollisionMesh")
+
+    assert visual.IsValid() and collider.IsValid()
+    assert not visual.HasAPI(UsdPhysics.CollisionAPI)
+    assert collider.HasAPI(UsdPhysics.CollisionAPI)
+    assert UsdGeom.Imageable(visual).ComputeVisibility() == "inherited"
+    assert UsdGeom.Imageable(collider).ComputeVisibility() == "invisible"
+    assert UsdGeom.Mesh(visual).GetOrientationAttr().Get() == "rightHanded"
+    assert UsdGeom.Mesh(collider).GetOrientationAttr().Get() == "leftHanded"
+    assert len(UsdGeom.Mesh(visual).GetPointsAttr().Get()) == len(UsdGeom.Mesh(collider).GetPointsAttr().Get())
+    assert UsdShade.MaterialBindingAPI(visual).ComputeBoundMaterial()[0].GetPrim().IsValid()
 
 
 def test_new_task_registration_does_not_replace_legacy_task():

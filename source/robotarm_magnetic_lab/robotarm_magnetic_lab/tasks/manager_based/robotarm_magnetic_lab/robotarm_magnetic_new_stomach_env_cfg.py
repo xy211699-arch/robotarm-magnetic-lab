@@ -125,7 +125,6 @@ class RobotarmMagneticNewStomachSceneCfg(RobotarmMagneticStomachSceneCfg):
         spawn=sim_utils.UsdFileCfg(
             usd_path=NEW_STOMACH_ASSET_USD_PATH,
             scale=NEW_STOMACH_GEOMETRY.scale,
-            collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
         ),
     )
 

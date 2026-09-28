@@ -12,11 +12,23 @@ def Xform "NewStomach" (
 {
     over "geometry"
     {
-        over "mesh" (
+        over "mesh"
+        {
+            # Retain the imported textured shell as the visible surface.
+            bool doubleSided = true
+            uniform token orientation = "rightHanded"
+        }
+
+        # Match the validated legacy asset's separate inward collision mesh.
+        # Inherit topology and the same local transform without changing the
+        # source visual USD or its texture binding.
+        def Mesh "CollisionMesh" (
             prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+            prepend inherits = </NewStomach/geometry/mesh>
         )
         {
-            bool doubleSided = true
+            token visibility = "invisible"
+            uniform token orientation = "leftHanded"
             bool physics:collisionEnabled = true
             uniform token physics:approximation = "none"
             rel material:binding:physics = </NewStomach/PhysicsMaterial>
