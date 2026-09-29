@@ -27,6 +27,7 @@ import omni.usd
 from isaaclab.app import launch_simulation
 from isaaclab.envs import ManagerBasedRLEnv
 
+from robotarm_magnetic_lab.coverage.new_stomach_marked_duct import candidate_marked_duct_mask
 from robotarm_magnetic_lab.coverage.new_stomach_tubes import candidate_tube_mask
 from robotarm_magnetic_lab.geometry.new_stomach_runtime import NewStomachRuntimeGeometry
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_new_stomach_env_cfg import (
@@ -38,7 +39,11 @@ from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_ma
 def main() -> None:
     candidate_dir = args.candidate_dir.resolve()
     record = json.loads((candidate_dir / "candidate_summary.json").read_text())
-    if record.get("status") != "needs_input" or not record.get("not_active_coverage_target"):
+    if (
+        record.get("schema") != "robotarm_magnetic_lab.new_stomach_tube_candidate.v2"
+        or record.get("status") != "needs_input"
+        or not record.get("not_active_coverage_target")
+    ):
         raise ValueError("only an unapproved, review-only tube candidate may be audited")
     mask_path = candidate_dir / "candidate_face_mask.npz"
     mask_sha = hashlib.sha256(mask_path.read_bytes()).hexdigest()
@@ -65,9 +70,17 @@ def main() -> None:
                 radial_limit_m=float(record["radial_limit_m"]),
                 mouth_buffer_m=float(record["mouth_buffer_m"]),
             )
-            different = int(np.count_nonzero(candidate.labels != saved["face_labels"]))
-            if different or len(candidate.labels) != int(record["triangle_count"]):
+            marked_duct = candidate_marked_duct_mask(geometry.reference)
+            if np.any(candidate.labels[marked_duct.face_indices]):
+                raise RuntimeError("runtime marked duct overlaps a main tube")
+            labels = candidate.labels.copy()
+            labels[marked_duct.face_indices] = 3
+            different = int(np.count_nonzero(labels != saved["face_labels"]))
+            if different or len(labels) != int(record["triangle_count"]):
                 raise RuntimeError(f"candidate mask differs from actual Isaac Lab mesh: {different} faces")
+            excluded_area = candidate.excluded_area_m2 + marked_duct.area_m2
+            if not np.isclose(excluded_area, record["excluded_area_m2"], atol=1.0e-9, rtol=0):
+                raise RuntimeError("runtime excluded surface area differs from candidate")
             report = {
                 "status": "passed",
                 "candidate_status": "needs_input",
@@ -75,11 +88,13 @@ def main() -> None:
                 "runtime_geometry_sha256": geometry.geometry_sha256,
                 "collision_mesh_path": geometry.collision_mesh_path,
                 "candidate_mask_sha256": mask_sha,
-                "runtime_triangle_count": len(candidate.labels),
+                "runtime_triangle_count": len(labels),
                 "differing_face_labels": different,
-                "excluded_face_count": len(candidate.excluded_face_indices),
-                "excluded_area_m2": candidate.excluded_area_m2,
+                "excluded_face_count": int(np.count_nonzero(labels)),
+                "excluded_area_m2": excluded_area,
                 "tube_connected_components": candidate.per_tube_component_counts,
+                "marked_duct_face_count": len(marked_duct.face_indices),
+                "marked_duct_connected_components": marked_duct.connected_components,
             }
             (candidate_dir / "runtime_mask_audit.json").write_text(
                 json.dumps(report, indent=2, sort_keys=True) + "\n"
