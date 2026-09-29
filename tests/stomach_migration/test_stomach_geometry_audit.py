@@ -29,6 +29,7 @@ def _stage(tmp_path: Path):
     )
     mesh.CreateFaceVertexCountsAttr([3])
     mesh.CreateFaceVertexIndicesAttr([0, 1, 2])
+    mesh.CreateOrientationAttr("leftHanded")
     UsdPhysics.CollisionAPI.Apply(mesh.GetPrim()).CreateCollisionEnabledAttr(True)
     UsdPhysics.MeshCollisionAPI.Apply(mesh.GetPrim()).CreateApproximationAttr("none")
     texture = tmp_path / "texture.png"
@@ -58,6 +59,7 @@ def test_audit_accepts_one_aligned_triangle_mesh_and_existing_texture(tmp_path):
 
     assert audit.collision_mesh_path == ROOT_PATH + "/geometry/mesh"
     assert audit.collision_mesh_count == 1
+    assert audit.collision_orientation == "leftHanded"
     assert audit.opening_elevation_deg == pytest.approx((0.0, 0.0))
     assert audit.texture_count == 1
 

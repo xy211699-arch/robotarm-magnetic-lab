@@ -6,6 +6,7 @@ import pytest
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, UsdShade
 
 from robotarm_magnetic_lab.geometry.new_stomach_runtime import (
+    NEW_STOMACH_WELD_TOLERANCE_M,
     NewStomachRuntimeGeometry,
     validate_model_specific_inputs,
 )
@@ -28,6 +29,7 @@ def _stage(tmp_path: Path):
     )
     mesh.CreateFaceVertexCountsAttr([3])
     mesh.CreateFaceVertexIndicesAttr([0, 1, 2])
+    mesh.CreateOrientationAttr("leftHanded")
     UsdPhysics.CollisionAPI.Apply(mesh.GetPrim()).CreateCollisionEnabledAttr(True)
     UsdPhysics.MeshCollisionAPI.Apply(mesh.GetPrim()).CreateApproximationAttr("none")
     texture = tmp_path / "texture.png"
@@ -56,6 +58,8 @@ def test_runtime_geometry_binds_all_consumers_to_one_world_mesh(tmp_path):
     runtime = NewStomachRuntimeGeometry.from_stage(stage, config, ROOT)
 
     assert runtime.collision_mesh_path == MESH
+    assert runtime.audit.collision_orientation == "leftHanded"
+    assert runtime.reference.weld_tolerance_m == NEW_STOMACH_WELD_TOLERANCE_M == 1.0e-7
     assert runtime.reference.selected_prim_paths == (MESH,)
     assert runtime.consumer_hashes() == {
         "collision": runtime.geometry_sha256,

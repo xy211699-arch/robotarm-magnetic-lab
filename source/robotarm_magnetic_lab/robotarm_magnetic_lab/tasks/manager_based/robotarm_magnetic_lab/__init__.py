@@ -49,6 +49,20 @@ gym.register(
 )
 
 gym.register(
+    id="Template-Robotarm-Magnetic-New-Stomach-Vector-Lab-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": (
+            f"{__name__}.robotarm_magnetic_new_stomach_vector_env_cfg:"
+            "RobotarmMagneticNewStomachVectorEnvCfg"
+        ),
+    },
+)
+
+
+
+gym.register(
     id="Template-Robotarm-Magnetic-Table-Lab-v0",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,

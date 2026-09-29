@@ -20,6 +20,7 @@ class GeometryAudit:
     collision_mesh_path: str
     collision_mesh_count: int
     collision_approximation: str
+    collision_orientation: str
     geometry_sha256: str
     config_sha256: str
     asset_usd_sha256: str
@@ -117,6 +118,12 @@ def audit_geometry_alignment(stage: Usd.Stage, config, stomach_root_path: str) -
             f"collision mesh path mismatch: {mesh_prim.GetPath()} != {expected_mesh_path}"
         )
     mesh = UsdGeom.Mesh(mesh_prim)
+    collision_orientation = str(mesh.GetOrientationAttr().Get() or "rightHanded")
+    if collision_orientation != "leftHanded":
+        raise ValueError(
+            "new stomach collider must face the cavity: "
+            f"orientation={collision_orientation!r}"
+        )
     points = np.asarray(mesh.GetPointsAttr().Get(), dtype=np.float64)
     triangles = np.asarray(mesh.GetFaceVertexIndicesAttr().Get(), dtype=np.int64)
     if points.ndim != 2 or points.shape[1] != 3 or not np.isfinite(points).all():
@@ -156,6 +163,7 @@ def audit_geometry_alignment(stage: Usd.Stage, config, stomach_root_path: str) -
         collision_mesh_path=str(mesh_prim.GetPath()),
         collision_mesh_count=1,
         collision_approximation=approximation,
+        collision_orientation=collision_orientation,
         geometry_sha256=digest,
         config_sha256=str(config.config_sha256),
         asset_usd_sha256=str(config.asset_usd_sha256),

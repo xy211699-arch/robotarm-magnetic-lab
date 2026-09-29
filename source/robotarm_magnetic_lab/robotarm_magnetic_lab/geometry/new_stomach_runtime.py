@@ -14,6 +14,13 @@ from robotarm_magnetic_lab.coverage.reference_mesh import MeshInput, ReferenceMe
 from .stomach_geometry_audit import GeometryAudit, audit_geometry_alignment
 
 
+# The converted asset contains two valid 0.222 um edges.  The legacy 1 um
+# coverage weld would collapse them and create degenerate faces.  This smaller
+# tolerance preserves every authored triangle while still merging numerical
+# duplicates well below the asset's minimum edge length.
+NEW_STOMACH_WELD_TOLERANCE_M = 1.0e-7
+
+
 @dataclass(frozen=True)
 class NewStomachRuntimeGeometry:
     """Audited world-space mesh shared by planning, wall and coverage code."""
@@ -62,7 +69,11 @@ class NewStomachRuntimeGeometry:
             world_transform=transform,
             orientation=str(mesh.GetOrientationAttr().Get() or "rightHanded"),
         )
-        reference = preprocess_reference_mesh([mesh_input], [audit.collision_mesh_path])
+        reference = preprocess_reference_mesh(
+            [mesh_input],
+            [audit.collision_mesh_path],
+            weld_tolerance_m=NEW_STOMACH_WELD_TOLERANCE_M,
+        )
         return cls(
             stomach_root_path=stomach_root_path,
             collision_mesh_path=audit.collision_mesh_path,
