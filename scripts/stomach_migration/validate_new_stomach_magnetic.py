@@ -309,6 +309,7 @@ def main():
                 stream.close()
         summary["wall_s"] = time.monotonic() - start
         (run_dir / "summary.json").write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n")
+        (run_dir / "status.json").write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n")
         print("NEW_STOMACH_MAGNETIC_SUMMARY", json.dumps(summary, allow_nan=False), flush=True)
         if env is not None:
             env.close()
