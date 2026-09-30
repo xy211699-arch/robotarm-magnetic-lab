@@ -27,8 +27,10 @@ import omni.usd
 from isaaclab.app import launch_simulation
 from isaaclab.envs import ManagerBasedRLEnv
 
-from robotarm_magnetic_lab.coverage.new_stomach_marked_duct import candidate_marked_duct_mask
-from robotarm_magnetic_lab.coverage.new_stomach_tubes import candidate_tube_mask
+from robotarm_magnetic_lab.coverage.new_stomach_tubes import (
+    candidate_right_tube_mask,
+    candidate_tube_mask,
+)
 from robotarm_magnetic_lab.geometry.new_stomach_runtime import NewStomachRuntimeGeometry
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_new_stomach_env_cfg import (
     NEW_STOMACH_GEOMETRY,
@@ -40,7 +42,7 @@ def main() -> None:
     candidate_dir = args.candidate_dir.resolve()
     record = json.loads((candidate_dir / "candidate_summary.json").read_text())
     if (
-        record.get("schema") != "robotarm_magnetic_lab.new_stomach_tube_candidate.v2"
+        record.get("schema") != "robotarm_magnetic_lab.new_stomach_tube_candidate.v3"
         or record.get("status") != "needs_input"
         or not record.get("not_active_coverage_target")
     ):
@@ -70,15 +72,23 @@ def main() -> None:
                 radial_limit_m=float(record["radial_limit_m"]),
                 mouth_buffer_m=float(record["mouth_buffer_m"]),
             )
-            marked_duct = candidate_marked_duct_mask(geometry.reference)
-            if np.any(candidate.labels[marked_duct.face_indices]):
-                raise RuntimeError("runtime marked duct overlaps a main tube")
+            right_tube = candidate_right_tube_mask(
+                geometry.reference,
+                cut_x_from_min_m=float(record["right_tube"]["cut_x_from_min_m"]),
+                max_y_from_min_m=float(record["right_tube"]["max_y_from_min_m"]),
+            )
+            right_mask = np.zeros(len(candidate.labels), dtype=bool)
+            right_mask[right_tube.face_indices] = True
+            if not np.all(right_mask[candidate.per_tube_face_indices[0]]):
+                raise RuntimeError("runtime right tube does not contain Tube A")
+            if np.any(right_mask[candidate.per_tube_face_indices[1]]):
+                raise RuntimeError("runtime right tube overlaps Tube B")
             labels = candidate.labels.copy()
-            labels[marked_duct.face_indices] = 3
+            labels[right_mask & (labels == 0)] = 3
             different = int(np.count_nonzero(labels != saved["face_labels"]))
             if different or len(labels) != int(record["triangle_count"]):
                 raise RuntimeError(f"candidate mask differs from actual Isaac Lab mesh: {different} faces")
-            excluded_area = candidate.excluded_area_m2 + marked_duct.area_m2
+            excluded_area = right_tube.area_m2 + candidate.per_tube_area_m2[1]
             if not np.isclose(excluded_area, record["excluded_area_m2"], atol=1.0e-9, rtol=0):
                 raise RuntimeError("runtime excluded surface area differs from candidate")
             report = {
@@ -93,8 +103,10 @@ def main() -> None:
                 "excluded_face_count": int(np.count_nonzero(labels)),
                 "excluded_area_m2": excluded_area,
                 "tube_connected_components": candidate.per_tube_component_counts,
-                "marked_duct_face_count": len(marked_duct.face_indices),
-                "marked_duct_connected_components": marked_duct.connected_components,
+                "right_tube_full_face_count": len(right_tube.face_indices),
+                "right_tube_added_face_count": int(np.count_nonzero(labels == 3)),
+                "right_tube_connected_components": right_tube.connected_components,
+                "right_tube_cut_x_from_min_m": right_tube.cut_x_from_min_m,
             }
             (candidate_dir / "runtime_mask_audit.json").write_text(
                 json.dumps(report, indent=2, sort_keys=True) + "\n"

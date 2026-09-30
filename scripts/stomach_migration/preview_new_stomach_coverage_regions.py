@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Calibrate a review-only two-tube exclusion and draw the new stomach ROI."""
+"""Calibrate the full right tube plus the other end duct; draw review-only ROI."""
 
 from __future__ import annotations
 
@@ -22,11 +22,10 @@ from pxr import Usd, UsdGeom
 from scipy.spatial.transform import Rotation
 
 from robotarm_magnetic_lab.coverage.area_weights import target_vertex_area_weights, weights_sha256
-from robotarm_magnetic_lab.coverage.new_stomach_marked_duct import (
-    MARKED_DUCT_SEEDS,
-    candidate_marked_duct_mask,
+from robotarm_magnetic_lab.coverage.new_stomach_tubes import (
+    candidate_right_tube_mask,
+    candidate_tube_mask,
 )
-from robotarm_magnetic_lab.coverage.new_stomach_tubes import candidate_tube_mask
 from robotarm_magnetic_lab.coverage.reference_mesh import MeshInput, preprocess_reference_mesh
 from robotarm_magnetic_lab.geometry.new_stomach_runtime import NEW_STOMACH_WELD_TOLERANCE_M
 from robotarm_magnetic_lab.tasks.manager_based.robotarm_magnetic_lab.robotarm_magnetic_new_stomach_env_cfg import (
@@ -84,7 +83,7 @@ def load_confirmed_reference():
     return reference
 
 
-def render_candidate(reference, candidate, marked_duct, labels: np.ndarray, output: Path, tube_length_m: float, radial_limit_m: float):
+def render_candidate(reference, candidate, right_tube, labels: np.ndarray, output: Path, tube_length_m: float, radial_limit_m: float):
     centers = reference.vertices_world[reference.triangles].mean(axis=1)
     origin = np.asarray(NEW_STOMACH_GEOMETRY.world_bounds_min_m)
     points = (centers - origin) * 1000.0
@@ -93,11 +92,12 @@ def render_candidate(reference, candidate, marked_duct, labels: np.ndarray, outp
     reachable = np.flatnonzero(labels == 0)[::5]
     tube_a = candidate.per_tube_face_indices[0]
     tube_b = candidate.per_tube_face_indices[1]
+    right_tube_extra = np.flatnonzero(labels == 3)
     green, red, orange, purple = "#16a68c", "#e34842", "#f39c35", "#7837bc"
     fig = plt.figure(figsize=(14, 10), facecolor="white")
     ax3 = fig.add_subplot(2, 2, 1, projection="3d")
     ax3.scatter(*points[reachable].T, s=0.12, c=green, alpha=0.18, depthshade=False)
-    for selected, color in ((tube_a, red), (tube_b, orange), (marked_duct.face_indices, purple)):
+    for selected, color in ((tube_a, red), (tube_b, orange), (right_tube_extra, purple)):
         ax3.scatter(*points[selected].T, s=0.8, c=color, alpha=0.9, depthshade=False)
     for mouth, direction in zip(mouths, directions, strict=True):
         ax3.plot(*np.stack((mouth, mouth + direction), axis=1), color="black", lw=2.0)
@@ -109,7 +109,7 @@ def render_candidate(reference, candidate, marked_duct, labels: np.ndarray, outp
     span = (np.asarray(NEW_STOMACH_GEOMETRY.world_bounds_max_m) - origin) * 1000.0
     ax3.set_box_aspect(span.copy())
 
-    for subplot, dims, name, labels in (
+    for subplot, dims, name, axis_labels in (
         (2, (0, 1), "Top / XY", ("X from min (mm)", "Y from min (mm)")),
         (3, (0, 2), "Front / XZ", ("X from min (mm)", "Z from min (mm)")),
         (4, (1, 2), "Side / YZ", ("Y from min (mm)", "Z from min (mm)")),
@@ -117,7 +117,7 @@ def render_candidate(reference, candidate, marked_duct, labels: np.ndarray, outp
         ax = fig.add_subplot(2, 2, subplot)
         ax.scatter(points[reachable, dims[0]], points[reachable, dims[1]],
                    s=0.12, c=green, alpha=0.16, linewidths=0, rasterized=True)
-        for selected, color in ((tube_a, red), (tube_b, orange), (marked_duct.face_indices, purple)):
+        for selected, color in ((tube_a, red), (tube_b, orange), (right_tube_extra, purple)):
             ax.scatter(points[selected, dims[0]], points[selected, dims[1]],
                        s=0.55, c=color, alpha=0.85, linewidths=0, rasterized=True)
         for index, (mouth, direction) in enumerate(zip(mouths, directions, strict=True)):
@@ -130,30 +130,32 @@ def render_candidate(reference, candidate, marked_duct, labels: np.ndarray, outp
                 arrowprops={"arrowstyle": "->", "lw": 1.1, "color": "black"},
             )
         ax.set_title(name)
-        ax.set_xlabel(labels[0])
-        ax.set_ylabel(labels[1])
+        ax.set_xlabel(axis_labels[0])
+        ax.set_ylabel(axis_labels[1])
+        if dims[0] == 0:
+            ax.axvline(right_tube.cut_x_from_min_m * 1000.0, color=purple,
+                       linestyle="--", linewidth=1.0, alpha=0.75)
         ax.set_xlim(0, span[dims[0]])
         ax.set_ylim(0, span[dims[1]])
         ax.set_aspect("equal", adjustable="box")
         ax.grid(alpha=0.17)
-    fraction = (candidate.excluded_area_m2 + marked_duct.area_m2) / (
+    fraction = (right_tube.area_m2 + candidate.per_tube_area_m2[1]) / (
         candidate.excluded_area_m2 + candidate.reachable_area_m2
     )
     fig.suptitle(
-        "New stomach coverage ROI: proposed tube exclusions\n"
-        f"Main tubes: {tube_length_m*1000:.0f} mm depth / {radial_limit_m*1000:.0f} mm radius; "
-        "marked small duct: purple; "
-        f"excluded {100*fraction:.2f}% of surface area (review only)",
+        "New stomach coverage ROI: complete right tubular appendage excluded\n"
+        f"Right-tube neck cut X={right_tube.cut_x_from_min_m*1000:.0f} mm (purple + red); "
+        f"Tube B remains orange; excluded {100*fraction:.2f}% of surface area (review only)",
         fontsize=14,
     )
     fig.legend(
         handles=(
-            Patch(color=purple, label="Excluded marked small duct"),
             Patch(color=green, label="Reachable candidate"),
-            Patch(color=red, label="Excluded Tube A"),
+            Patch(color=red, label="Excluded Tube A (within right tube)"),
+            Patch(color=purple, label="Excluded complete right tube"),
             Patch(color=orange, label="Excluded Tube B"),
         ),
-        loc="lower center", ncol=3, frameon=False, fontsize=10,
+        loc="lower center", ncol=4, frameon=False, fontsize=10,
     )
     fig.subplots_adjust(left=0.06, right=0.98, bottom=0.09, top=0.89, hspace=0.23)
     fig.savefig(output, dpi=180, facecolor="white")
@@ -165,9 +167,12 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--tube-length-mm", type=float, default=25.0)
     parser.add_argument("--radial-limit-mm", type=float, default=12.0)
+    parser.add_argument("--right-tube-cut-x-mm", type=float, default=130.0)
     args = parser.parse_args()
     if not (5 <= args.tube_length_mm <= 60 and 9.5 <= args.radial_limit_mm <= 25):
         parser.error("tube length must be 5..60 mm and radial limit 9.5..25 mm")
+    if not 115 <= args.right_tube_cut_x_mm <= 145:
+        parser.error("right-tube neck cut must be 115..145 mm from the model minimum X")
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     reference = load_confirmed_reference()
@@ -180,11 +185,18 @@ def main() -> None:
         tube_length_m=tube_length_m,
         radial_limit_m=radial_limit_m,
     )
-    marked_duct = candidate_marked_duct_mask(reference)
-    if np.any(candidate.labels[marked_duct.face_indices]):
-        raise RuntimeError("marked small duct overlaps a main tube mask")
+    right_tube = candidate_right_tube_mask(
+        reference, cut_x_from_min_m=args.right_tube_cut_x_mm / 1000.0
+    )
+    right_mask = np.zeros(len(candidate.labels), dtype=bool)
+    right_mask[right_tube.face_indices] = True
+    if not np.all(right_mask[candidate.per_tube_face_indices[0]]):
+        raise RuntimeError("right-tube mask does not contain all of Tube A")
+    if np.any(right_mask[candidate.per_tube_face_indices[1]]):
+        raise RuntimeError("right-tube mask overlaps Tube B")
     labels = candidate.labels.copy()
-    labels[marked_duct.face_indices] = 3
+    labels[right_mask & (labels == 0)] = 3
+    right_tube_extra = np.flatnonzero(labels == 3)
     reachable_indices = np.flatnonzero(labels == 0)
     excluded_indices = np.flatnonzero(labels != 0)
     raw_weights = target_vertex_area_weights(reference)
@@ -197,14 +209,15 @@ def main() -> None:
         reachable_face_indices=reachable_indices,
         tube_a_face_indices=candidate.per_tube_face_indices[0],
         tube_b_face_indices=candidate.per_tube_face_indices[1],
-        marked_duct_face_indices=marked_duct.face_indices,
+        right_tube_full_face_indices=right_tube.face_indices,
+        right_tube_added_face_indices=right_tube_extra,
     )
     figure_path = output / "reachable_vs_excluded_tubes.png"
-    render_candidate(reference, candidate, marked_duct, labels, figure_path, tube_length_m, radial_limit_m)
+    render_candidate(reference, candidate, right_tube, labels, figure_path, tube_length_m, radial_limit_m)
     total_area = candidate.excluded_area_m2 + candidate.reachable_area_m2
-    excluded_area = candidate.excluded_area_m2 + marked_duct.area_m2
+    excluded_area = right_tube.area_m2 + candidate.per_tube_area_m2[1]
     summary = {
-        "schema": "robotarm_magnetic_lab.new_stomach_tube_candidate.v2",
+        "schema": "robotarm_magnetic_lab.new_stomach_tube_candidate.v3",
         "status": "needs_input",
         "not_active_coverage_target": True,
         "asset_usd_sha256": NEW_STOMACH_GEOMETRY.asset_usd_sha256,
@@ -222,16 +235,15 @@ def main() -> None:
         "tube_face_counts": [len(group) for group in candidate.per_tube_face_indices],
         "tube_connected_components": candidate.per_tube_component_counts,
         "tube_area_m2": candidate.per_tube_area_m2,
-        "marked_duct": {
-            "seed_names": [seed.name for seed in MARKED_DUCT_SEEDS],
-            "seed_centers_from_min_m": [seed.center_from_min_m for seed in MARKED_DUCT_SEEDS],
-            "seed_surface_distances_m": [seed.surface_distance_m for seed in MARKED_DUCT_SEEDS],
-            "matched_boundary_centers_world_m": marked_duct.matched_boundary_centers_world_m.tolist(),
-            "per_seed_face_counts": marked_duct.per_seed_face_counts,
-            "face_count": len(marked_duct.face_indices),
-            "area_m2": marked_duct.area_m2,
-            "connected_components": marked_duct.connected_components,
-            "bounds_from_min_m": marked_duct.bounds_from_min_m.tolist(),
+        "right_tube": {
+            "cut_x_from_min_m": right_tube.cut_x_from_min_m,
+            "max_y_from_min_m": 0.110,
+            "full_face_count": len(right_tube.face_indices),
+            "full_area_m2": right_tube.area_m2,
+            "added_face_count_excluding_tube_a": len(right_tube_extra),
+            "added_area_m2_excluding_tube_a": right_tube.area_m2 - candidate.per_tube_area_m2[0],
+            "connected_components": right_tube.connected_components,
+            "bounds_from_min_m": right_tube.bounds_from_min_m.tolist(),
         },
         "excluded_face_count": len(excluded_indices),
         "reachable_face_count": len(reachable_indices),
@@ -243,7 +255,7 @@ def main() -> None:
         "candidate_reachable_vertex_weights_sha256": weights_sha256(reachable_weights),
         "mask_file": {"path": str(mask_path), "bytes": mask_path.stat().st_size, "sha256": _sha256(mask_path)},
         "figure_file": {"path": str(figure_path), "bytes": figure_path.stat().st_size, "sha256": _sha256(figure_path)},
-        "operator_review": "Confirm the purple marked small duct and red/orange end tubes are excluded without erasing adjacent gastric wall.",
+        "operator_review": "Confirm the entire C-shaped right tube (purple plus red Tube A) is excluded up to the dashed X=130 mm neck cut, while stomach body remains green.",
     }
     (output / "candidate_summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"

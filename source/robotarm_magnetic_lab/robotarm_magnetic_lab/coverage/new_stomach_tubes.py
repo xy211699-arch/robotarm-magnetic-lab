@@ -1,4 +1,4 @@
-"""Review-only tube masks for the new stomach's two open cylindrical ends.
+"""Review-only tube masks for the new stomach's ends and right appendage.
 
 This selects authored surface triangles, not a fitted solid or a visibility
 shortcut.  The candidate is deliberately not a frozen coverage target until
@@ -26,6 +26,17 @@ class TubeCandidate:
     per_tube_area_m2: tuple[float, float]
     excluded_area_m2: float
     reachable_area_m2: float
+
+
+@dataclass(frozen=True)
+class RightTubeCandidate:
+    """Entire right-hand tubular appendage beyond its junction with the body."""
+
+    face_indices: np.ndarray
+    cut_x_from_min_m: float
+    area_m2: float
+    connected_components: int
+    bounds_from_min_m: np.ndarray
 
 
 def _face_geometry(reference: ReferenceMesh) -> tuple[np.ndarray, np.ndarray]:
@@ -60,6 +71,43 @@ def _component_count(triangles: np.ndarray, selected: np.ndarray) -> int:
             if prior != local:
                 parent[root(local)] = root(prior)
     return len({root(index) for index in range(len(selected))})
+
+
+def candidate_right_tube_mask(
+    reference: ReferenceMesh,
+    *,
+    cut_x_from_min_m: float = 0.130,
+    max_y_from_min_m: float = 0.110,
+) -> RightTubeCandidate:
+    """Select the complete C-shaped tube right of a single neck cross-section.
+
+    The cut is in the accepted asset's local world-aligned coordinates, not a
+    screen-space rectangle.  The Y bound is an audit guard: no part of the
+    selected appendage may extend above the user's annotated region.
+    """
+    if not np.isfinite(cut_x_from_min_m) or cut_x_from_min_m <= 0:
+        raise ValueError("right-tube cut X must be finite and positive")
+    if not np.isfinite(max_y_from_min_m) or max_y_from_min_m <= 0:
+        raise ValueError("right-tube audit Y must be finite and positive")
+    centers, areas = _face_geometry(reference)
+    origin = np.asarray(reference.vertices_world, dtype=np.float64).min(axis=0)
+    relative = centers - origin
+    selected = np.flatnonzero(relative[:, 0] >= cut_x_from_min_m)
+    if not len(selected) or len(selected) == len(centers):
+        raise ValueError("right-tube cut selects none or all of the stomach")
+    bounds = np.stack((relative[selected].min(axis=0), relative[selected].max(axis=0)))
+    if bounds[1, 1] > max_y_from_min_m:
+        raise ValueError("right-tube mask extends outside the annotated Y region")
+    components = _component_count(reference.triangles, selected)
+    if components != 1:
+        raise ValueError(f"right-tube mask has {components} disconnected patches")
+    return RightTubeCandidate(
+        face_indices=selected,
+        cut_x_from_min_m=float(cut_x_from_min_m),
+        area_m2=float(areas[selected].sum()),
+        connected_components=components,
+        bounds_from_min_m=bounds,
+    )
 
 
 def infer_inward_direction(
