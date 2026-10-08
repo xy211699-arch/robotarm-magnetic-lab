@@ -114,3 +114,18 @@ def test_profiler_annotations_only_on_explicit_trace_boundary():
             with p.scope('magnetic'):
                 pass
     assert labels == ['magnetic']
+
+
+def test_cuda_completion_failure_does_not_count_a_transition_or_publish_throughput():
+    syncs = []
+    def synchronize():
+        syncs.append(1)
+        if len(syncs) == 2:
+            raise RuntimeError('fake CUDA completion fault')
+    p = CapacityProfile(enabled=True, synchronize=synchronize)
+    with pytest.raises(RuntimeError, match='completion fault'):
+        with p.boundary(valid_rows=1, phase='active'):
+            pass
+    assert p.records[0]['completed'] is False
+    assert p.summary()['valid_transitions'] == 0
+    assert p.summary()['q_valid_including_reset'] is None

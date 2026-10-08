@@ -45,6 +45,9 @@ class CapacityProfile:
                     exclusive = sum(x['exclusive_host_s'] for x in row['timers'].values())
                     # Includes CUDA completion drain, not purely CPU work.
                     row['unattributed_outer_s'] = max(row['wall_s'] - exclusive, 0.)
+            except BaseException:
+                row['completed'] = False
+                raise
             finally:
                 self.records.append(row)
                 self.current = None
@@ -93,7 +96,8 @@ class CapacityProfile:
         steady = [r for r in good if r['phase'] == 'active' and not r['trace']]
         valid = sum(r['valid_rows'] for r in good)
         count = sum(r['valid_rows'] for r in steady)
-        wall = sum(r['wall_s'] for r in self.records) if self.enabled else None
+        wall = (sum(r['wall_s'] for r in self.records) if self.enabled and
+                all(r['wall_s'] is not None for r in self.records) else None)
         steady_wall = sum(r['wall_s'] for r in steady) if self.enabled else None
         return dict(timing_enabled=self.enabled, valid_transitions=valid, accounted_wall_s=wall,
                     q_valid_including_reset=valid/wall if wall else None,
