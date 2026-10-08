@@ -1,6 +1,6 @@
 # 新胃连续RL预验证执行报告（进行中）
 
-当前状态：`partial`。Gate 0、1通过；Gate 2–6未验收。未启动PPO或正式训练。
+当前状态：`partial`。Gate 0、1、2通过；Gate 3–6未验收。未启动PPO或正式训练。
 
 ## 版本及边界
 
@@ -70,4 +70,18 @@ git diff --check
 
 实际GPU命令：`ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor ./run_isaaclab.sh -p scripts/new_stomach_rl/validate_actions.py --mode chunk --device cuda:0 --viz none`，Single仅将mode改为single。
 
-未验证：C10/C1、奖励、Actor隔离、PPO短训、并行容量及正式训练预算；不把前两项Gate结果当作全部任务完成。
+## Gate 2观察结果
+
+- 新增独立精确可见性/双时钟模块，复用原CUDA first-hit、入射面片、法向、距离及面积权重；70mm/120°及冻结管道掩码保持不变，面积实测0.04020530122973119m²。
+- 120秒GPU回合通过：28800物理步；C10=1201点、C1=121点（含C0），每秒真实RGB帧号+1、内容SHA留存；共同边界可见顶点差异全部0；C1累计集合是C10子集。结束C10=26.237952%、C1=26.096835%，仅为脚本链路验证，不称为策略性能。
+- 初始回载采用冻结库首个固定train样本，1秒HOLD不计入策略预算；C0不产生策略奖励（奖励适配尚待Gate3验证）。
+- 解决新增适配问题：Python/渲染器约1nm光心舍入令1个边缘顶点first-hit不同；改为SDK相同Warp坐标转换，未量化外参或放宽可见性条件。PhysX step不主动同步Fabric，使用公开`physics_manager.forward()`及仅层级变换刷新，从真实物理状态获取挂载相机变换；逐样本检查与胶囊刚体及挂载关系匹配，绝不读取过期1Hz相机位姿作为C10。
+- SDK相机第二个边界未自动采图：复用已验证Task009D0RgbSynchronizer，仅对遗漏边界补采，120秒中60次补采；帧号仍每秒只增加1。新的PolicyRGBBoundary将供新正式环境观测路径使用，Gate4尚未验收，不声称已接入正式Actor。
+- 兼容风险：pose-only路径读取Camera._view及SDK Warp约定；补采使用既有Camera._update_buffers_impl接口。SDK升级必须重跑门禁。
+- 纯覆盖测试11 passed；Gate0–2及原回归合计104 passed、65 warnings，退出码0。
+
+命令：`ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor ./run_isaaclab.sh -p scripts/new_stomach_rl/validate_preflight.py --gate coverage --seconds 120 --device cuda:0 --viz none`。
+
+通过摘要：本工作树`artifacts/new_stomach_rl/preflight/20261008T063439.430899Z/summary.json`；同目录逐10Hz/1Hz JSONL。全部绝对路径、字节数、SHA及保留的初始失败工件见`artifacts/new_stomach_rl/evidence/gate2_artifact_inventory.json`。测试当时已提交HEAD为`0d8764ec88cabd04c32485a7ab60a8e5674524e9`，包含尚未提交的Gate2新增代码；不将该HEAD误称为Gate2实现提交。
+
+未验证：奖励、正式Actor信息隔离、PPO短训、并行容量及训练预算；不把前三项Gate结果当作全部任务完成。

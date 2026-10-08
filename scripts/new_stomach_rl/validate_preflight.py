@@ -293,7 +293,8 @@ def run_runtime(args, report, output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--gate', choices=['assets'], default='assets')
+    parser.add_argument('--gate', choices=['assets', 'coverage'], default='assets')
+    parser.add_argument('--seconds', type=int, default=4)
     parser.add_argument('--pose_manifest', type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument('--mask', type=Path, default=DEFAULT_MASK)
     parser.add_argument('--runtime', action='store_true')
@@ -309,9 +310,15 @@ def main():
     code = 0
     try:
         report['assets'] = audit_assets(args.pose_manifest, args.mask)
-        if args.runtime:
+        if args.gate == 'coverage':
+            from validate_coverage import run_coverage
+            report['gate'] = 2
+            run_coverage(args, report, output)
+            code = int(report['status'] != 'pass')
+        elif args.runtime:
             run_runtime(args, report, output)
-        report['status'] = 'pass' if args.runtime else 'assets_pass_runtime_not_run'
+        if args.gate == 'assets':
+            report['status'] = 'pass' if args.runtime else 'assets_pass_runtime_not_run'
     except Exception as error:
         report['status'] = 'fail'
         report['error'] = {'type': type(error).__name__, 'message': str(error), 'traceback': traceback.format_exc()}
