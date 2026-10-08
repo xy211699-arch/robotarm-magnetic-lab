@@ -1,6 +1,6 @@
 # 新胃连续RL预验证执行报告（进行中）
 
-当前状态：`partial`。Gate 0–3通过；Gate 4–6未验收。未启动PPO或正式训练。
+当前状态：`partial`。Gate 0–4通过；Gate 5–6未验收。A/D各完成2次PPO烟雾更新，未启动正式训练。
 
 ## 版本及边界
 
@@ -92,8 +92,27 @@ git diff --check
 
 通过摘要：本工作树`artifacts/new_stomach_rl/preflight/20261008T065553.947988Z/summary.json`；同目录`reward_10hz.jsonl`、`reward_1hz.jsonl`及`physics_240hz.jsonl`。完整绝对路径/字节/SHA见`artifacts/new_stomach_rl/evidence/gate3_artifact_inventory.json`。测试加载Gate3未提交代码，原执行HEAD为`aff567e32539d9c4f67a8bb916fcf45051a41303`。
 
-命令：`ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor ./run_isaaclab.sh -p scripts/new_stomach_rl/validate_preflight.py --gate rewards --seconds 120 --pose_split train --device cuda:0 --viz none`。validation随机120秒追加验收正在运行，结果尚未确定。
+命令：`ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor ./run_isaaclab.sh -p scripts/new_stomach_rl/validate_preflight.py --gate rewards --seconds 120 --pose_split train --device cuda:0 --viz none`。validation随机120秒追加验收也通过，摘要为`artifacts/new_stomach_rl/preflight/20261008T070409.039061Z/summary.json`，C10/C1均正确计数，所有奖励汇总一致。
 
 验收脚本将TIMEOUT设置为121秒并在120秒精确停止，以保留最后一秒证据，未改碰撞/停止保护；独立正式配置仍为120秒，其Same-Step autoreset及正式Actor接口将在Gate4验证。Gate3的240Hz文件记录实际电机状态，尚不含逐步胶囊/磁力全量数据，不能冒称Gate6最终动力学记录。
 
-未验证：正式Actor信息隔离、PPO短训、并行容量及训练预算；不把前四项Gate结果当作全部任务完成。
+## Gate 4观察结果
+
+新增独立task ID `Template-Robotarm-Magnetic-New-Stomach-RL-Preflight-v0`及环境步进/重置适配；旧注册模块不改，新CLI显式注册。Actor仅548D（冻结视觉512D或全零 + 上一秒已下发的四个实际指令36D）；Critic特权输入28D单独声明为胶囊pose7/速度6/关节9/恢复阶段4/C10-C1两项。重置写入冻结库位姿，只用于reset；随后实际240步HOLD不计预算、不产生奖，清空动作历史后初始化C0。
+
+9项纯测试通过：tanh联合概率与PyTorch参考一致、9/36维有限梯度、GRU按行reset mask、checkpoint恢复、Actor拒绝额外输入/不读取特权对象、Blind不读RGB、冻结编码器每新帧一次前向、私有split采样隔离。
+
+实际GPU正式env.step路径：A与D各2次更新、每次8步rollout，策略/价值loss、KL、梯度、reward全部有限；checkpoints恢复后相同观察/hidden的输出完全相同。重置后的覆盖、动作历史、奖励清空；加载checkpoint再在新reset下推进一个1秒步成功，不宣称恢复了旧物理轨迹。D使用原SHA固定的frozen ResNet18，真实1Hz RGB，不更新backbone。
+
+| 模式 | update | policy loss | value loss | KL/维 |
+| --- | --- | --- | --- | --- |
+| A | 1 | -0.114129 | 41.144558 | 0.004012 |
+| A | 2 | -0.098135 | 0.109790 | 0.004392 |
+| D | 1 | -0.177736 | 46.301239 | 0.005128 |
+| D | 2 | -0.109674 | 0.045978 | 0.002136 |
+
+Smoke用每秒gamma=0.999^10、lambda=0.95，Adam 3e-4、clip0.2、value系数0.5、每update两个完整recurrent minibatch epochs；均为预验证参数，正式训练前待冻结。联合log_prob不除维数，KL/entropy诊断按维平均，避免9/36维总量误比。短烟雾遇终止即失败，不把未测的长训/timeout GAE行为写成已验证。
+
+命令：`ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor ./run_isaaclab.sh -p scripts/new_stomach_rl/train_smoke.py --group A --updates 2 --num_envs 1 --rollout_steps 8 --device cuda:0 --viz none`；D仅将group改为D。A/D通过摘要分别为`artifacts/new_stomach_rl/smoke/20261008T071255.990907Z/summary.json`、`20261008T071628.233275Z/summary.json`；逐1Hz动作/RGB与10Hz奖励记录、checkpoint完整绝对路径、字节和SHA见`artifacts/new_stomach_rl/evidence/gate4_artifact_inventory.json`。执行时已提交HEAD为Gate3，包含当时新增Gate4未提交实现。
+
+未验证：并行容量、训练预算、120秒正式env自动reset与全量240Hz胶囊/磁力记录；不把前五项Gate结果当作全部任务完成。
