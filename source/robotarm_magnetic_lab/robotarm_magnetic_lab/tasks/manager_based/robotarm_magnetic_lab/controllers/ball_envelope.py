@@ -20,11 +20,34 @@ def stomach_collision_mesh(stage, configured_path=None):
     return candidates[0]
 
 
-def audit_stage(stage):
+def _scope_prims(stage, env_root=None):
+    """Keep legacy traversal, or visit exactly one validated USD prim subtree."""
+    from pxr import Sdf, Usd
+    if env_root is None:
+        return Usd.PrimRange.Stage(stage, Usd.TraverseInstanceProxies())
+    path = Sdf.Path(str(env_root))
+    if not path.IsAbsolutePath() or not path.IsPrimPath() or path == Sdf.Path.absoluteRootPath:
+        raise ValueError(f'env_root must be an absolute non-root prim path: {env_root}')
+    root = stage.GetPrimAtPath(path)
+    if not root.IsValid() or not root.IsActive() or not root.IsDefined():
+        raise ValueError(f'env_root must identify an active defined prim: {env_root}')
+    return Usd.PrimRange(root, Usd.TraverseInstanceProxies())
+
+
+def _require_body_scope(body_path, env_root, label):
+    """Reject cross-row ownership/bindings, including env_1 versus env_10."""
+    if env_root is not None:
+        from pxr import Sdf
+        if not Sdf.Path(str(body_path)).HasPrefix(Sdf.Path(str(env_root))):
+            raise ValueError(f'{label} body {body_path} is outside env_root {env_root}')
+
+
+def audit_stage(stage, env_root=None):
+    """Audit one explicit subtree; None retains the whole-stage single-copy guard."""
     from pxr import Usd,UsdGeom,UsdPhysics
     cache=UsdGeom.XformCache()
     meshes=[];joints=[]
-    for p in Usd.PrimRange.Stage(stage,Usd.TraverseInstanceProxies()):
+    for p in _scope_prims(stage, env_root):
         path=str(p.GetPath())
         if '/asm/' not in path:continue
         if p.IsA(UsdGeom.Mesh) and p.GetName() in ('magl','ballzl'):meshes.append(p)
@@ -38,6 +61,11 @@ def audit_stage(stage):
         for bodies,local in ((j.GetBody0Rel().GetTargets(),j.GetLocalPos0Attr().Get()),
                              (j.GetBody1Rel().GetTargets(),j.GetLocalPos1Attr().Get())):
             if len(bodies)!=1:raise RuntimeError('Ball joint must have two identified bodies')
+            _require_body_scope(bodies[0], env_root, 'Ball joint')
+            if env_root is not None:
+                body = stage.GetPrimAtPath(bodies[0])
+                if not body.IsValid() or not body.HasAPI(UsdPhysics.RigidBodyAPI):
+                    raise ValueError('Ball joint must bind an existing scoped rigid body')
             mat=np.asarray(cache.GetLocalToWorldTransform(stage.GetPrimAtPath(bodies[0])))
             point=np.r_[np.asarray(local),1.]@mat
             joint_errors.append(float(np.linalg.norm(point[:3]-pivot)))

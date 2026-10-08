@@ -54,17 +54,20 @@ class ClosedMesh:
 
 
 class NativeMeshClearance:
-    def __init__(self,stage,model,device='cpu',asm_mount=None,ball_envelope=None):
+    def __init__(self,stage,model,device='cpu',asm_mount=None,ball_envelope=None,env_root=None):
         from pxr import Usd,UsdGeom,UsdPhysics
+        from .ball_envelope import _scope_prims, _require_body_scope
         self.model=model;self.meshes=[];self.records=[];self.query_count=0
         cache=UsdGeom.XformCache()
         expected=set(model.spheres)-{model.asm_frame}-set(model.ignored_frames)
         seen=set()
-        for prim in Usd.PrimRange.Stage(stage,Usd.TraverseInstanceProxies()):
+        for prim in _scope_prims(stage, env_root):
             if not prim.IsA(UsdGeom.Mesh) or '/robotarm/' not in str(prim.GetPath()):continue
             body=prim
             while body.IsValid() and not body.HasAPI(UsdPhysics.RigidBodyAPI):body=body.GetParent()
-            if not body.IsValid() or body.GetName() not in expected:continue
+            if not body.IsValid():continue
+            _require_body_scope(body.GetPath(), env_root, 'Native mesh')
+            if body.GetName() not in expected:continue
             frame=body.GetName();mesh=UsdGeom.Mesh(prim)
             counts=np.asarray(mesh.GetFaceVertexCountsAttr().Get(),int)
             if not len(counts) or np.any(counts!=3):raise ValueError('native mesh must be triangular')
@@ -82,12 +85,13 @@ class NativeMeshClearance:
         self.asm_certificate=None
         if asm_mount is not None:
             from .mesh_cover_audit import cover_triangles,certify_triangles
-            selected=[p for p in Usd.PrimRange.Stage(stage,Usd.TraverseInstanceProxies())
+            selected=[p for p in _scope_prims(stage, env_root)
                 if p.IsA(UsdGeom.Mesh) and '/asm/' in str(p.GetPath()) and p.GetName()=='base_link']
             if len(selected)!=1:raise ValueError('one static ASM mesh required')
             prim=selected[0];body=prim
             while body.IsValid() and not body.HasAPI(UsdPhysics.RigidBodyAPI):body=body.GetParent()
             if not body.IsValid():raise ValueError('ASM rigid body missing')
+            _require_body_scope(body.GetPath(), env_root, 'ASM mesh')
             geometry=UsdGeom.Mesh(prim)
             if np.any(np.asarray(geometry.GetFaceVertexCountsAttr().Get())!=3):raise ValueError('ASM must be triangulated')
             vertices=np.asarray(geometry.GetPointsAttr().Get(),float)

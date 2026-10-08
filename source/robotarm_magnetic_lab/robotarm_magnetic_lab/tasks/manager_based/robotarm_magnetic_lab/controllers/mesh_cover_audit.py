@@ -103,10 +103,11 @@ def certify_triangles(triangles,centers,radii,tolerance=1e-6,max_depth=8):
         pending=np.concatenate([np.stack(v,axis=1) for v in ((a,ab,ca),(ab,b,bc),(ca,bc,c),(ab,bc,ca))])
 
 
-def audit_stage_static_meshes(stage,model,mount=None,repair_native=False):
+def audit_stage_static_meshes(stage,model,mount=None,repair_native=False,env_root=None):
     from pxr import Usd,UsdGeom,UsdPhysics
+    from .ball_envelope import _scope_prims, _require_body_scope
     cache=UsdGeom.XformCache();records=[];seen=set()
-    for prim in Usd.PrimRange.Stage(stage,Usd.TraverseInstanceProxies()):
+    for prim in _scope_prims(stage, env_root):
         if not prim.IsA(UsdGeom.Mesh):continue
         path=str(prim.GetPath());is_asm='/asm/' in path
         if is_asm and mount is None:continue
@@ -115,6 +116,7 @@ def audit_stage_static_meshes(stage,model,mount=None,repair_native=False):
         body=prim
         while body.IsValid() and not body.HasAPI(UsdPhysics.RigidBodyAPI):body=body.GetParent()
         if not body.IsValid():continue
+        _require_body_scope(body.GetPath(), env_root, 'Static mesh')
         frame='l6' if is_asm else body.GetName()
         if frame not in model.spheres and frame not in model.environment_spheres:continue
         mesh=UsdGeom.Mesh(prim)
