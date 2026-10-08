@@ -3,6 +3,21 @@
 Isaac Lab 3.0 single-environment task for the AUBO-style six-axis arm, the
 three-axis magnetic ball assembly, and the external capsule magnet.
 
+## 当前归档主版本：A版（新胃模型联合磁控）
+
+用户于2026-10-08确认选择A版，归档分支为
+`release/new-stomach-magnetic-v1-20261008`。版本入口、文件索引、依赖与限制见
+[`docs/RELEASE_A_NEW_STOMACH_MAGNETIC.md`](docs/RELEASE_A_NEW_STOMACH_MAGNETIC.md)。
+
+- 任务：`Template-Robotarm-Magnetic-New-Stomach-Vector-Lab-v0`。
+- 控制：240 Hz物理、1 Hz动作；4×9相对增量chunk，首秒执行、后三秒预览。
+- 胶囊由真实计算的磁力/磁矩、重力和接触驱动，不采用MOVE/VIEW/UP直接施力。
+- 新胃双管口水平；不可达区是候选掩码，尚未启用正式新胃覆盖率或训练。
+- 旧开环演示与TASK-010直接施力训练代码保留，不能与A版入口或指标混用。
+- 本仓库仍依赖外部Isaac Lab/Isaac Sim安装和机器人原始USD资产；不是独立安装包。
+
+下面保留的bring-up、训练和数据接口说明属于历史入口，不代表A版控制时序。
+
 ## Project status and execution history
 
 - Incremental work since the 2026-07-17 handover:

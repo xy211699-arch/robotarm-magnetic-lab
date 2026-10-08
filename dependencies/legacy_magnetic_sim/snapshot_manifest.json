@@ -1,0 +1,46 @@
+{
+  "schema": "robotarm_magnetic_lab.legacy_source_snapshot.v1",
+  "captured_date": "2026-10-08",
+  "base_commit": "e4fde7904b04bea4f6f99288b3dcd88546bad80f",
+  "runtime_rewired": false,
+  "magpylib_version": "5.2.3",
+  "files": [
+    {
+      "repository_path": "dependencies/legacy_magnetic_sim/robotarm/magnetic_sim/config.py",
+      "original_path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/config.py",
+      "sha256": "5d32740c62a75e06b7b876ed16f0043378ad45b72317b1f99637466b7f71ee07"
+    },
+    {
+      "repository_path": "dependencies/legacy_magnetic_sim/robotarm/magnetic_sim/magnetics/field_models.py",
+      "original_path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/field_models.py",
+      "sha256": "be2f4d4af8db2e3a04552add61cbbc84d89e2348c08864a0c9cc3e6283265965"
+    },
+    {
+      "repository_path": "dependencies/legacy_magnetic_sim/robotarm/magnetic_sim/magnetics/streamlines.py",
+      "original_path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/streamlines.py",
+      "sha256": "a0a1c04e0250dd1eb9a2079475b655dd72081b53f9da0c0b8cf43802d42bb27c"
+    },
+    {
+      "repository_path": "dependencies/legacy_magnetic_sim/robotarm/magnetic_sim/visualization/magnetic_field.py",
+      "original_path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/visualization/magnetic_field.py",
+      "sha256": "c8c5f502b4d1d4a6d25fa11fcb4e1e3e4b6a86eb9845a38c34682ea082c57069"
+    },
+    {
+      "repository_path": "dependencies/legacy_magnetic_sim/data/config/default.json",
+      "original_path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/config/default.json",
+      "sha256": "326e770eb03ab6eaae130a1d6787e472cc8d7b78ec28c4f6085eb90eaa2fd817"
+    },
+    {
+      "repository_path": "dependencies/legacy_magnetic_sim/data/planning/robot.xrdf",
+      "original_path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/planning/robot.xrdf",
+      "sha256": "5293e63d4112c67f479bdfa88ad8cb520c864c69939f0683a8dea5ca08146f40"
+    },
+    {
+      "repository_path": "dependencies/legacy_magnetic_sim/robotarm.urdf",
+      "original_path": "/home/multirobo/Desktop/robotarm/urdf/robotarm.urdf",
+      "sha256": "0560e8a02f57789648c60bcfc03d7237146c4bca5c99d7008c2650006ff675f8",
+      "original_sha256": "1d6e12d461207e65ac30b4ddfcbc2d136f5cbeb9f7ac0f9e9c9852511133a613",
+      "normalization": "CRLF/LF mixed source normalized to LF and one exporter-comment trailing space removed; canonical XML without comments matches original"
+    }
+  ]
+}
