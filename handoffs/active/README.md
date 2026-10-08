@@ -1,5 +1,11 @@
 # 活动任务合同
 
+## 2026-10-08 新胃 RL 容量与长程训练就绪
+
+当前新胃 RL 下一阶段入口为 `NEW-STOMACH-RL-CAPACITY-20261008.md`，完整方案为 `docs/superpowers/plans/2026-10-08-new-stomach-rl-capacity-and-training-readiness-plan.md`。用户确认仅将容量阶梯改为 1、4、8、12、16、20，其余不变；P2 两环境隔离门禁仍保留，不属于容量阶梯。
+
+Windows 交接分支为 `workflow/new-stomach-rl-capacity-20261008`，以 Linux 预验证交付提交 `3ff631e08ecffd97a3bba78cfbbc923906d5dc01` 为起点。先实施 P0—P3，容量报告和批量预算冻结后才接入 R0—R2；GPU 实验由用户人工启动，不启动正式四组多种子训练。以下预验证及历史任务登记保留原文，不作为新阶段状态。
+
 ## 2026-10-08 新胃连续 RL 预验证
 
 当前新胃 RL 预验证交接入口为 `NEW-STOMACH-RL-PREFLIGHT-20261008.md`。完整冻结规格及实施计划分别位于 `docs/superpowers/specs/2026-10-08-new-stomach-rl-preflight-design.md` 和 `docs/superpowers/plans/2026-10-08-new-stomach-rl-preflight-implementation-plan.md`。
