@@ -1,6 +1,6 @@
 # 新胃连续RL预验证执行报告（进行中）
 
-当前状态：`partial`。Gate 0通过；Gate 1–6未验收。未启动PPO或正式训练。
+当前状态：`partial`。Gate 0、1通过；Gate 2–6未验收。未启动PPO或正式训练。
 
 ## 版本及边界
 
@@ -58,4 +58,16 @@ git diff --check
 - TDD红灯：上述evidence目录`gate0_shutdown_red.log`、`gate0_closest_red.log`各2 failed，最终修复后通过；初始未实现检查时终端观察5 failed/1 passed。
 - 固定日志地址`/mnt/isaac-linux/robotarm_magnetic_lab/logs/runtime.txt`由既有桥追加本轮记录，未改加载/日志路径。
 
-未验证：Single/Chunk安全执行、C10/C1、奖励、Actor隔离、PPO短训、并行容量及正式训练预算；不把Gate 0结果当作全部任务完成。
+## Gate 1观察结果
+
+新增独立轨迹模块、action term、`validate_actions.py`及`test_action.py`；未改旧控制器。Single完整1秒执行，Chunk四个0.25秒段全部执行；持续时间相关的IK半径及解析速度/加速度极值认证，段间位置/速度/加速度连续，保留原停止路径和原5mm余量。
+
+- 纯回归：25 passed、14 warnings，退出码0；原961点预览保持原样。
+- GPU：Single与Chunk各21场景，合计42；每场景240物理记录及240次真实磁力更新，所有原跟踪容差通过、无非有限状态/终止，均有实际可运动指令。包含HOLD、9轴正负、组合和换向；未通过在真实场景中制造碰撞来测试拒绝，碰撞拒绝由纯函数低于5mm证书测试验证，不夸大此项。
+- Single历史按四个实际四分之一秒指令差分记录，并非复制四次整秒增量；Chunk最后段影响末段，四段预算与解析加速度限制单测通过。
+- 首次Chunk输入检查失败：SDK实测Ball软限位为`[-inf,+inf]`，其float32软限位计算对连续关节极大区间溢出。修复仅在新增模块接受原合法无界区间，仍拒绝NaN/反向区间；未替换SDK、修改关节限位或降低速度/碰撞保护。失败摘要保留。
+- Chunk通过摘要：`artifacts/new_stomach_rl/action/20261008T060439.262435Z/summary.json`；Single通过摘要及全部逐步记录路径、字节数、SHA见`artifacts/new_stomach_rl/evidence/gate1_artifact_inventory.json`（均以本工作树为绝对路径前缀）。
+
+实际GPU命令：`ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor ./run_isaaclab.sh -p scripts/new_stomach_rl/validate_actions.py --mode chunk --device cuda:0 --viz none`，Single仅将mode改为single。
+
+未验证：C10/C1、奖励、Actor隔离、PPO短训、并行容量及正式训练预算；不把前两项Gate结果当作全部任务完成。
