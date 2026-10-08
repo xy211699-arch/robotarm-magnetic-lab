@@ -1,6 +1,6 @@
 # 新胃连续RL预验证执行报告（进行中）
 
-当前状态：`partial`。Gate 0–4通过；Gate 5–6未验收。A/D各完成2次PPO烟雾更新，未启动正式训练。
+当前状态：`partial`。Gate 0–4通过；Gate 5为`limited_pass`，最大已验证1环境；Gate 6未验收。仅执行PPO短程烟雾，未启动正式训练。
 
 ## 版本及边界
 
@@ -100,19 +100,49 @@ git diff --check
 
 新增独立task ID `Template-Robotarm-Magnetic-New-Stomach-RL-Preflight-v0`及环境步进/重置适配；旧注册模块不改，新CLI显式注册。Actor仅548D（冻结视觉512D或全零 + 上一秒已下发的四个实际指令36D）；Critic特权输入28D单独声明为胶囊pose7/速度6/关节9/恢复阶段4/C10-C1两项。重置写入冻结库位姿，只用于reset；随后实际240步HOLD不计预算、不产生奖，清空动作历史后初始化C0。
 
-9项纯测试通过：tanh联合概率与PyTorch参考一致、9/36维有限梯度、GRU按行reset mask、checkpoint恢复、Actor拒绝额外输入/不读取特权对象、Blind不读RGB、冻结编码器每新帧一次前向、私有split采样隔离。
+初始9项纯测试通过；后续重置审阅发现C0特权Critic沿用上一回合last_step恢复阶段，新测试1 failed/4 passed复现。首轮性能运行在130步主动停止、不计验收（无worker最终摘要，父程序正确记blocked，不以进程退出码0误判成功）。仅修改新增运行时读当前已重置tracker阶段，Actor/旧状态机/奖励权重不变。另补float32 tanh饱和测试，用存储的有限latent计算严格变换密度。修正后的观察/PPO/隔离/trace合计16项通过。
 
 实际GPU正式env.step路径：A与D各2次更新、每次8步rollout，策略/价值loss、KL、梯度、reward全部有限；checkpoints恢复后相同观察/hidden的输出完全相同。重置后的覆盖、动作历史、奖励清空；加载checkpoint再在新reset下推进一个1秒步成功，不宣称恢复了旧物理轨迹。D使用原SHA固定的frozen ResNet18，真实1Hz RGB，不更新backbone。
 
 | 模式 | update | policy loss | value loss | KL/维 |
 | --- | --- | --- | --- | --- |
-| A | 1 | -0.114129 | 41.144558 | 0.004012 |
-| A | 2 | -0.098135 | 0.109790 | 0.004392 |
-| D | 1 | -0.177736 | 46.301239 | 0.005128 |
-| D | 2 | -0.109674 | 0.045978 | 0.002136 |
+| A | 1 | -0.114123 | 41.157551 | 0.004012 |
+| A | 2 | -0.098494 | 0.094735 | 0.004432 |
+| D | 1 | -0.178675 | 46.820194 | 0.005096 |
+| D | 2 | -0.110727 | 0.041395 | 0.002163 |
 
 Smoke用每秒gamma=0.999^10、lambda=0.95，Adam 3e-4、clip0.2、value系数0.5、每update两个完整recurrent minibatch epochs；均为预验证参数，正式训练前待冻结。联合log_prob不除维数，KL/entropy诊断按维平均，避免9/36维总量误比。短烟雾遇终止即失败，不把未测的长训/timeout GAE行为写成已验证。
 
-命令：`ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor ./run_isaaclab.sh -p scripts/new_stomach_rl/train_smoke.py --group A --updates 2 --num_envs 1 --rollout_steps 8 --device cuda:0 --viz none`；D仅将group改为D。A/D通过摘要分别为`artifacts/new_stomach_rl/smoke/20261008T071255.990907Z/summary.json`、`20261008T071628.233275Z/summary.json`；逐1Hz动作/RGB与10Hz奖励记录、checkpoint完整绝对路径、字节和SHA见`artifacts/new_stomach_rl/evidence/gate4_artifact_inventory.json`。执行时已提交HEAD为Gate3，包含当时新增Gate4未提交实现。
+命令：`ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor ./run_isaaclab.sh -p scripts/new_stomach_rl/train_smoke.py --group A --updates 2 --num_envs 1 --rollout_steps 8 --device cuda:0 --viz none`；D仅将group改为D。修正后A/D通过摘要分别为`artifacts/new_stomach_rl/smoke/20261008T073515.409778Z/summary.json`、`20261008T073949.034329Z/summary.json`，D额外实测两次C0 Critic正常阶段。早期071255/071628短测保留，不作为Critic修正后的最终验收证据。工件完整路径/字节/SHA在最终清单中记录。修正后测试执行已提交HEAD为`ffae824142ec6b5067e3cea4209fc30dd0e8a331`，包含当时新增未提交修正代码。
 
-未验证：并行容量、训练预算、120秒正式env自动reset与全量240Hz胶囊/磁力记录；不把前五项Gate结果当作全部任务完成。
+## Gate 5观察结果：limited_pass，最大1环境
+
+按固定顺序实际尝试1、2环境。1环境完成两次8步warmup+32步测量、两个64步rollout，总计208个1秒动作；两次64步后的PPO更新loss/梯度有限，优化耗时0.133516/0.082929秒。物理及相机仍原频率/原分辨率，10Hz射线仍精确实现。
+
+2环境在原`ActuatorVectorAction.__init__`被拒绝：`ValueError: single environment, 1Hz boundary, 240Hz physics required`。实际Stage已构造双环境，但不执行非法双环境动作；不是OOM或驱动故障。保留原保护，没有删断言或修改共享核心；4/8/12按门禁顺序未运行。轨迹/测量索引、停止路径与碰撞缓存、world_mesh路径、双时钟/部分reset仍须按env隔离后才可能扩展，不能把基础Actor/Reward纯函数隔离测试当作多环境GPU通过。
+
+| 测量（D，1环境） | 结果 |
+| --- | --- |
+| 64个计时步吞吐 | 0.271524 env_steps/s = transitions/s |
+| 1秒控制步平均墙钟 | 3.682917s |
+| 规划 | 0.226565s/步 |
+| 磁力更新 | 1.319501s/步 |
+| 10Hz几何覆盖 | 0.393288s/步 |
+| 四项奖励 | 0.054337s/步 |
+| RGB采集同步API | 0.016651s/步 |
+| 冻结视觉编码 | 0.001963s/步 |
+| 执行器总计（嵌套） | 0.747592s/步 |
+| 碰撞查询（嵌套） | 0.292275s/步 |
+| 驱动显存采样最大值 | 6421MiB，不称瞬时硬件峰值 |
+| CPU进程峰值RSS | 9294956KiB |
+| 提交/缩小投影/安全HOLD比例 | 100% / 4.8077% / 0% |
+
+嵌套计时不能相加：执行器含覆盖回调和部分安全检查，碰撞查询亦包含规划过程；render API仅计调用墙钟，不能代表完整GPU渲染核耗时。外层step在CUDA完成后计时，未包含nvidia-smi采样开销。完整原始timings提供复核。
+
+预算推算：按当前**单环境实测吞吐**，同等768000 transitions/seed约785.689小时（32.74天），不含启动/评测/额外工件；12环境尚未支持，不允许假定12倍加速。若改用1×64×1000只需64000 transitions，约65.474小时，但那将改变正式rollout采样量，不能未经冻结直接采用。当前瓶颈主要在物理/磁场和安全执行链路，CNN仅约2ms。正式A/B/C/D多种子未启动，不以本次小PPO的覆盖率判策略性能。
+
+命令：`ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor ./run_isaaclab.sh -p scripts/new_stomach_rl/benchmark_preflight.py --num_envs 1,2,4,8,12 --device cuda:0 --viz none`。
+
+正式工件根路径：`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/`，包含总summary、envs_1/summary、timings CSV/JSONL、两个64步checkpoint及envs_2/summary完整错误栈。最初被主动停止的运行保存在`20261008T072356.227350Z/`，有`interruption_diagnostic.json`，不得混入正式计时汇总。129项当前回归通过、65 warnings、退出0；Gate5隔离基础单测3项通过，GPU多环境隔离未验证。
+
+未验证：120秒正式env自动reset与全量240Hz胶囊/磁力记录；不把单环境容量验证当作12环境通过。

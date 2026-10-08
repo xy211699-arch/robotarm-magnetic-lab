@@ -65,3 +65,16 @@ def test_private_sampler_seeds_independent_and_no_test_split():
         FrozenPoseLibrary(manifest,'test',8)
     with pytest.raises(ValueError,match='requested split'):
         FrozenPoseLibrary(manifest,'validation',8,'train-0003')
+
+
+def test_reset_critic_uses_current_tracker_phase_not_old_last_step():
+    runtime = object.__new__(NewStomachRLRuntime)
+    runtime.capsule_pose = lambda: torch.zeros((1,7))
+    runtime.capsule = SimpleNamespace(data=SimpleNamespace(root_com_vel_w=SimpleNamespace(torch=torch.zeros((1,6)))))
+    runtime.term = SimpleNamespace(robot=SimpleNamespace(data=SimpleNamespace(
+        joint_pos=SimpleNamespace(torch=torch.zeros((1,9))))),ids=list(range(9)))
+    runtime.reward = SimpleNamespace(trackers=[SimpleNamespace(phase=torch.tensor([0]))],
+        last_step=SimpleNamespace(phase_one_hot_4=torch.tensor([[0.,0.,0.,1.]])))
+    runtime.coverage = SimpleNamespace(c10_records=[{'coverage':[.1]}],c1_records=[{'coverage':[.1]}])
+    observation = runtime.critic_observation()
+    assert torch.equal(observation[:,22:26],torch.tensor([[1.,0.,0.,0.]]))

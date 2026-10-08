@@ -48,6 +48,8 @@ def main():
                 mask_path=args.mask,pose_id=pose_id)
             env = wrapped.unwrapped
             observations,_ = env.reset(seed=1008)
+            if not torch.equal(observations['critic'][:,22:26],observations['critic'].new_tensor([[1.,0.,0.,0.]])):
+                raise RuntimeError('C0 Critic inherited a recovery phase')
             dimension = 9 if args.group in ('A','B') else 36
             torch.manual_seed(1008)
             runner = SmokePPO(dimension,env.device)
@@ -56,6 +58,7 @@ def main():
                 task_id=wrapped.spec.id,actor_allowed_inputs=['frozen RGB 512D (or zeros)','last actually issued quarter-second commands 36D'],
                 critic_privileged_inputs=['capsule pose 7','velocity 6','joint positions 9','recovery phase 4','C10/C1 2'],
                 observation_shapes={k:list(v.shape) for k,v in observations.items()},updates=[],pose_id=pose_id,
+                initial_critic_phase=observations['critic'][:,22:26].cpu().tolist(),
                 device=env.device,physics_hz=240,policy_hz=1,coverage_hz=10)
             term = env.action_manager.get_term('magnet')
             runtime = env.runtime
@@ -110,6 +113,8 @@ def main():
                     raise RuntimeError('checkpoint output differs on identical allowed observations/hidden')
             previous = runtime.coverage.c10_records[-1]['coverage']
             observations,_ = env.reset(seed=1008)
+            if not torch.equal(observations['critic'][:,22:26],observations['critic'].new_tensor([[1.,0.,0.,0.]])):
+                raise RuntimeError('second reset Critic inherited a recovery phase')
             if (len(runtime.ten_hz_records) != 1 or len(runtime.one_hz_records) != 1
                 or term.executed_history.count_nonzero() or env.episode_length_buf.any()
                 or runtime.reward._pending.count_nonzero()):

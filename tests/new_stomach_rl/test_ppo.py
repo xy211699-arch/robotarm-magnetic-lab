@@ -33,6 +33,16 @@ def test_recurrent_reset_rows_and_explicit_hidden_no_stale_state():
         actor.parameters_sequence(torch.zeros((1,549)), None)
 
 
+def test_float32_tanh_saturation_keeps_latent_density_finite():
+    mean = torch.full((1,9),20.,requires_grad=True)
+    dist = BoundedNormal(mean,torch.zeros_like(mean))
+    action,latent = dist.sample()
+    assert (action == 1).all()
+    loss = -dist.log_prob(action.detach(),latent.detach()).mean()
+    loss.backward()
+    assert torch.isfinite(loss) and torch.isfinite(mean.grad).all()
+
+
 @pytest.mark.parametrize('dimension', [9, 36])
 def test_minimal_ppo_update_and_checkpoint_roundtrip(tmp_path, dimension):
     torch.manual_seed(8)

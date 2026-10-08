@@ -22,10 +22,14 @@ class BoundedNormal:
         return self.base.loc.tanh()
 
     def log_prob(self, action, latent=None):
-        if not torch.isfinite(action).all() or (action.abs() >= 1).any():
-            raise ValueError('finite action strictly inside [-1,1] required')
+        if not torch.isfinite(action).all() or (action.abs() > 1).any():
+            raise ValueError('finite bounded action required')
         if latent is None:
+            if (action.abs() >= 1).any():
+                raise ValueError('saturated float32 action requires its stored finite latent')
             latent = torch.atanh(action)
+        elif not torch.isfinite(latent).all() or not torch.allclose(action,latent.tanh(),atol=1e-6,rtol=1e-6):
+            raise ValueError('finite latent must correspond to the sampled bounded action')
         # Exact numerically stable log(1-tanh(z)^2), no epsilon bias.
         jacobian = 2 * (math.log(2.) - latent - F.softplus(-2*latent))
         return (self.base.log_prob(latent) - jacobian).sum(-1)

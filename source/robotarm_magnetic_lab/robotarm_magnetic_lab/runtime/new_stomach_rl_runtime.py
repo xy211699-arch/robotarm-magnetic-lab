@@ -110,7 +110,9 @@ class NewStomachRLRuntime:
         pose = self.capsule_pose()
         velocity = self.capsule.data.root_com_vel_w.torch
         joints = self.term.robot.data.joint_pos.torch[:,self.term.ids]
-        phase = self.reward.last_step.phase_one_hot_4 if self.reward.last_step is not None else pose.new_zeros((1,4))
+        # last_step is a completed sample, not reset state. Reading it here
+        # leaked the previous episode's phase into the privileged C0 Critic.
+        phase = torch.nn.functional.one_hot(torch.cat([tracker.phase for tracker in self.reward.trackers]),4).to(pose.dtype)
         coverage = pose.new_tensor([[self.coverage.c10_records[-1]['coverage'][0],
             self.coverage.c1_records[-1]['coverage'][0]]])
         return torch.cat((pose, velocity, joints, phase, coverage), dim=1)
