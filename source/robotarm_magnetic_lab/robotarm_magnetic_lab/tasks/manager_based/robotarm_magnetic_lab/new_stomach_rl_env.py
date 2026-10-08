@@ -22,21 +22,35 @@ def clone_tree(value):
 
 
 class NewStomachRLPreflightEnv(ManagerBasedRLEnv):
-    def __init__(self,cfg,pose_manifest,mask_path,pose_split='train',pose_id=None,**kwargs):
+    def __init__(self,cfg,pose_manifest,mask_path,pose_split='train',pose_id=None,record_physics=False,**kwargs):
         self._pending_bootstrap = False
         self._bootstrap = False
         self._new_stomach_rl_runtime = None
         self.library = FrozenPoseLibrary(pose_manifest,pose_split,cfg.seed,pose_id)
         self.last_episode_records = None
+        self._recording_step = False
+        self.trace = None
         super().__init__(cfg,**kwargs)
         self.runtime = NewStomachRLRuntime(self,mask_path)
         if cfg.group in ('B','D'):
             from robotarm_magnetic_lab.runtime.task010_visual_encoder import FrozenResNet18Encoder
             self.runtime.encoder = FrozenResNet18Encoder().to(self.device)
+        if record_physics:
+            from robotarm_magnetic_lab.runtime.new_stomach_rl_trace import PhysicalStepRecorder
+            self.trace = PhysicalStepRecorder(self.scene['capsule'],self.action_manager.get_term('magnet'),
+                self.event_manager.get_term_cfg('magnetic_collision_bridge').func,self.device)
+            self._original_scene_update = self.scene.update
+            def update_and_record(dt):
+                self._original_scene_update(dt)
+                if self._recording_step and abs(dt-self.physics_dt)<1e-12:
+                    self.trace.append()
+            self.scene.update = update_and_record
 
     def _reset_idx(self,env_ids):
         runtime = self._new_stomach_rl_runtime
         if runtime is not None:
+            if runtime.ready:
+                self._terminal_pose_id = self.reset_pose_id
             runtime.ready = False
         super()._reset_idx(env_ids)
         self.event_manager.get_term_cfg('magnetic_collision_bridge').func.reset()
@@ -79,14 +93,32 @@ class NewStomachRLPreflightEnv(ManagerBasedRLEnv):
     def step(self,action):
         if self._bootstrap or not self.runtime.ready:
             raise RuntimeError('Actor step requires initialized C0 and completed reset HOLD')
-        observations,reward,terminated,truncated,extras = super().step(action)
+        if self.trace is not None:
+            self.trace.begin()
+        self._recording_step = True
+        try:
+            observations,reward,terminated,truncated,extras = super().step(action)
+        finally:
+            self._recording_step = False
+        self.last_policy_physics_end_tick = self._sim_step_counter
+        if self.trace is not None:
+            self.last_physics_tensor = self.trace.finish()
+        term = self.action_manager.get_term('magnet')
+        self.last_policy_telemetry = clone_tree(term.telemetry)
+        self.last_policy_history = (extras['final_obs']['policy'][:,512:].reshape(1,4,9).clone()
+            if self._pending_bootstrap else term.executed_history)
         if self._pending_bootstrap:
             saved = clone_tree((reward,terminated,truncated,extras))
             self.last_episode_records = dict(ten_hz=list(self.runtime.ten_hz_records),
-                one_hz=list(self.runtime.one_hz_records),pose_id=self.reset_pose_id)
+                one_hz=list(self.runtime.one_hz_records),pose_id=self._terminal_pose_id)
             observations = self._settle_and_initialize()
             reward,terminated,truncated,extras = saved
         return observations,reward,terminated,truncated,extras
+
+    def close(self):
+        if self.trace is not None:
+            self.scene.update = self._original_scene_update
+        super().close()
 
 
 def register_preflight():
