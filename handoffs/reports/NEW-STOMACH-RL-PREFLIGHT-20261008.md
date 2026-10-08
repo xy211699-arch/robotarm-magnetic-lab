@@ -1,6 +1,6 @@
 # 新胃连续RL预验证执行报告（进行中）
 
-当前状态：`partial`。Gate 0、1、2通过；Gate 3–6未验收。未启动PPO或正式训练。
+当前状态：`partial`。Gate 0–3通过；Gate 4–6未验收。未启动PPO或正式训练。
 
 ## 版本及边界
 
@@ -76,7 +76,7 @@ git diff --check
 - 120秒GPU回合通过：28800物理步；C10=1201点、C1=121点（含C0），每秒真实RGB帧号+1、内容SHA留存；共同边界可见顶点差异全部0；C1累计集合是C10子集。结束C10=26.237952%、C1=26.096835%，仅为脚本链路验证，不称为策略性能。
 - 初始回载采用冻结库首个固定train样本，1秒HOLD不计入策略预算；C0不产生策略奖励（奖励适配尚待Gate3验证）。
 - 解决新增适配问题：Python/渲染器约1nm光心舍入令1个边缘顶点first-hit不同；改为SDK相同Warp坐标转换，未量化外参或放宽可见性条件。PhysX step不主动同步Fabric，使用公开`physics_manager.forward()`及仅层级变换刷新，从真实物理状态获取挂载相机变换；逐样本检查与胶囊刚体及挂载关系匹配，绝不读取过期1Hz相机位姿作为C10。
-- SDK相机第二个边界未自动采图：复用已验证Task009D0RgbSynchronizer，仅对遗漏边界补采，120秒中60次补采；帧号仍每秒只增加1。新的PolicyRGBBoundary将供新正式环境观测路径使用，Gate4尚未验收，不声称已接入正式Actor。
+- SDK相机第二个边界未自动采图：复用已验证Task009D0RgbSynchronizer，仅对遗漏边界补采，120秒中52次补采（直接统计摘要）；帧号仍每秒只增加1。新的PolicyRGBBoundary将供新正式环境观测路径使用，Gate4尚未验收，不声称已接入正式Actor。
 - 兼容风险：pose-only路径读取Camera._view及SDK Warp约定；补采使用既有Camera._update_buffers_impl接口。SDK升级必须重跑门禁。
 - 纯覆盖测试11 passed；Gate0–2及原回归合计104 passed、65 warnings，退出码0。
 
@@ -84,4 +84,16 @@ git diff --check
 
 通过摘要：本工作树`artifacts/new_stomach_rl/preflight/20261008T063439.430899Z/summary.json`；同目录逐10Hz/1Hz JSONL。全部绝对路径、字节数、SHA及保留的初始失败工件见`artifacts/new_stomach_rl/evidence/gate2_artifact_inventory.json`。测试当时已提交HEAD为`0d8764ec88cabd04c32485a7ab60a8e5674524e9`，包含尚未提交的Gate2新增代码；不将该HEAD误称为Gate2实现提交。
 
-未验证：奖励、正式Actor信息隔离、PPO短训、并行容量及训练预算；不把前三项Gate结果当作全部任务完成。
+## Gate 3观察结果
+
+新增四项奖励适配、独立RewardsCfg、运行时与验收脚本；直接复用旧5秒状态机及固定权重，不改旧模块。12项奖励测试通过，包括正常/脱困/等待覆盖/锁定全过程与旧实现逐项相等、部分环境重置隔离、零面积不刷coverage奖励、严格十次加总。阶段总回归112项通过（新增全过程对照后总回归尚待重跑）。
+
+实际GPU train脚本120秒通过：初始化1秒HOLD返回零策略奖，C0不奖励；28800个实际物理步，C10 1201点、C1 121点；仅four_terms一个RewardManager项，无继承alive/action_rate/joint_velocity/collision奖励。每秒四项之和、十次0.1秒采样之和与env.step返回奖励误差小于1e-5，全部有限。覆盖停滞进入原无进展/锁定状态，不扩大幅度以使结果好看。此测试证明奖励一致性，不证明新磁控下阈值最优。
+
+通过摘要：本工作树`artifacts/new_stomach_rl/preflight/20261008T065553.947988Z/summary.json`；同目录`reward_10hz.jsonl`、`reward_1hz.jsonl`及`physics_240hz.jsonl`。完整绝对路径/字节/SHA见`artifacts/new_stomach_rl/evidence/gate3_artifact_inventory.json`。测试加载Gate3未提交代码，原执行HEAD为`aff567e32539d9c4f67a8bb916fcf45051a41303`。
+
+命令：`ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor ./run_isaaclab.sh -p scripts/new_stomach_rl/validate_preflight.py --gate rewards --seconds 120 --pose_split train --device cuda:0 --viz none`。validation随机120秒追加验收正在运行，结果尚未确定。
+
+验收脚本将TIMEOUT设置为121秒并在120秒精确停止，以保留最后一秒证据，未改碰撞/停止保护；独立正式配置仍为120秒，其Same-Step autoreset及正式Actor接口将在Gate4验证。Gate3的240Hz文件记录实际电机状态，尚不含逐步胶囊/磁力全量数据，不能冒称Gate6最终动力学记录。
+
+未验证：正式Actor信息隔离、PPO短训、并行容量及训练预算；不把前四项Gate结果当作全部任务完成。

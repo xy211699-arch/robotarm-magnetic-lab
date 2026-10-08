@@ -293,8 +293,9 @@ def run_runtime(args, report, output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--gate', choices=['assets', 'coverage'], default='assets')
+    parser.add_argument('--gate', choices=['assets', 'coverage', 'rewards'], default='assets')
     parser.add_argument('--seconds', type=int, default=4)
+    parser.add_argument('--pose_split', choices=['train','validation'], default='train')
     parser.add_argument('--pose_manifest', type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument('--mask', type=Path, default=DEFAULT_MASK)
     parser.add_argument('--runtime', action='store_true')
@@ -310,7 +311,12 @@ def main():
     code = 0
     try:
         report['assets'] = audit_assets(args.pose_manifest, args.mask)
-        if args.gate == 'coverage':
+        if args.gate == 'rewards':
+            from validate_rewards import run_rewards
+            report['gate'] = 3
+            run_rewards(args, report, output)
+            code = int(report['status'] != 'pass')
+        elif args.gate == 'coverage':
             from validate_coverage import run_coverage
             report['gate'] = 2
             run_coverage(args, report, output)
