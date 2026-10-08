@@ -1,0 +1,18 @@
+{
+  "root": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/evidence/p1_implementation_20261009",
+  "total_log_bytes": 8926,
+  "files": [
+    {"name": "p1_actual_audit.log", "bytes": 781, "sha256": "06d46dc555519e489bd058a50742d2bad1f945dd24b3aa3565c7cc495ffb571d"},
+    {"name": "p1_cli_tools_green.log", "bytes": 112, "sha256": "c1e062fe10b4b5f21dc059a3aa745ae369cdb7615195a51c8a5c373b401d2b83"},
+    {"name": "p1_equivalence_red.log", "bytes": 1116, "sha256": "9bbfcbc868481d6df1cb4f4150d8108a7cd268e211556072fba02dbfc9861286"},
+    {"name": "p1_profile_cli_red.log", "bytes": 2376, "sha256": "1feae6f47ce82d3745c32904b4104a18103963bf51e5abfef123d93fa85bc92c"},
+    {"name": "p1_profile_red.log", "bytes": 1087, "sha256": "b690e5844fcfca5f9d204767717fe7e77e17bf08be5684c4681030a7356baa9d"},
+    {"name": "p1_regression_accepted.log", "bytes": 273, "sha256": "79db1ed5b11cc56826270338c995a807469d6fe7a983df1ebf0fcb976ee78aad"},
+    {"name": "p1_regression_delivery.log", "bytes": 273, "sha256": "48320b1487b269983a878d0eba21e8cf5f9c62ea80426a64642ccd53bfaca453"},
+    {"name": "p1_regression_final.log", "bytes": 273, "sha256": "54c038ec736c91f3a224d99e6d36458ab1806a130a2862dde849621a6acd5c53"},
+    {"name": "p1_regression_initial.log", "bytes": 273, "sha256": "3be8317da21e117ef7ec739b91fde333d43043ea03326f246e07f89f4db0eff6"},
+    {"name": "p1_tools_final.log", "bytes": 112, "sha256": "d43a7c261945a1935f6ec73c16d6d035a9476d2e553683b9314d9aa467509cb4"},
+    {"name": "p1_tools_green.log", "bytes": 2139, "sha256": "e66cb9199b307af9fcfe913881768f2e754a77c0e71c5db638ddf6dcafe56852"},
+    {"name": "p1_worker_initial.log", "bytes": 111, "sha256": "03260542ccf49c4881d58eed7f8ec0d02d9b35af7186d38e59820de3ee63e227"}
+  ]
+}

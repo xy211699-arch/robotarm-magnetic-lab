@@ -1,0 +1,257 @@
+{
+  "artifacts": [
+    {
+      "bytes": 2318,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/reference/20261008T152609.305712Z/raw_actions.json",
+      "sha256": "2e74157cd7d80dde12e33ba63e508d88d605a186d8d6e654f43c1d9f62c53ea7"
+    },
+    {
+      "bytes": 142534,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/reference/20261008T152609.305712Z/repeat_0/coverage_reward_10hz.jsonl",
+      "sha256": "514d307cd4b35196d374adeb52aa22f02d581877cb904151bfb327d9045cca25"
+    },
+    {
+      "bytes": 59248,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/reference/20261008T152609.305712Z/repeat_0/policy_1hz.jsonl",
+      "sha256": "cbe7ecc1962edb89550793a4a4942c4edf5091f1450149da1373f69c027936b6"
+    },
+    {
+      "bytes": 1808356,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/reference/20261008T152609.305712Z/repeat_0/reference_tape.npz",
+      "sha256": "8fb08aaf8b7957af4d0af0091c2f1ecb5255d963846dfe4b4b3f2ef9ac715041"
+    },
+    {
+      "bytes": 6667,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/reference/20261008T152609.305712Z/repeat_0/rgb_1hz.jsonl",
+      "sha256": "b3be60ccb34d4339182eb3a8c8a6efbcf34a9dc913d4c5909debbbb63dc0284b"
+    },
+    {
+      "bytes": 142534,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/reference/20261008T152609.305712Z/repeat_1/coverage_reward_10hz.jsonl",
+      "sha256": "514d307cd4b35196d374adeb52aa22f02d581877cb904151bfb327d9045cca25"
+    },
+    {
+      "bytes": 59247,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/reference/20261008T152609.305712Z/repeat_1/policy_1hz.jsonl",
+      "sha256": "adfc94efaee5d4a978b21bc66696bf8c236aeff0c1f9783674cdc35cea827590"
+    },
+    {
+      "bytes": 1808356,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/reference/20261008T152609.305712Z/repeat_1/reference_tape.npz",
+      "sha256": "8fb08aaf8b7957af4d0af0091c2f1ecb5255d963846dfe4b4b3f2ef9ac715041"
+    },
+    {
+      "bytes": 6667,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/reference/20261008T152609.305712Z/repeat_1/rgb_1hz.jsonl",
+      "sha256": "5ecf44b746e4550015469492a93b35a8400e7b8a98563d3360d38ff9702db840"
+    }
+  ],
+  "assets": {
+    "asset": {
+      "bytes": 1375,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/assets/stomach/new_stomach_v1/new_stomach_physics.usda",
+      "sha256": "d24885ab1cf9182d8f13993e5d69d57b6a9a6b39027541f656191309be262954"
+    },
+    "external_dependencies": [
+      {
+        "bytes": 3687,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/config.py",
+        "sha256": "5d32740c62a75e06b7b876ed16f0043378ad45b72317b1f99637466b7f71ee07"
+      },
+      {
+        "bytes": 3808,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/field_models.py",
+        "sha256": "be2f4d4af8db2e3a04552add61cbbc84d89e2348c08864a0c9cc3e6283265965"
+      },
+      {
+        "bytes": 3068,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/streamlines.py",
+        "sha256": "a0a1c04e0250dd1eb9a2079475b655dd72081b53f9da0c0b8cf43802d42bb27c"
+      },
+      {
+        "bytes": 2483,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/visualization/magnetic_field.py",
+        "sha256": "c8c5f502b4d1d4a6d25fa11fcb4e1e3e4b6a86eb9845a38c34682ea082c57069"
+      },
+      {
+        "bytes": 4991,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/config/default.json",
+        "sha256": "326e770eb03ab6eaae130a1d6787e472cc8d7b78ec28c4f6085eb90eaa2fd817"
+      },
+      {
+        "bytes": 116003,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/planning/robot.xrdf",
+        "sha256": "5293e63d4112c67f479bdfa88ad8cb520c864c69939f0683a8dea5ca08146f40"
+      },
+      {
+        "bytes": 8828,
+        "path": "/home/multirobo/Desktop/robotarm/urdf/robotarm.urdf",
+        "sha256": "1d6e12d461207e65ac30b4ddfcbc2d136f5cbeb9f7ac0f9e9c9852511133a613"
+      }
+    ],
+    "mask": {
+      "excluded_faces": 176109,
+      "file": {
+        "bytes": 1183699,
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz",
+        "sha256": "7261eeec9deeefcd960bb245aae0f495a459f9e3a221abd460017783fdd4d58c"
+      },
+      "offline_mesh_sha": "15f1b86c7f993889ce4ba1b1616ff0b0e079355e95580ac3737f3989255eb538",
+      "runtime_mask_equivalence": "not_run",
+      "runtime_mesh_sha_required": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "summary": {
+        "bytes": 3080,
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_summary.json",
+        "sha256": "908aa88bbc44d1cc972bf497279ee0da9031b12305d259564ad612f7f010e45a"
+      },
+      "target_area_m2": 0.04020530122973115,
+      "target_faces": 252920,
+      "total_faces": 429029
+    },
+    "orientation": {
+      "bytes": 1457,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/configs/new_stomach_v1/orientation_v1.json",
+      "sha256": "8fb79781a11e61babd816414c682866924ab673ebcabf8c6b02de47debdef909"
+    },
+    "poses": {
+      "data": {
+        "bytes": 1935393,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/artifacts/new_stomach_entry_pose_library/20261008_051344_557873Z/pose_library_v1.jsonl",
+        "sha256": "aa9a67f863949b4c9ce20d6d2c75d4ff5cfac5c0765697df9841949c959e6c29"
+      },
+      "live_gpu_reload": "not_run",
+      "manifest": {
+        "bytes": 51627,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json",
+        "sha256": "09bc34bdbeb8b174a4329497c42058737d59bdbc6a85b1603e6537196bea75a2"
+      },
+      "split_counts": {
+        "test": 100,
+        "train": 1000,
+        "validation": 100
+      },
+      "stomach_geometry_sha256": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "stored_candidate_stability": "pass",
+      "unique_poses": 1200
+    },
+    "release_semantics": {
+      "action_source": {
+        "bytes": 14017,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/actuator_vector_action.py",
+        "sha256": "0352f9f1573a6d892bca895919fca92e01e1ebcdc38f4c7eb5fefd3d0a543e76"
+      },
+      "committed_ticks": 240,
+      "preview_seconds": 4,
+      "required_clearance_m": 0.005,
+      "single_env_guard": true,
+      "source": {
+        "bytes": 5192,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/controllers/actuator_vector.py",
+        "sha256": "44e6f09137a857a5fa56008e86983ed375a9355532ca50c43136ff90cffb855b"
+      }
+    },
+    "robot_stage": {
+      "bytes": 166278,
+      "path": "/home/multirobo/Desktop/sim of FF/Stage.usd",
+      "sha256": "0d5afec84d42989a7910899b4ef78369c454e34185c89052ab25b33fac4a6671"
+    }
+  },
+  "command": [
+    "scripts/new_stomach_rl/capture_capacity_reference.py",
+    "--mode",
+    "single",
+    "--pose_manifest",
+    "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json",
+    "--mask",
+    "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz",
+    "--device",
+    "cuda:0",
+    "--viz",
+    "none",
+    "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+    "--/UJITSO/enabled=false",
+    "--/UJITSO/geometry=false"
+  ],
+  "coverage_hz": 10,
+  "devices": {
+    "camera": "cuda:0",
+    "environment": "cuda:0",
+    "gpu_dynamics": true,
+    "simulation": "cuda:0"
+  },
+  "head": "c1ef70a9c1593c182df9353a4086bc16ff6f1de3",
+  "magnetic_input_columns": [
+    "source_pose_xyzw_7",
+    "capsule_pose_xyzw_7",
+    "capsule_velocity_world_6",
+    "prior_filtered_wrench_12",
+    "prior_coupling_elapsed_1"
+  ],
+  "magnetic_output_columns": [
+    "raw_robot_capsule_wrench_12",
+    "applied_filtered_wrench_12",
+    "coupling_elapsed_1"
+  ],
+  "mode": "single",
+  "model_updates": 0,
+  "optimization_started": false,
+  "original_preflight_sources_verified": [
+    "scripts/new_stomach_rl/benchmark_preflight.py",
+    "scripts/new_stomach_rl/train_smoke.py",
+    "scripts/new_stomach_rl/validate_actions.py",
+    "scripts/new_stomach_rl/validate_coverage.py",
+    "scripts/new_stomach_rl/validate_end_to_end.py",
+    "scripts/new_stomach_rl/validate_preflight.py",
+    "scripts/new_stomach_rl/validate_rewards.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/coverage/new_stomach_rl_coverage.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_actor.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_distribution.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_runner.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_library.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_optics.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_reward.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_rgb.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_runtime.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_trace.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/controllers/new_stomach_rl_trajectory.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/new_stomach_rl_action.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/new_stomach_rl_terms.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/new_stomach_rl_env.py",
+    "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/robotarm_magnetic_new_stomach_rl_env_cfg.py",
+    "tests/new_stomach_rl/test_action.py",
+    "tests/new_stomach_rl/test_coverage.py",
+    "tests/new_stomach_rl/test_multi_env.py",
+    "tests/new_stomach_rl/test_observation.py",
+    "tests/new_stomach_rl/test_ppo.py",
+    "tests/new_stomach_rl/test_preflight.py",
+    "tests/new_stomach_rl/test_reward.py",
+    "tests/new_stomach_rl/test_trace.py"
+  ],
+  "physics_hz": 240,
+  "policy_hz": 1,
+  "pose_id": "train-0003",
+  "repeat_runs": 2,
+  "repeatability_tolerance": "not_registered",
+  "repeats": [
+    {
+      "c10_points": 201,
+      "c1_points": 21,
+      "coverage_masks": 222,
+      "magnetic_calls": 4800,
+      "physics_steps": 4800,
+      "policy_seconds": 20,
+      "repeat": 0
+    },
+    {
+      "c10_points": 201,
+      "c1_points": 21,
+      "coverage_masks": 222,
+      "magnetic_calls": 4800,
+      "physics_steps": 4800,
+      "policy_seconds": 20,
+      "repeat": 1
+    }
+  ],
+  "stage": "P0_reference",
+  "status": "pass"
+}

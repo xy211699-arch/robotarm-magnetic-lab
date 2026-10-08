@@ -1,2 +1,4 @@
 # Immutable Linux evidence: preserve original bytes on Windows checkout.
 preflight_review_v1/** -text whitespace=cr-at-eol
+scoped_audit_v1/** -text
+p1_reference_v1/** -text

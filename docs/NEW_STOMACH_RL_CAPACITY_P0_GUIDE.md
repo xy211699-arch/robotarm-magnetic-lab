@@ -58,3 +58,5 @@ artifacts/new_stomach_rl_capacity/reference/<UTC运行ID>/
 P0尚待Windows端复核及上述真实参照采集。用户已批准报告列出的三个可选`env_root`接口，并已完成实施及32项CPU作用域回归（完整回归177项）。旧调用默认仍为全Stage审计，旧单环境断言未删除；这尚不代表向量任务或GPU两环境隔离已完成，无需重复审批同一接口改动。
 
 P2两环境正确性通过后才能测P3固定容量阶梯`1,4,8,12,16,20`。预算/批量未冻结前，不进入R0—R2的GPU接入或正式训练。
+
+2026-10-09更新：Single/Chunk人工采集均已通过Linux离线复核，原数据未修改；下一步使用`docs/NEW_STOMACH_RL_CAPACITY_P1_GUIDE.md`中的热点入口。Windows端小证据复核尚未获得明确确认，不冒称已完成。
