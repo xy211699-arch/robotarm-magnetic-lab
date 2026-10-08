@@ -1,5 +1,13 @@
 # 活动任务合同
 
+## 2026-10-08 新胃连续 RL 预验证
+
+当前新胃 RL 预验证交接入口为 `NEW-STOMACH-RL-PREFLIGHT-20261008.md`。完整冻结规格及实施计划分别位于 `docs/superpowers/specs/2026-10-08-new-stomach-rl-preflight-design.md` 和 `docs/superpowers/plans/2026-10-08-new-stomach-rl-preflight-implementation-plan.md`。
+
+规划分支为 `workflow/new-stomach-rl-preflight-20261008`，以发布提交 `1e89c9ccb48545c4513915be94d4c17d9cdebaaa` 为代码基准。Linux 按交接入口在独立 feature 分支完成预验证，不启动正式多种子长训练。本次仅上传文档，尚无新 Gate 执行结果。
+
+## 历史任务登记（原文保留）
+
 当前授权 Linux 执行的任务为
 `TASK-009D0A-12-env-incremental-closeout.md`。
 
