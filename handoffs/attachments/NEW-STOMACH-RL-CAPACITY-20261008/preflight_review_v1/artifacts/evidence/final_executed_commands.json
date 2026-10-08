@@ -1,0 +1,478 @@
+[
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/action/20261008T055809.071017Z/summary.json",
+    "status": "fail",
+    "command": [
+      "scripts/new_stomach_rl/validate_actions.py",
+      "--mode",
+      "chunk",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false"
+    ],
+    "executed_head": null
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/action/20261008T060439.262435Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_actions.py",
+      "--mode",
+      "chunk",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false"
+    ],
+    "executed_head": null
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/action/20261008T060717.448392Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_actions.py",
+      "--mode",
+      "single",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false"
+    ],
+    "executed_head": null
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T072356.227350Z/summary.json",
+    "status": "blocked",
+    "command": null,
+    "executed_head": null
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_1/summary.json",
+    "status": "pass",
+    "command": [
+      "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/benchmark_preflight.py",
+      "--level",
+      "1",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--output_directory",
+      "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_1",
+      "--pose_manifest",
+      "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json",
+      "--mask",
+      "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": null
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_2/summary.json",
+    "status": "unsupported",
+    "command": [
+      "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/benchmark_preflight.py",
+      "--level",
+      "2",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--output_directory",
+      "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_2",
+      "--pose_manifest",
+      "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json",
+      "--mask",
+      "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": null
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/summary.json",
+    "status": "limited_pass",
+    "command": null,
+    "executed_head": null
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T080534.571344Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_end_to_end.py",
+      "--checkpoint",
+      "artifacts/new_stomach_rl/smoke/20261008T073949.034329Z/update_0002.pt",
+      "--seconds",
+      "4",
+      "--pose_split",
+      "train",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "ffae824142ec6b5067e3cea4209fc30dd0e8a331"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T080942.758742Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_end_to_end.py",
+      "--checkpoint",
+      "artifacts/new_stomach_rl/smoke/20261008T073949.034329Z/update_0002.pt",
+      "--seconds",
+      "120",
+      "--pose_split",
+      "train",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "7ea3dbf58084d79de949242f087b017fce94b452"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T082615.445313Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_end_to_end.py",
+      "--checkpoint",
+      "artifacts/new_stomach_rl/smoke/20261008T073949.034329Z/update_0002.pt",
+      "--seconds",
+      "120",
+      "--pose_split",
+      "validation",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "7ea3dbf58084d79de949242f087b017fce94b452"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T054059.845404Z/summary.json",
+    "status": "fail",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "assets",
+      "--runtime",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "8a1156a9cf349fdd730cc6d39132628b3f73f641"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T054338.801049Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "assets",
+      "--runtime",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "8a1156a9cf349fdd730cc6d39132628b3f73f641"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T061402.679633Z/summary.json",
+    "status": "fail",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "coverage",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "0d8764ec88cabd04c32485a7ab60a8e5674524e9"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T061642.142704Z/summary.json",
+    "status": "fail",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "coverage",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "0d8764ec88cabd04c32485a7ab60a8e5674524e9"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T062151.205101Z/summary.json",
+    "status": "fail",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "coverage",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "0d8764ec88cabd04c32485a7ab60a8e5674524e9"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T062435.335331Z/summary.json",
+    "status": "fail",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "coverage",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "0d8764ec88cabd04c32485a7ab60a8e5674524e9"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T062700.261717Z/summary.json",
+    "status": "fail",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "coverage",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "0d8764ec88cabd04c32485a7ab60a8e5674524e9"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T063108.083184Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "coverage",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "0d8764ec88cabd04c32485a7ab60a8e5674524e9"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T063439.430899Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "coverage",
+      "--seconds",
+      "120",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "0d8764ec88cabd04c32485a7ab60a8e5674524e9"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T065158.888002Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "rewards",
+      "--seconds",
+      "4",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "aff567e32539d9c4f67a8bb916fcf45051a41303"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T065553.947988Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "rewards",
+      "--seconds",
+      "120",
+      "--pose_split",
+      "train",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "aff567e32539d9c4f67a8bb916fcf45051a41303"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T070409.039061Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/validate_preflight.py",
+      "--gate",
+      "rewards",
+      "--seconds",
+      "120",
+      "--pose_split",
+      "validation",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": "aff567e32539d9c4f67a8bb916fcf45051a41303"
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071255.990907Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/train_smoke.py",
+      "--group",
+      "A",
+      "--updates",
+      "2",
+      "--num_envs",
+      "1",
+      "--rollout_steps",
+      "8",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": null
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071628.233275Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/train_smoke.py",
+      "--group",
+      "D",
+      "--updates",
+      "2",
+      "--num_envs",
+      "1",
+      "--rollout_steps",
+      "8",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": null
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073515.409778Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/train_smoke.py",
+      "--group",
+      "A",
+      "--updates",
+      "2",
+      "--num_envs",
+      "1",
+      "--rollout_steps",
+      "8",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": null
+  },
+  {
+    "summary_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073949.034329Z/summary.json",
+    "status": "pass",
+    "command": [
+      "scripts/new_stomach_rl/train_smoke.py",
+      "--group",
+      "D",
+      "--updates",
+      "2",
+      "--num_envs",
+      "1",
+      "--rollout_steps",
+      "8",
+      "--device",
+      "cuda:0",
+      "--viz",
+      "none",
+      "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+      "--/UJITSO/enabled=false",
+      "--/UJITSO/geometry=false"
+    ],
+    "executed_head": null
+  }
+]

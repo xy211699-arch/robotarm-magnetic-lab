@@ -1,0 +1,21 @@
+{
+  "cases": [],
+  "command": [
+    "scripts/new_stomach_rl/validate_actions.py",
+    "--mode",
+    "chunk",
+    "--device",
+    "cuda:0",
+    "--viz",
+    "none",
+    "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false"
+  ],
+  "error": {
+    "message": "finite nine-joint reference and limits required",
+    "traceback": "Traceback (most recent call last):\n  File \"/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/validate_actions.py\", line 67, in <module>\n    obs, reward, terminated, truncated, extras = env.step(torch.as_tensor(action, dtype=torch.float32, device=env.device).reshape(1, -1))\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/isaac-linux/IsaacLab/source/isaaclab/isaaclab/envs/manager_based_rl_env.py\", line 194, in step\n    self.action_manager.process_action(action.to(self.device))\n  File \"/mnt/isaac-linux/IsaacLab/source/isaaclab/isaaclab/managers/action_manager.py\", line 386, in process_action\n    term.process_actions(term_actions)\n  File \"/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/new_stomach_rl_action.py\", line 68, in process_actions\n    planned = build_schedule(self.cfg.mode, raw, state)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/controllers/new_stomach_rl_trajectory.py\", line 113, in build_schedule\n    q, v, a, knots, clearance, peak_v, peak_a = _plan(start_state, desired, duration)\n                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/controllers/new_stomach_rl_trajectory.py\", line 61, in _plan\n    raise ValueError('finite nine-joint reference and limits required')\nValueError: finite nine-joint reference and limits required\n",
+    "type": "ValueError"
+  },
+  "gate": 1,
+  "mode": "chunk",
+  "status": "fail"
+}

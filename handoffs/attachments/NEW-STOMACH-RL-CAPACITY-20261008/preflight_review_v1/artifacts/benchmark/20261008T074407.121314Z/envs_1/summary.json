@@ -1,0 +1,183 @@
+{
+  "assets": {
+    "asset": {
+      "bytes": 1375,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/assets/stomach/new_stomach_v1/new_stomach_physics.usda",
+      "sha256": "d24885ab1cf9182d8f13993e5d69d57b6a9a6b39027541f656191309be262954"
+    },
+    "external_dependencies": [
+      {
+        "bytes": 3687,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/config.py",
+        "sha256": "5d32740c62a75e06b7b876ed16f0043378ad45b72317b1f99637466b7f71ee07"
+      },
+      {
+        "bytes": 3808,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/field_models.py",
+        "sha256": "be2f4d4af8db2e3a04552add61cbbc84d89e2348c08864a0c9cc3e6283265965"
+      },
+      {
+        "bytes": 3068,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/streamlines.py",
+        "sha256": "a0a1c04e0250dd1eb9a2079475b655dd72081b53f9da0c0b8cf43802d42bb27c"
+      },
+      {
+        "bytes": 2483,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/visualization/magnetic_field.py",
+        "sha256": "c8c5f502b4d1d4a6d25fa11fcb4e1e3e4b6a86eb9845a38c34682ea082c57069"
+      },
+      {
+        "bytes": 4991,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/config/default.json",
+        "sha256": "326e770eb03ab6eaae130a1d6787e472cc8d7b78ec28c4f6085eb90eaa2fd817"
+      },
+      {
+        "bytes": 116003,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/planning/robot.xrdf",
+        "sha256": "5293e63d4112c67f479bdfa88ad8cb520c864c69939f0683a8dea5ca08146f40"
+      },
+      {
+        "bytes": 8828,
+        "path": "/home/multirobo/Desktop/robotarm/urdf/robotarm.urdf",
+        "sha256": "1d6e12d461207e65ac30b4ddfcbc2d136f5cbeb9f7ac0f9e9c9852511133a613"
+      }
+    ],
+    "mask": {
+      "excluded_faces": 176109,
+      "file": {
+        "bytes": 1183699,
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz",
+        "sha256": "7261eeec9deeefcd960bb245aae0f495a459f9e3a221abd460017783fdd4d58c"
+      },
+      "offline_mesh_sha": "15f1b86c7f993889ce4ba1b1616ff0b0e079355e95580ac3737f3989255eb538",
+      "runtime_mask_equivalence": "not_run",
+      "runtime_mesh_sha_required": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "summary": {
+        "bytes": 3080,
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_summary.json",
+        "sha256": "908aa88bbc44d1cc972bf497279ee0da9031b12305d259564ad612f7f010e45a"
+      },
+      "target_area_m2": 0.04020530122973115,
+      "target_faces": 252920,
+      "total_faces": 429029
+    },
+    "orientation": {
+      "bytes": 1457,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/configs/new_stomach_v1/orientation_v1.json",
+      "sha256": "8fb79781a11e61babd816414c682866924ab673ebcabf8c6b02de47debdef909"
+    },
+    "poses": {
+      "data": {
+        "bytes": 1935393,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/artifacts/new_stomach_entry_pose_library/20261008_051344_557873Z/pose_library_v1.jsonl",
+        "sha256": "aa9a67f863949b4c9ce20d6d2c75d4ff5cfac5c0765697df9841949c959e6c29"
+      },
+      "live_gpu_reload": "not_run",
+      "manifest": {
+        "bytes": 51627,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json",
+        "sha256": "09bc34bdbeb8b174a4329497c42058737d59bdbc6a85b1603e6537196bea75a2"
+      },
+      "split_counts": {
+        "test": 100,
+        "train": 1000,
+        "validation": 100
+      },
+      "stomach_geometry_sha256": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "stored_candidate_stability": "pass",
+      "unique_poses": 1200
+    },
+    "release_semantics": {
+      "action_source": {
+        "bytes": 14017,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/actuator_vector_action.py",
+        "sha256": "0352f9f1573a6d892bca895919fca92e01e1ebcdc38f4c7eb5fefd3d0a543e76"
+      },
+      "committed_ticks": 240,
+      "preview_seconds": 4,
+      "required_clearance_m": 0.005,
+      "single_env_guard": true,
+      "source": {
+        "bytes": 5192,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/controllers/actuator_vector.py",
+        "sha256": "44e6f09137a857a5fa56008e86983ed375a9355532ca50c43136ff90cffb855b"
+      }
+    },
+    "robot_stage": {
+      "bytes": 166278,
+      "path": "/home/multirobo/Desktop/sim of FF/Stage.usd",
+      "sha256": "0d5afec84d42989a7910899b4ef78369c454e34185c89052ab25b33fac4a6671"
+    }
+  },
+  "benchmark_steps": 208,
+  "command": [
+    "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/benchmark_preflight.py",
+    "--level",
+    "1",
+    "--device",
+    "cuda:0",
+    "--viz",
+    "none",
+    "--output_directory",
+    "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_1",
+    "--pose_manifest",
+    "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json",
+    "--mask",
+    "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz",
+    "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+    "--/UJITSO/enabled=false",
+    "--/UJITSO/geometry=false"
+  ],
+  "committed_fraction": 1.0,
+  "env_steps_per_s": 0.27152390147793193,
+  "environment_device": "cuda:0",
+  "equivalent_768000_transition_hours": 785.6889657674279,
+  "gate": 5,
+  "hold_fraction": 0.0,
+  "long_rollout_steps": 64,
+  "num_envs": 1,
+  "peak_cpu_rss_kib": 9294956,
+  "peak_driver_memory_sampled_mib": 6421,
+  "peak_torch_allocated_bytes": 1290168320,
+  "physics_device": "cuda:0",
+  "ppo_updates": [
+    {
+      "entropy_per_dimension": 0.2888747751712799,
+      "gradient_norm": 3.6211581230163574,
+      "kl_per_dimension": 0.0029306497890502214,
+      "policy_loss": -0.052703678607940674,
+      "ppo_wall_s": 0.13351574901025742,
+      "reward_mean": 0.21915145218372345,
+      "value_loss": 6.511877536773682
+    },
+    {
+      "entropy_per_dimension": 0.2982063293457031,
+      "gradient_norm": 6.198988914489746,
+      "kl_per_dimension": 0.0021000592969357967,
+      "policy_loss": -0.05612187087535858,
+      "ppo_wall_s": 0.08292913099285215,
+      "reward_mean": 0.24216961860656738,
+      "value_loss": 6.721617698669434
+    }
+  ],
+  "projected_fraction": 0.04807692307692308,
+  "repeat_steps": 32,
+  "rgb_device": "cuda:0",
+  "status": "pass",
+  "timer_means": {
+    "actuator_total_nested_s": 0.7475920746765041,
+    "collision_nested_s": 0.29227476479081815,
+    "coverage_10hz_s": 0.3932881271275619,
+    "magnetic_s": 1.3195009910432418,
+    "planner_s": 0.22656497215211857,
+    "render_s": 3.712120360432891e-05,
+    "reward_10hz_s": 0.05433712268313684,
+    "rgb_sync_s": 0.01665062031315756,
+    "step_wall_s": 3.6829170270348186,
+    "visual_encoder_s": 0.0019634070959000383
+  },
+  "timer_note": "nested timers are not additive; CUDA completed at outer step boundaries",
+  "transitions_per_s": 0.27152390147793193,
+  "two_64_step_rollouts": true,
+  "warmup_steps": 8
+}

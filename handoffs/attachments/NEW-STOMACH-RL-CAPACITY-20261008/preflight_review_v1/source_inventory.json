@@ -1,0 +1,984 @@
+{
+  "audited_head": "69f393cb95268eb17986f5ee0a2049386d6745aa",
+  "branch": "feature/new-stomach-rl-preflight-20261008",
+  "base": "1e89c9ccb48545c4513915be94d4c17d9cdebaaa",
+  "files": [
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/action/20261008T055809.071017Z/physics_240hz.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/action/20261008T055809.071017Z/summary.json",
+      "bytes": 2352,
+      "sha256": "c9ab265398b113581a86cb35bd27afa43b173105f5023cce195cc73995cf00cd"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/action/20261008T060439.262435Z/physics_240hz.jsonl",
+      "bytes": 4933325,
+      "sha256": "20e6a0f45d863daead19395638f83a5fa3e5461696f0fc272e6718233cb2590b"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/action/20261008T060439.262435Z/summary.json",
+      "bytes": 139193,
+      "sha256": "5575c6912fd6c8228e60afdf6ae5a4d80d0bede1d2711ca2e95d58dbc1ff41dc"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/action/20261008T060717.448392Z/physics_240hz.jsonl",
+      "bytes": 4932901,
+      "sha256": "ba1e73cbf3e6d0ff8b38c335e4fc68dc0190def310c5cbfceeea41061d57c03c"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/action/20261008T060717.448392Z/summary.json",
+      "bytes": 112288,
+      "sha256": "610d1c377659279be8f5b32c7b39a608d9683c4e77b36508c98e98969868a395"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T072356.227350Z/envs_1/step_timings.jsonl",
+      "bytes": 52969,
+      "sha256": "74a49021336e412244cf9d61730bb9e356b2b66a78fa3bc410d6d4a65e29a70b"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T072356.227350Z/envs_1.log",
+      "bytes": 121138,
+      "sha256": "eab4f06c685d038abc49e4602b7435be20dadcc88995148ddf1e5f27c748edf2"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T072356.227350Z/interruption_diagnostic.json",
+      "bytes": 586,
+      "sha256": "a1e0a035a245008594c772291f58b2dd36bb5095430d8b924ecb43ecd224b277"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T072356.227350Z/summary.json",
+      "bytes": 1264,
+      "sha256": "83581fc5c5260403cf25fca22ab3689ca89b421cbdc8cd975e0ec86f274284bb"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_1/long_rollout_update_0001.pt",
+      "bytes": 8254517,
+      "sha256": "eef0f33d8c51eba632f6d69293740548afd69be47ab0e68190aefed5166d5520"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_1/long_rollout_update_0002.pt",
+      "bytes": 8254517,
+      "sha256": "34659794259922db99ab7cb959a9f9b9848df0e22666713ecbfed98b9d74bf73"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_1/step_timings.csv",
+      "bytes": 45317,
+      "sha256": "40328fa9ffa28def438f32be8d04094d5f45bcb8c6d2dc0dab9c7f3b53be1888"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_1/step_timings.jsonl",
+      "bytes": 92152,
+      "sha256": "50426127a9cfd0a497d5fa6433f277e1a0e25bea3a78f41e74af3de62cbcb42a"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_1/summary.json",
+      "bytes": 7850,
+      "sha256": "a5c221c6d0b479078477aedd5674c0dd7e6406eddf9aaeaeeed4cac2c87fdcdf"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_1.log",
+      "bytes": 183458,
+      "sha256": "76adf1aa1638eb969906087989116b45ee57eaf460464b660fb5d5717caf1f45"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_2/summary.json",
+      "bytes": 9155,
+      "sha256": "e05db185e5372e169a98fd96a026af5cdd0e1c33190b1d633503fe32678dde49"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/envs_2.log",
+      "bytes": 21733,
+      "sha256": "069f3e54f31aa1b26aa542c924b4b752c6a3401c1f722dc50b6feeb956cd0628"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T074407.121314Z/summary.json",
+      "bytes": 2397,
+      "sha256": "0132a03f49b3b63908ddd415a9a82c946e37c5d281140b4c4755b8c8fa4a7f52"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T080534.571344Z/coverage_reward_10hz.jsonl",
+      "bytes": 29096,
+      "sha256": "7fc95a5fa97cfd721644bf1d6f4170988cf1ce86ce3449a4bf8c87c30b9d1388"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T080534.571344Z/physics_240hz.jsonl",
+      "bytes": 1328109,
+      "sha256": "34e3778fcbe0df30c7beb11027ce0b8c0d64cda59bd542c756c15af3b6a315fb"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T080534.571344Z/policy_rgb_1hz.jsonl",
+      "bytes": 22692,
+      "sha256": "b9235cfb95c19bfaf96ff86232da4a96bc6d4d333ef15c9ca33874cbed8d07f0"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T080534.571344Z/summary.json",
+      "bytes": 6972,
+      "sha256": "a8fbd3b32d13e103e393ab90245542edc30a27e3e05e4107f3713c258729ce39"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T080942.758742Z/coverage_reward_10hz.jsonl",
+      "bytes": 858708,
+      "sha256": "aaa4012b5734d6e6aaa2bdc4dc48591acb3f14645d6ebdcb397e1be4c68cccc7"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T080942.758742Z/physics_240hz.jsonl",
+      "bytes": 39956851,
+      "sha256": "b99bbbf44ecf9b8ae24f4e6dad885db11ae56f0dca6e32afeea2bb3357aa77ac"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T080942.758742Z/policy_rgb_1hz.jsonl",
+      "bytes": 680448,
+      "sha256": "a03d1b11f749246d27ccbe3582f1a9fd41c52561575630a4ac94e71c26f1994f"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T080942.758742Z/summary.json",
+      "bytes": 11104,
+      "sha256": "91f64dba5c5c019d0831e1cf50fdea080ff2a6ca4d3c50ee58926bf14e15bd52"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T082615.445313Z/coverage_reward_10hz.jsonl",
+      "bytes": 847637,
+      "sha256": "dd4eb3a3654c79706ed2fd0cb890a77ab8d08f853bc5bfbbfd4f468a49bffa62"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T082615.445313Z/physics_240hz.jsonl",
+      "bytes": 39885828,
+      "sha256": "2dbeeeff2fe2436e136e282c7b499142d6bcea726b85b3dc0f0d7c91692acfbd"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T082615.445313Z/policy_rgb_1hz.jsonl",
+      "bytes": 679445,
+      "sha256": "2be66b18c301b56ce240367ddfc0ca1f19a9c2e4dda6d3a29373b3455a6a17fd"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/end_to_end/20261008T082615.445313Z/summary.json",
+      "bytes": 11186,
+      "sha256": "bcaddec292519b3f998a09ac7526bc8971104ea39e3b1e7e72f047f3fa1bed8e"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/final_evidence_table.md",
+      "bytes": 6140,
+      "sha256": "2253dec47b983aef954b54525a7347d57199d05857fc13e7a1a6eb6b5d514290"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/final_executed_commands.json",
+      "bytes": 15754,
+      "sha256": "10df4c363e662e63498f9dd0e48ccb17e816e353a3f7c53d42b0e0b41352e004"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate0_closest_red.log",
+      "bytes": 1938,
+      "sha256": "99d273c3e7940cc54962cb1ecbdf4e816a254e75d70fc52903bcf66667f8095d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate0_runtime.log",
+      "bytes": 110092,
+      "sha256": "8b4e8b2bb9a293d5297c4c93f87da1814e780dc414405b58cf7818bf80d53876"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate0_runtime_final.log",
+      "bytes": 116241,
+      "sha256": "ceef16610252aa4bd6ce3449a0b6dd22a4abd0efcc6c4ae375c998139351a1e2"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate0_runtime_reset_isolated.log",
+      "bytes": 19035,
+      "sha256": "4916a63c30b71b34bac3ecbcd73c9c97a509513a6c3a294c4721108078b002bf"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate0_shutdown_red.log",
+      "bytes": 2104,
+      "sha256": "55039ef56ebb9b06808d7c78462c974992654ed1c780a1167649a28f726eca94"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate0_tests.log",
+      "bytes": 112,
+      "sha256": "8a4a1741950f0b25d43796b0c23d346fe50adde87c50b1932f6c4868693af666"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate0_tests_final.log",
+      "bytes": 192,
+      "sha256": "4d4a147cee4c162dc82ced36db4e75dd97b4cc679e204d235ac484471af8182d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate0_tests_reset_isolated.log",
+      "bytes": 192,
+      "sha256": "0b266a0c9816b8f5bce11959ab49da73a82f9b09a037611afc7a9ce77d73063b"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate1_action_red.log",
+      "bytes": 112,
+      "sha256": "f906e544030c78c523558e62284d3ed215efe20d8089ebee610fd5df6837bd8d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate1_action_tests.log",
+      "bytes": 112,
+      "sha256": "670f4e926ff35c9df0b24f91b1013639e7969c48a7397bbd9d527eda56a40ca3"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate1_action_tests_final.log",
+      "bytes": 112,
+      "sha256": "b3f3a508d5a96061731af0762eb7c88a384be4bfd02ba70f22fa839ddd2901e7"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate1_artifact_inventory.json",
+      "bytes": 3648,
+      "sha256": "4f5c59b808ac6a4c472384a7065a24160f88535606459381da08e7a41aed7466"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate1_chunk_gpu.log",
+      "bytes": 21244,
+      "sha256": "aaf6a0de02fd82f729dd345c95a2b3783e8a4fa9884e92eb529675fe982b59a1"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate1_chunk_gpu_limits_fixed.log",
+      "bytes": 120898,
+      "sha256": "4a4e1d99bca8ab6dc60138b6f1ef528e041b42198015d7cf91b0f4c2322112e1"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate1_continuous_limits_red.log",
+      "bytes": 2398,
+      "sha256": "791b0c42db891ebef3c82fa4f490edfb707e070e6bd180ab2c72bdc57d34b532"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate1_limits_red.log",
+      "bytes": 888,
+      "sha256": "6fccb4f679fc03c1bc530ec472a3c078e345ff18d50ef6435a07bd9b45ae8696"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate1_single_gpu.log",
+      "bytes": 108310,
+      "sha256": "d92d6de67027e9c80dbf6a91ba14963996d4db4bfa14ba4d9923711b711cd74b"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate2_artifact_inventory.json",
+      "bytes": 9198,
+      "sha256": "d5c587fcdc23e78dd84c6cf8a5929517630c9439bf005a8853ef6c2f8688c739"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate2_coverage_gpu.log",
+      "bytes": 20000,
+      "sha256": "e95e2157cd33a8f325859984e4f34f1e1c1bcf241342f6277922bd7d0b5aef4f"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate2_coverage_gpu_120s.log",
+      "bytes": 141894,
+      "sha256": "b4673f1b86c51712e5dfd6038ec0038e48dc23740ca5bb4b8ae1673b03d79682"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate2_coverage_gpu_diagnostic.log",
+      "bytes": 19996,
+      "sha256": "39b8cdd5462444d91ff4fcd800a9632bac414ff2b4a5f46b83717ec76732fe56"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate2_coverage_gpu_hierarchy_refresh.log",
+      "bytes": 21201,
+      "sha256": "6654778314b9833152d766e6080be4f12ea6d496e0cf9860905afd5c8d1b5844"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate2_coverage_gpu_live_optics.log",
+      "bytes": 19885,
+      "sha256": "295b6e1d38e18bc8c1f6654c969f7181e462f3ae3e9b2a46e5a27b66561c1863"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate2_coverage_gpu_physics_sync.log",
+      "bytes": 21210,
+      "sha256": "c7d48189401b7a2dce28e12a69768d8692f0c64cd2897260b580414a9c86116b"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate2_coverage_gpu_rgb_sync.log",
+      "bytes": 22677,
+      "sha256": "abb5b7c8e68f1bf9ce48565dc4b92b103516bd8334474e933e092e16b15356cd"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate2_coverage_red.log",
+      "bytes": 1050,
+      "sha256": "ed3682456d404b61ac4da5718d77d22bc30fe40221da7203d8bcf244300e7222"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate2_coverage_tests.log",
+      "bytes": 112,
+      "sha256": "daf582dd81bc52aa553bec793c7c719c5cbbaffa8419610df1ca13a87b30e6b4"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate3_artifact_inventory.json",
+      "bytes": 3706,
+      "sha256": "a23d76a11faf6a811075c4091f5654e410a7e6894b11f94e670c2ad35cd48b6b"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate3_regression.log",
+      "bytes": 193,
+      "sha256": "a11dad4c3a178ed24cdd4bfd3da601da578ac622800625915aea68d035a96050"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate3_reward_gpu_4s.log",
+      "bytes": 21608,
+      "sha256": "8409ba9b61bfb286b68c1d7266fe682e8dae5605c5ce27f217b7cfe6d2f9736f"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate3_reward_gpu_train_120s.log",
+      "bytes": 113635,
+      "sha256": "7519c915f895616d7b7ea646bc33c7513a9873eefac00927119ee3700feaa182"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate3_reward_gpu_validation_120s.log",
+      "bytes": 114044,
+      "sha256": "e8eb79dedcf8705d50c9fdaaffe8a006614b499c2337f277a54354267f6d82b3"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate3_reward_red.log",
+      "bytes": 1053,
+      "sha256": "1c39ece9991bd3ec6a6611467dfe0144a639326f75c6f3b62f93be4813103a41"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate3_reward_tests.log",
+      "bytes": 112,
+      "sha256": "9ce426eb43004e89bfec614227155a7b4ca9598af857736326f1bd85d2b5946e"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate3_reward_tests_final.log",
+      "bytes": 112,
+      "sha256": "7fed6dfe1f904ec35bcd451db9de30a7a8486a532f4666a9ddf961243f5c08ab"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_artifact_inventory.json",
+      "bytes": 4190,
+      "sha256": "e54ebfc7207d83fc4cdea0b20a71923ef93d15f9368bfe4b3783b0b2ced1a46d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_critic_reset_red.log",
+      "bytes": 1943,
+      "sha256": "a0bef03abc88bbbd60be03e20a282360e533a2f187117ab2263ed2629178de19"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_ppo_red.log",
+      "bytes": 1055,
+      "sha256": "0f4e1a379e58a39ad98972545b992d2392197a76aefef04bd531c94a8bf78a3d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_ppo_tests.log",
+      "bytes": 111,
+      "sha256": "333e9ef115bc606719092c04ff7d4cfc3cbf7317c06bcaee22b57741bc390b32"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_pure_tests.log",
+      "bytes": 111,
+      "sha256": "c684640961625b074ade782814614844f289e250d2b4767b40dd0fa24a87957a"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_pure_tests_final.log",
+      "bytes": 111,
+      "sha256": "760380cb5e0867736a819ff27020a8eaaf2f7e6e9dedef198194f822266d9c6c"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_reset_regression.log",
+      "bytes": 112,
+      "sha256": "8368b4636b9e786748b50c751eb9cb3d6f973bbac0a3d5ee61e71262270543d0"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_reset_regression_final.log",
+      "bytes": 112,
+      "sha256": "ff8f54108356bc7659c9db170577945cbf57da6df7e2bd088388dfbd39fe4d9e"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_smoke_A.log",
+      "bytes": 33315,
+      "sha256": "3fdca81a6a0e6a836d73dfd3c8962daac1089d3cda721b4a787807dfc4d0135a"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_smoke_A_reset_fixed.log",
+      "bytes": 33316,
+      "sha256": "456b0882c8a859f9c349a92128c3607e03554e26a1e70fa4687912deb5302797"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_smoke_D.log",
+      "bytes": 33321,
+      "sha256": "48a715139b34ba2b0c3743534c816a010b7303283e92034982757b6438cb19fe"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_smoke_D_reset_fixed.log",
+      "bytes": 33317,
+      "sha256": "5d15d089a8d40b14708ae44bfd5a0709cb78c7224ab472ce37dc3c5a5378c507"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate4_tanh_saturation_red.log",
+      "bytes": 1591,
+      "sha256": "1ded3527e370438e115a5ff2dbce4965ffebb50eb90d8ed706043cd381d05565"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate5_benchmark.log",
+      "bytes": 1143,
+      "sha256": "76dad76b536b99bf55c9c503d902fc7d9b4e6db16d79efa646511105b1bcc7bd"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate5_benchmark_reset_fixed.log",
+      "bytes": 2112,
+      "sha256": "c6015e21dc1f753cbc1ca3d21cde4d12323d5f680f77502ea53bac653561e6b4"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate5_isolation_tests.log",
+      "bytes": 111,
+      "sha256": "b3439821765525275a9cab5ddee0471d421a033bf492684018b67d9cf4d8d63d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate6_end_to_end_train_120s.log",
+      "bytes": 115447,
+      "sha256": "f1b29fb7ef7617c682ac5adfc44964d70bc27836aaaf59744f370b00c48e19e0"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate6_end_to_end_validation_120s.log",
+      "bytes": 115515,
+      "sha256": "ddf8541daea1a164657ae671678365383e2b90f84499b76389f42672cbf7ac05"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate6_lifecycle_4s.log",
+      "bytes": 23552,
+      "sha256": "a26818bfdddb94a567f56c35994a5aa2d48c9d7c4fffca2aa241767fda756add"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate6_trace_red.log",
+      "bytes": 1052,
+      "sha256": "8b6fd1f541580ccf2a3456b7fb274843984a2a35c3e55c7ded54bff6ff3165f2"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gate6_trace_tests.log",
+      "bytes": 111,
+      "sha256": "0e42d9491235941db6606a47a82417d2556d09bd0b1b01c4e6d0d85ad548dcd0"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/gates_0_1_2_regression.log",
+      "bytes": 193,
+      "sha256": "5c858910c0424ba8de3c0b69b78dab290062cdc34e08142fb157723ec7ba331f"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/preflight_regression_current.log",
+      "bytes": 193,
+      "sha256": "9b06a999c489537b171093f367dfb884b7d22bd8c1d077fbf1062eed9662d755"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/evidence/preflight_regression_final.log",
+      "bytes": 193,
+      "sha256": "35d1c084f8efcf28c01b6286eadc4e04f758dfb3d8cc68904e4aced32fd74607"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T053523.583281Z/runtime_reload.jsonl",
+      "bytes": 45320,
+      "sha256": "55d33bc2d63624cd6d8ff339027fdb7ad65346d07e2f8e7aeed5f19ad625d0f2"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T054059.845404Z/runtime_reload.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T054059.845404Z/summary.json",
+      "bytes": 7464,
+      "sha256": "46dc6736284472947c5b86bb6dc3f69e5d682566b274dc05703e990ae3216fd4"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T054338.801049Z/artifact_inventory.json",
+      "bytes": 3385,
+      "sha256": "3aa53780e0c3bf9aa634d0a3395c4dc9310ade68dce985ac5cb20485a0c7dc5d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T054338.801049Z/runtime_reload.jsonl",
+      "bytes": 51262,
+      "sha256": "bd73d31efe6084c6bffa47310dca1674d4746410203e4b08a37567f3d0aff5dd"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T054338.801049Z/summary.json",
+      "bytes": 81487,
+      "sha256": "3d814c99d919817e6a67910576025600669abe01e11213c57ce944d653d826d4"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T061402.679633Z/coverage_geometry_10hz.jsonl",
+      "bytes": 122,
+      "sha256": "9f1c8c068ab766533184eded7225b176fff76b920bb82fbd674d557ae3c06202"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T061402.679633Z/coverage_rgb_1hz.jsonl",
+      "bytes": 122,
+      "sha256": "9f1c8c068ab766533184eded7225b176fff76b920bb82fbd674d557ae3c06202"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T061402.679633Z/summary.json",
+      "bytes": 6728,
+      "sha256": "d1ddd82c77488fa4a3f63a8f13a205583c7cc15706ca52c575e023dbe90eac6d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T061642.142704Z/boundary_visibility_failure.npz",
+      "bytes": 431090,
+      "sha256": "52fb10859797ffe78c14f7605b7233e5da23c24fd87d813c4d02dd7addb44692"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T061642.142704Z/coverage_geometry_10hz.jsonl",
+      "bytes": 122,
+      "sha256": "9f1c8c068ab766533184eded7225b176fff76b920bb82fbd674d557ae3c06202"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T061642.142704Z/coverage_rgb_1hz.jsonl",
+      "bytes": 122,
+      "sha256": "9f1c8c068ab766533184eded7225b176fff76b920bb82fbd674d557ae3c06202"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T061642.142704Z/summary.json",
+      "bytes": 7529,
+      "sha256": "21e2e13d11ba97709b5ed816dbee2c3d81a68003213d5070272e812ac31a61f2"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T062151.205101Z/summary.json",
+      "bytes": 6724,
+      "sha256": "6e61213e963981939e77da2f43244206deb56819b9483be8317823f2f006996d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T062435.335331Z/summary.json",
+      "bytes": 7601,
+      "sha256": "32de5a0f74c34e32e0cd142589173e0cddca9edac84dff25cb3923fd00e28130"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T062700.261717Z/coverage_geometry_10hz.jsonl",
+      "bytes": 5920,
+      "sha256": "7bfe1e700c12bf50cbe5c2d841629bc1b4e9b78f633cdd112b9659c189de8d3c"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T062700.261717Z/coverage_rgb_1hz.jsonl",
+      "bytes": 246,
+      "sha256": "dadb8a566923c8eb388b2fad152581f90746a04abb8772c505a4b9b3c4576608"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T062700.261717Z/summary.json",
+      "bytes": 7654,
+      "sha256": "2fca6d90f6776b073edb60339b494f2928b874ac8d77914eedbb9d7e9bc81641"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T063108.083184Z/coverage_geometry_10hz.jsonl",
+      "bytes": 23360,
+      "sha256": "a42ae7403dcf8e8b68a7c3eb2762c36ccd48f2a0829572f3c1e79b2966a403cf"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T063108.083184Z/coverage_rgb_1hz.jsonl",
+      "bytes": 620,
+      "sha256": "a338a3b9a557891b987e4d14669b5d370b3815b9613a2bce7ae5a33f11eabde1"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T063108.083184Z/summary.json",
+      "bytes": 10898,
+      "sha256": "5183fbc257236c4634f7e80fa94798beb99d7c9255f853e3d07af0e51c5c1dc5"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T063439.430899Z/coverage_geometry_10hz.jsonl",
+      "bytes": 682308,
+      "sha256": "531004fc13d77bd0642f962fb3c1487b9ae1bd898b7c88bd50846ae1a266fd2f"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T063439.430899Z/coverage_rgb_1hz.jsonl",
+      "bytes": 14017,
+      "sha256": "a7ca3dd85b682736698e14ef2dd8e922bf58ae20821adb775e23b0af888075bf"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T063439.430899Z/summary.json",
+      "bytes": 139584,
+      "sha256": "32db76110eb8519c57224342f948db06158130daccfa15ac8f1d1e1c6d3af13b"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T065158.888002Z/physics_240hz.jsonl",
+      "bytes": 680228,
+      "sha256": "4f4a12e8bcf0439163be649f6198ec7a59b5f8ee113f08eecea11829b563ec2c"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T065158.888002Z/reward_10hz.jsonl",
+      "bytes": 29092,
+      "sha256": "253cc3cf8f7ecee3e170b2472d09b094547a8802d461d8fb2a7dac1c865e0f66"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T065158.888002Z/reward_1hz.jsonl",
+      "bytes": 1456,
+      "sha256": "89d2178ca3e4f444e092c81200d74044f9d119e0d11d76ee5c847e5222fd6ca6"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T065158.888002Z/summary.json",
+      "bytes": 7551,
+      "sha256": "7fc8c90e9622a1248d48ec4ed463c098e526346136c2487e7a7b141b907a6853"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T065553.947988Z/physics_240hz.jsonl",
+      "bytes": 20372716,
+      "sha256": "ace55f2fe84ed48f4e96ca74bad48aac49f2c3e57ecaa99a0e4823bd0dc5c65f"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T065553.947988Z/reward_10hz.jsonl",
+      "bytes": 845610,
+      "sha256": "3e4385dfa3aa293c335062851b495b697dab638a5d8d6b2ef67b7a9ce7c21dd6"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T065553.947988Z/reward_1hz.jsonl",
+      "bytes": 39675,
+      "sha256": "913d6093896d733795e87c6f5610f64758c2d4bd2ac0299c78070f64c75abb87"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T065553.947988Z/summary.json",
+      "bytes": 47601,
+      "sha256": "f9c22b59457f12866f3840025115fb7bce2aa7b57bc26f3fcfb3f3707b5e7f28"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T070409.039061Z/physics_240hz.jsonl",
+      "bytes": 20115517,
+      "sha256": "75d198555be09206d13107a1bc9e2849cf7ec9cdc08086d2fcecc9475171aa53"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T070409.039061Z/reward_10hz.jsonl",
+      "bytes": 852049,
+      "sha256": "58ace5b90f3b09df6e486c766f96886826ea94171adcced11c871263dcb5831c"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T070409.039061Z/reward_1hz.jsonl",
+      "bytes": 41087,
+      "sha256": "2cba67b0b5e8a086b94da86d3d32deb9820690e41e33556590283ec960917ecc"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/preflight/20261008T070409.039061Z/summary.json",
+      "bytes": 49026,
+      "sha256": "761f7534f7b4fa4d007c2656974a24d9f409a0fbbd23788772dcc65d667d6379"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071255.990907Z/coverage_reward_10hz.jsonl",
+      "bytes": 114234,
+      "sha256": "7d09c4bcb4d8e08d36210b1c7f1156be83cdc475ea7f15e481b273a9c851615e"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071255.990907Z/policy_1hz.jsonl",
+      "bytes": 61027,
+      "sha256": "f1bec049939b41c22c78e57340afd5c8dc1b1d1de6a2034489a8f21fe98af518"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071255.990907Z/summary.json",
+      "bytes": 7410,
+      "sha256": "7ad8cd6166504be2a029975b31d2d61e1ad7023ebf8f8da83a9abadd14cf0bfc"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071255.990907Z/update_0001.pt",
+      "bytes": 8169493,
+      "sha256": "f8e737195d890cdc2938a7600e3335dbeb4157089a89d11a90eb2bfe3f0818d0"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071255.990907Z/update_0002.pt",
+      "bytes": 8169493,
+      "sha256": "1c78d541b0d2228826ac659e1d4ebddd70efd0ddbd743aa0d70e8ad2e050ef5a"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071628.233275Z/coverage_reward_10hz.jsonl",
+      "bytes": 114041,
+      "sha256": "75015d0885ab6379132114d9f6bef2059e2cc8c399c2ebf521c3605b9e6fb392"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071628.233275Z/policy_1hz.jsonl",
+      "bytes": 88387,
+      "sha256": "2050f83a8bf4c4ad2eca1f784e0e250122e90a741164dd7c238a0ed6f0dd9ea4"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071628.233275Z/summary.json",
+      "bytes": 7416,
+      "sha256": "0e93a57673c12790efcb9958d6d0e82400cd607f075b3525376c93bc9f74a4bd"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071628.233275Z/update_0001.pt",
+      "bytes": 8253205,
+      "sha256": "9745453b00280d6a4d21f7a6136e56268542f8b94c1abdda383f4375cfbdafe4"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T071628.233275Z/update_0002.pt",
+      "bytes": 8253205,
+      "sha256": "ee3a0eb039c8bfc41e060cbfd403c14b1837214feda8a3f5fe8ed0c7fd77dcdb"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073515.409778Z/coverage_reward_10hz.jsonl",
+      "bytes": 113907,
+      "sha256": "e95784388a1e5a98b23e3ecd6380ab4e80557aeab7bea60c12445b490e515893"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073515.409778Z/policy_1hz.jsonl",
+      "bytes": 60991,
+      "sha256": "d4238a200e2878b1634320a8366a5ed0d832bcd883ba4fab5e81e67a19d8d9ae"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073515.409778Z/summary.json",
+      "bytes": 7407,
+      "sha256": "6da5224550dc7d67f9bd9e12ca717185a63417a59deb9e44669b64c696c93755"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073515.409778Z/update_0001.pt",
+      "bytes": 8169493,
+      "sha256": "e1352eb920aca64d2c8937d687492926a541dc5409b8ad6ae6e01f7be8e43a03"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073515.409778Z/update_0002.pt",
+      "bytes": 8169493,
+      "sha256": "db60779ae0ded72d0f44f820ea95a3c7f47bf24a1ef92461818fa597c70948cf"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073949.034329Z/coverage_reward_10hz.jsonl",
+      "bytes": 114132,
+      "sha256": "48ef088be3da70280b61e33154ed2755e3d1e4563d77d0afcb5f1dcc5424e151"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073949.034329Z/policy_1hz.jsonl",
+      "bytes": 88283,
+      "sha256": "6203a00be8a2917157d6fc78351c2cf1901b8c371645769119ba33a2a3a18f99"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073949.034329Z/summary.json",
+      "bytes": 7501,
+      "sha256": "3229da311f580a1278228f1caa77e62f79fb07bc6f52f2fb3bac77a36f2b0850"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073949.034329Z/update_0001.pt",
+      "bytes": 8253205,
+      "sha256": "4bacacce7476043db4b1fc1141c2c02ae0250cab5b0f9f651ec7897bfc2dace6"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073949.034329Z/update_0002.pt",
+      "bytes": 8253205,
+      "sha256": "87be7395c868f90b502079790a3dfb72c0877489f20398b69739a09407b8b414"
+    }
+  ],
+  "external_dependencies": [
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/assets/stomach/new_stomach_v1/new_stomach_physics.usda",
+      "bytes": 1375,
+      "sha256": "d24885ab1cf9182d8f13993e5d69d57b6a9a6b39027541f656191309be262954"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/config.py",
+      "bytes": 3687,
+      "sha256": "5d32740c62a75e06b7b876ed16f0043378ad45b72317b1f99637466b7f71ee07"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/field_models.py",
+      "bytes": 3808,
+      "sha256": "be2f4d4af8db2e3a04552add61cbbc84d89e2348c08864a0c9cc3e6283265965"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/streamlines.py",
+      "bytes": 3068,
+      "sha256": "a0a1c04e0250dd1eb9a2079475b655dd72081b53f9da0c0b8cf43802d42bb27c"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/visualization/magnetic_field.py",
+      "bytes": 2483,
+      "sha256": "c8c5f502b4d1d4a6d25fa11fcb4e1e3e4b6a86eb9845a38c34682ea082c57069"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/config/default.json",
+      "bytes": 4991,
+      "sha256": "326e770eb03ab6eaae130a1d6787e472cc8d7b78ec28c4f6085eb90eaa2fd817"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/planning/robot.xrdf",
+      "bytes": 116003,
+      "sha256": "5293e63d4112c67f479bdfa88ad8cb520c864c69939f0683a8dea5ca08146f40"
+    },
+    {
+      "path": "/home/multirobo/Desktop/robotarm/urdf/robotarm.urdf",
+      "bytes": 8828,
+      "sha256": "1d6e12d461207e65ac30b4ddfcbc2d136f5cbeb9f7ac0f9e9c9852511133a613"
+    },
+    {
+      "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz",
+      "bytes": 1183699,
+      "sha256": "7261eeec9deeefcd960bb245aae0f495a459f9e3a221abd460017783fdd4d58c"
+    },
+    {
+      "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_summary.json",
+      "bytes": 3080,
+      "sha256": "908aa88bbc44d1cc972bf497279ee0da9031b12305d259564ad612f7f010e45a"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/configs/new_stomach_v1/orientation_v1.json",
+      "bytes": 1457,
+      "sha256": "8fb79781a11e61babd816414c682866924ab673ebcabf8c6b02de47debdef909"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/artifacts/new_stomach_entry_pose_library/20261008_051344_557873Z/pose_library_v1.jsonl",
+      "bytes": 1935393,
+      "sha256": "aa9a67f863949b4c9ce20d6d2c75d4ff5cfac5c0765697df9841949c959e6c29"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json",
+      "bytes": 51627,
+      "sha256": "09bc34bdbeb8b174a4329497c42058737d59bdbc6a85b1603e6537196bea75a2"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/actuator_vector_action.py",
+      "bytes": 14017,
+      "sha256": "0352f9f1573a6d892bca895919fca92e01e1ebcdc38f4c7eb5fefd3d0a543e76"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/controllers/actuator_vector.py",
+      "bytes": 5192,
+      "sha256": "44e6f09137a857a5fa56008e86983ed375a9355532ca50c43136ff90cffb855b"
+    },
+    {
+      "path": "/home/multirobo/Desktop/sim of FF/Stage.usd",
+      "bytes": 166278,
+      "sha256": "0d5afec84d42989a7910899b4ef78369c454e34185c89052ab25b33fac4a6671"
+    }
+  ],
+  "executed_source_snapshots": [
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/benchmark_preflight.py",
+      "bytes": 10750,
+      "sha256": "27503d3e0b650e3b15fdab238d56f0b1c121b7ab538daa71fe03480aa5de7d3b"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/train_smoke.py",
+      "bytes": 9660,
+      "sha256": "7aefdd1b7967d91ec26f696f2c4f09e5d7ef4a1b4b0f4db60b96cd27db210f84"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/validate_actions.py",
+      "bytes": 5580,
+      "sha256": "a5f51ed4aa1a94cff3224b997e584a66fd08b6bffbd9e42462e44b9e802bf2a3"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/validate_coverage.py",
+      "bytes": 10223,
+      "sha256": "bb665484e6b7e13bfb76508e5beff05b648ee366d68795aeb71078dc34c65bac"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/validate_end_to_end.py",
+      "bytes": 9163,
+      "sha256": "fade242f11aed7821c1983718ea35607da1a1a6228c89874e274da976d294d2c"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/validate_preflight.py",
+      "bytes": 20445,
+      "sha256": "4481d3a322020e3a0ecc53d2e9bd55839ce70ba3641433c53affd41eea73135a"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/validate_rewards.py",
+      "bytes": 6750,
+      "sha256": "640ef062ed5d42a221bad00ce88d73d875ea7e0683e31d3908617e1face3640c"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/coverage/new_stomach_rl_coverage.py",
+      "bytes": 7790,
+      "sha256": "b4f233335ac6d3704a6b480f707bc1262741fb6ccf61ce97e364253fa007b96b"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_actor.py",
+      "bytes": 3060,
+      "sha256": "35d65010188437cd3d9984f8bd7906619c8d2b7d7da86e31ae8474327786c662"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_distribution.py",
+      "bytes": 1865,
+      "sha256": "e4a6e7806c8ccaf20eeafc38e94e2bcc71f669f9c82e63bff99555390215707d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_runner.py",
+      "bytes": 5359,
+      "sha256": "dcd2dca3c0b234ecb339bbebb04cbbb1219138f744f3102c2c68665c17f998fe"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_library.py",
+      "bytes": 2286,
+      "sha256": "45cf564ae1565acaeafd821456e1cd0a2e57b06f4f4fdd5744ecb8b0cbb4d9c0"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_optics.py",
+      "bytes": 3499,
+      "sha256": "eee81c4ca7f05d0b57f034062f63c36d7fa7a2012a108b649e36d809a4de750a"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_reward.py",
+      "bytes": 4312,
+      "sha256": "9d1d7ef6ae42435c357a03964048414c9f6877e5d01f983b1b336854a08cc5cf"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_rgb.py",
+      "bytes": 1276,
+      "sha256": "9fdbfe5ee61dc29995b32fd7445332f966111914d9daa78fcd8c2014bc2ec275"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_runtime.py",
+      "bytes": 6358,
+      "sha256": "1d53ee2ad04b47c856678bc8ee601ed7478cf05afbf248e3f35e67a75f8cf8b2"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_trace.py",
+      "bytes": 1506,
+      "sha256": "82d0c651d6a21addd5f30c4d6dca72a0f2cb2e4bb33df10ac6b0a22f53365252"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/controllers/new_stomach_rl_trajectory.py",
+      "bytes": 5986,
+      "sha256": "904a5a0205e9c7cd2665e3fb753f1ddc3ab7f18aa06e507cf7530f24856b53b5"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/new_stomach_rl_action.py",
+      "bytes": 4980,
+      "sha256": "af8484b1d080e48f2095de7c4642ef32fbf0ae8b9ecda03a5f2d4bfa02ff580f"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/new_stomach_rl_terms.py",
+      "bytes": 822,
+      "sha256": "37d5230466b7250124964e2f58a4847af584e110db06188456c3232bd76aba72"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/new_stomach_rl_env.py",
+      "bytes": 6179,
+      "sha256": "f1263d9c3a13c1ba7cf0dd9373481c95e54e18ac25781094346d3acf2b47f54d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/robotarm_magnetic_new_stomach_rl_env_cfg.py",
+      "bytes": 2017,
+      "sha256": "6e93396d783c9d69d4687061703e835960fb3c5e81a33b106c245af8c913e5e7"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/tests/new_stomach_rl/test_action.py",
+      "bytes": 4734,
+      "sha256": "7c9814e70efa83b8bc199bc7ef3fe24875c96ed75aea5444c27da6f7616bf03d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/tests/new_stomach_rl/test_coverage.py",
+      "bytes": 6266,
+      "sha256": "9007651053129c28bd67b16afe2a2ba51c85f3cc48a7ea541825b1d6394eee0d"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/tests/new_stomach_rl/test_multi_env.py",
+      "bytes": 1750,
+      "sha256": "7acdc23fd85e7613123c40ce84b8504f181b4a7798201369a79ff44da6b15f88"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/tests/new_stomach_rl/test_observation.py",
+      "bytes": 3862,
+      "sha256": "2556a9bb23a2f0ab5fae2b3c34369c7daf38a57078ba9ac887de39a21f16c35c"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/tests/new_stomach_rl/test_ppo.py",
+      "bytes": 3596,
+      "sha256": "4f9840480782a81ce23057fb7a95d030f60b656888db84c052136c1eeec6c351"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/tests/new_stomach_rl/test_preflight.py",
+      "bytes": 2967,
+      "sha256": "f49cc0c10bbeffd07a3ebc2d571eec551b2dbb920732847072c36d900ecbb970"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/tests/new_stomach_rl/test_reward.py",
+      "bytes": 3739,
+      "sha256": "ebf78ca6b3bb038a1096eb276032e4260c7514003482c1e937622a951592d4de"
+    },
+    {
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/tests/new_stomach_rl/test_trace.py",
+      "bytes": 1861,
+      "sha256": "208a8123620789127a4182109cb2d5cd2dbc6dbf86b137c6959df61d17d0014c"
+    }
+  ],
+  "file_count": 148,
+  "total_bytes": 224039444,
+  "self_exclusion": "Inventory excludes itself to avoid recursive hash; hash is recorded in report."
+}

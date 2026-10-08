@@ -1,0 +1,2687 @@
+{
+  "assets": {
+    "asset": {
+      "bytes": 1375,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/assets/stomach/new_stomach_v1/new_stomach_physics.usda",
+      "sha256": "d24885ab1cf9182d8f13993e5d69d57b6a9a6b39027541f656191309be262954"
+    },
+    "external_dependencies": [
+      {
+        "bytes": 3687,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/config.py",
+        "sha256": "5d32740c62a75e06b7b876ed16f0043378ad45b72317b1f99637466b7f71ee07"
+      },
+      {
+        "bytes": 3808,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/field_models.py",
+        "sha256": "be2f4d4af8db2e3a04552add61cbbc84d89e2348c08864a0c9cc3e6283265965"
+      },
+      {
+        "bytes": 3068,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/streamlines.py",
+        "sha256": "a0a1c04e0250dd1eb9a2079475b655dd72081b53f9da0c0b8cf43802d42bb27c"
+      },
+      {
+        "bytes": 2483,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/visualization/magnetic_field.py",
+        "sha256": "c8c5f502b4d1d4a6d25fa11fcb4e1e3e4b6a86eb9845a38c34682ea082c57069"
+      },
+      {
+        "bytes": 4991,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/config/default.json",
+        "sha256": "326e770eb03ab6eaae130a1d6787e472cc8d7b78ec28c4f6085eb90eaa2fd817"
+      },
+      {
+        "bytes": 116003,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/planning/robot.xrdf",
+        "sha256": "5293e63d4112c67f479bdfa88ad8cb520c864c69939f0683a8dea5ca08146f40"
+      },
+      {
+        "bytes": 8828,
+        "path": "/home/multirobo/Desktop/robotarm/urdf/robotarm.urdf",
+        "sha256": "1d6e12d461207e65ac30b4ddfcbc2d136f5cbeb9f7ac0f9e9c9852511133a613"
+      }
+    ],
+    "mask": {
+      "excluded_faces": 176109,
+      "file": {
+        "bytes": 1183699,
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz",
+        "sha256": "7261eeec9deeefcd960bb245aae0f495a459f9e3a221abd460017783fdd4d58c"
+      },
+      "offline_mesh_sha": "15f1b86c7f993889ce4ba1b1616ff0b0e079355e95580ac3737f3989255eb538",
+      "runtime_mask_equivalence": "not_run",
+      "runtime_mesh_sha_required": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "summary": {
+        "bytes": 3080,
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_summary.json",
+        "sha256": "908aa88bbc44d1cc972bf497279ee0da9031b12305d259564ad612f7f010e45a"
+      },
+      "target_area_m2": 0.04020530122973115,
+      "target_faces": 252920,
+      "total_faces": 429029
+    },
+    "orientation": {
+      "bytes": 1457,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/configs/new_stomach_v1/orientation_v1.json",
+      "sha256": "8fb79781a11e61babd816414c682866924ab673ebcabf8c6b02de47debdef909"
+    },
+    "poses": {
+      "data": {
+        "bytes": 1935393,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/artifacts/new_stomach_entry_pose_library/20261008_051344_557873Z/pose_library_v1.jsonl",
+        "sha256": "aa9a67f863949b4c9ce20d6d2c75d4ff5cfac5c0765697df9841949c959e6c29"
+      },
+      "live_gpu_reload": "not_run",
+      "manifest": {
+        "bytes": 51627,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json",
+        "sha256": "09bc34bdbeb8b174a4329497c42058737d59bdbc6a85b1603e6537196bea75a2"
+      },
+      "split_counts": {
+        "test": 100,
+        "train": 1000,
+        "validation": 100
+      },
+      "stomach_geometry_sha256": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "stored_candidate_stability": "pass",
+      "unique_poses": 1200
+    },
+    "release_semantics": {
+      "action_source": {
+        "bytes": 14017,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/actuator_vector_action.py",
+        "sha256": "0352f9f1573a6d892bca895919fca92e01e1ebcdc38f4c7eb5fefd3d0a543e76"
+      },
+      "committed_ticks": 240,
+      "preview_seconds": 4,
+      "required_clearance_m": 0.005,
+      "single_env_guard": true,
+      "source": {
+        "bytes": 5192,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/controllers/actuator_vector.py",
+        "sha256": "44e6f09137a857a5fa56008e86983ed375a9355532ca50c43136ff90cffb855b"
+      }
+    },
+    "robot_stage": {
+      "bytes": 166278,
+      "path": "/home/multirobo/Desktop/sim of FF/Stage.usd",
+      "sha256": "0d5afec84d42989a7910899b4ef78369c454e34185c89052ab25b33fac4a6671"
+    }
+  },
+  "branch": "feature/new-stomach-rl-preflight-20261008",
+  "command": [
+    "scripts/new_stomach_rl/validate_preflight.py",
+    "--gate",
+    "assets",
+    "--runtime",
+    "--device",
+    "cuda:0",
+    "--viz",
+    "none",
+    "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+    "--/UJITSO/enabled=false",
+    "--/UJITSO/geometry=false"
+  ],
+  "devices": {
+    "camera_update_period_s": 1.0,
+    "cuda": "12.8",
+    "env": "cuda:0",
+    "gpu_dynamics_scenes": [
+      {
+        "broadphase": "GPU",
+        "enabled": true,
+        "path": "/physicsScene"
+      }
+    ],
+    "isaaclab": "12.0.0",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+    "python": "3.12.13 (tags/v3.12.13-dirty:3bb231a, Apr 22 2026, 14:10:08) [GCC 11.4.0]",
+    "simulation": "cuda:0",
+    "torch": "2.11.0+cu128"
+  },
+  "gate": 0,
+  "head": "8a1156a9cf349fdd730cc6d39132628b3f73f641",
+  "runtime_geometry": {
+    "consumer_hashes": {
+      "collision": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "coverage": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "planning": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "visual_alignment": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "wall_surface": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e"
+    },
+    "mask_different_faces": 0,
+    "mesh_sha256": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e"
+  },
+  "runtime_reload": {
+    "requested": 60,
+    "rows": [
+      {
+        "axis_angle_deg": 80.3133423989571,
+        "camera_signed_lumen_distance_m": 0.004994658478860406,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043060941341781615
+        },
+        "final_pose_xyzw": [
+          1.0525847673416138,
+          0.12223160266876221,
+          0.005863994359970093,
+          -0.2854190170764923,
+          -0.5782784819602966,
+          -0.4964751899242401,
+          0.5810698866844177
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.053973913192749,
+          0.12338899821043015,
+          0.005899358075112104,
+          -0.3851757049560547,
+          -0.519392192363739,
+          -0.5499902963638306,
+          0.5285661220550537
+        ],
+        "pose_id": "train-0003",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0034174532629549503,
+          7.859507604734972e-05,
+          -0.0011572233634069562,
+          -0.25001540780067444,
+          -0.2691115140914917,
+          0.689221203327179
+        ]
+      },
+      {
+        "axis_angle_deg": 83.22391381894316,
+        "camera_signed_lumen_distance_m": 0.00521898138541647,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043061447981262206
+        },
+        "final_pose_xyzw": [
+          1.0642043352127075,
+          0.11751893162727356,
+          0.005480410996824503,
+          0.4944290518760681,
+          0.44333407282829285,
+          0.6979526877403259,
+          0.2680610716342926
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0640844106674194,
+          0.11807011812925339,
+          0.0054756090976297855,
+          0.4699634313583374,
+          0.4688931405544281,
+          0.7062278985977173,
+          0.24599987268447876
+        ],
+        "pose_id": "train-0014",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0010461336933076382,
+          -0.001191586721688509,
+          0.0001723896129988134,
+          0.0602971650660038,
+          -0.14274685084819794,
+          -0.281882107257843
+        ]
+      },
+      {
+        "axis_angle_deg": 86.89997853265285,
+        "camera_signed_lumen_distance_m": 0.004428829892158018,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305983865585327
+        },
+        "final_pose_xyzw": [
+          1.0618208646774292,
+          0.11428045481443405,
+          0.005241971462965012,
+          0.2751990556716919,
+          -0.6717923879623413,
+          0.04730589687824249,
+          0.68609219789505
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.062110424041748,
+          0.11432202905416489,
+          0.005258860997855663,
+          0.24530012905597687,
+          -0.6861792206764221,
+          0.0037057511508464813,
+          0.6848154664039612
+        ],
+        "pose_id": "train-0107",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0007861547637730837,
+          0.0008699770551174879,
+          -0.00018158688908442855,
+          -0.03119533322751522,
+          0.01795833930373192,
+          0.1988818347454071
+        ]
+      },
+      {
+        "axis_angle_deg": 87.43517664487415,
+        "camera_signed_lumen_distance_m": 0.005676352615833467,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306068057146072
+        },
+        "final_pose_xyzw": [
+          1.0582249164581299,
+          0.11935018002986908,
+          0.005282689351588488,
+          -0.14285562932491302,
+          -0.676178514957428,
+          -0.43245571851730347,
+          0.5791000127792358
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0591027736663818,
+          0.12007451802492142,
+          0.005447015631943941,
+          -0.24505332112312317,
+          -0.6341265439987183,
+          -0.5032215714454651,
+          0.533479630947113
+        ],
+        "pose_id": "train-0138",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0035747226793318987,
+          0.0004533195460680872,
+          -0.000704793375916779,
+          0.04199839010834694,
+          0.1377580463886261,
+          0.7548450231552124
+        ]
+      },
+      {
+        "axis_angle_deg": 84.7538798374214,
+        "camera_signed_lumen_distance_m": 0.00528435139610438,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043059853557014464
+        },
+        "final_pose_xyzw": [
+          1.0595157146453857,
+          0.1070932000875473,
+          0.005402684677392244,
+          0.6599686145782471,
+          -0.13683687150478363,
+          -0.2031644582748413,
+          0.7102403044700623
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0602178573608398,
+          0.10690870881080627,
+          0.005427147261798382,
+          0.6654303669929504,
+          -0.08846578001976013,
+          -0.16660775244235992,
+          0.7222314476966858
+        ],
+        "pose_id": "train-0156",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.00010640947584761307,
+          0.0001114313563448377,
+          -0.000161501913680695,
+          0.003568388521671295,
+          -0.012658612802624702,
+          -0.25513777136802673
+        ]
+      },
+      {
+        "axis_angle_deg": 78.40275615736509,
+        "camera_signed_lumen_distance_m": 0.005295719675038579,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.0430605017575264
+        },
+        "final_pose_xyzw": [
+          1.0488770008087158,
+          0.12455287575721741,
+          0.0065367803908884525,
+          0.18417026102542877,
+          -0.6046204566955566,
+          -0.5261256694793701,
+          0.5689526796340942
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0510706901550293,
+          0.13119739294052124,
+          0.00785384513437748,
+          0.03904619812965393,
+          -0.5968247652053833,
+          -0.5927349925041199,
+          0.5393894910812378
+        ],
+        "pose_id": "train-0228",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0016277276445180178,
+          -0.002414307091385126,
+          -7.162447673181305e-06,
+          0.04693083092570305,
+          -0.0720198005437851,
+          0.6254796981811523
+        ]
+      },
+      {
+        "axis_angle_deg": 87.69228980840992,
+        "camera_signed_lumen_distance_m": 0.005785991598516694,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043061403277778625
+        },
+        "final_pose_xyzw": [
+          1.0552153587341309,
+          0.1173674538731575,
+          0.005342409014701843,
+          0.32294216752052307,
+          0.6448577046394348,
+          0.4591676890850067,
+          0.5186828374862671
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0547901391983032,
+          0.11819816380739212,
+          0.005349914543330669,
+          0.2737067639827728,
+          0.664997398853302,
+          0.48237869143486023,
+          0.500173807144165
+        ],
+        "pose_id": "train-0394",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0010740022407844663,
+          -0.0025462997145950794,
+          0.0002314177545486018,
+          -0.07348795980215073,
+          0.011533978395164013,
+          -0.4424900412559509
+        ]
+      },
+      {
+        "axis_angle_deg": 85.7502846394801,
+        "camera_signed_lumen_distance_m": 0.0051614718725096626,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306151503648758
+        },
+        "final_pose_xyzw": [
+          1.065427541732788,
+          0.11208371818065643,
+          0.00551236979663372,
+          -0.44702544808387756,
+          0.512948751449585,
+          0.0649312436580658,
+          0.7299559116363525
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0654467344284058,
+          0.11199328303337097,
+          0.005499726161360741,
+          -0.44312357902526855,
+          0.5145330429077148,
+          0.05683029443025589,
+          0.7318933010101318
+        ],
+        "pose_id": "train-0425",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -2.887009031837806e-05,
+          -0.0001358982117380947,
+          2.587913149909582e-05,
+          -0.0037981856148689985,
+          0.0120471166446805,
+          -0.02095062844455242
+        ]
+      },
+      {
+        "axis_angle_deg": 89.90115007614976,
+        "camera_signed_lumen_distance_m": 0.004665763264004742,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043060315493011474
+        },
+        "final_pose_xyzw": [
+          1.0600539445877075,
+          0.12267422676086426,
+          0.005584079306572676,
+          -0.6992586851119995,
+          0.10908689349889755,
+          0.7026609778404236,
+          0.07351838797330856
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0617003440856934,
+          0.1248890683054924,
+          0.0059319050051271915,
+          -0.6400977969169617,
+          0.24283367395401,
+          0.7121884226799011,
+          0.1552235335111618
+        ],
+        "pose_id": "train-0572",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0009654582245275378,
+          -0.0023252663668245077,
+          6.0510483308462426e-05,
+          -0.018931636586785316,
+          -0.016448790207505226,
+          0.6090503334999084
+        ]
+      },
+      {
+        "axis_angle_deg": 88.81216149976929,
+        "camera_signed_lumen_distance_m": 0.004352413700988901,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043059779051208495
+        },
+        "final_pose_xyzw": [
+          1.0634446144104004,
+          0.11084631085395813,
+          0.005429523065686226,
+          -0.37975457310676575,
+          -0.6051046252250671,
+          0.6551478505134583,
+          0.24579712748527527
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0635424852371216,
+          0.11083682626485825,
+          0.005426348187029362,
+          -0.3819510340690613,
+          -0.6049151420593262,
+          0.6512725353240967,
+          0.25305211544036865
+        ],
+        "pose_id": "train-0596",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0003016543050762266,
+          6.42363665974699e-05,
+          -2.0949453755747527e-05,
+          -0.024760764092206955,
+          -0.00933669600635767,
+          0.04186892881989479
+        ]
+      },
+      {
+        "axis_angle_deg": 80.50119050116272,
+        "camera_signed_lumen_distance_m": 0.005499560649623196,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306011432733536
+        },
+        "final_pose_xyzw": [
+          1.0574657917022705,
+          0.10289362072944641,
+          0.006027750205248594,
+          0.00980746652930975,
+          0.6460574865341187,
+          -0.7631341218948364,
+          -0.011827691458165646
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0588655471801758,
+          0.1006990522146225,
+          0.00638099480420351,
+          -0.0832333192229271,
+          0.6357777714729309,
+          -0.7649902701377869,
+          0.060406800359487534
+        ],
+        "pose_id": "train-0625",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0007346142083406448,
+          0.0006841382128186524,
+          8.73523731570458e-06,
+          -0.007052024360746145,
+          -0.07430711388587952,
+          -0.48870548605918884
+        ]
+      },
+      {
+        "axis_angle_deg": 88.8758219084963,
+        "camera_signed_lumen_distance_m": 0.0057631274496913664,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306066567029953
+        },
+        "final_pose_xyzw": [
+          1.0595346689224243,
+          0.11687882244586945,
+          0.00524153420701623,
+          0.5194944143295288,
+          -0.48983171582221985,
+          0.6947447657585144,
+          0.08671747893095016
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0606330633163452,
+          0.11792592704296112,
+          0.005321198608726263,
+          0.5855292081832886,
+          -0.3985217809677124,
+          0.7058504223823547,
+          0.010544747114181519
+        ],
+        "pose_id": "train-0643",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0012482372112572193,
+          -0.0011297845048829913,
+          -0.00015186899690888822,
+          0.04689043015241623,
+          0.04263903200626373,
+          -0.6658854484558105
+        ]
+      },
+      {
+        "axis_angle_deg": 86.36582589574178,
+        "camera_signed_lumen_distance_m": 0.005532616312799688,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305988335933685
+        },
+        "final_pose_xyzw": [
+          1.05311119556427,
+          0.11582110077142715,
+          0.005390088073909283,
+          -0.5294908881187439,
+          -0.4335280656814575,
+          0.6889236569404602,
+          0.2389082908630371
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0526857376098633,
+          0.11700905114412308,
+          0.005436919163912535,
+          -0.5668638348579407,
+          -0.37691813707351685,
+          0.6818371415138245,
+          0.26776182651519775
+        ],
+        "pose_id": "train-0646",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0006545806536450982,
+          -0.00103334232699126,
+          -4.684603845817037e-05,
+          0.03895936533808708,
+          0.004854360595345497,
+          0.26748740673065186
+        ]
+      },
+      {
+        "axis_angle_deg": 77.03419786115424,
+        "camera_signed_lumen_distance_m": 0.005223697080446265,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.0430607327255249
+        },
+        "final_pose_xyzw": [
+          1.0495247840881348,
+          0.12363487482070923,
+          0.006440009921789169,
+          -0.3396509885787964,
+          -0.5219698548316956,
+          -0.26867759227752686,
+          0.734844982624054
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0503357648849487,
+          0.12491875141859055,
+          0.00653165252879262,
+          -0.4278172552585602,
+          -0.44697892665863037,
+          -0.34620726108551025,
+          0.7052111625671387
+        ],
+        "pose_id": "train-0682",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0014270023675635457,
+          -0.0016346573829650879,
+          -0.00017162860604003072,
+          0.03436284512281418,
+          -0.1121363416314125,
+          0.6747118234634399
+        ]
+      },
+      {
+        "axis_angle_deg": 89.47828522435984,
+        "camera_signed_lumen_distance_m": 0.005346276068579638,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043060010019207
+        },
+        "final_pose_xyzw": [
+          1.0606765747070312,
+          0.11489498615264893,
+          0.005091503728181124,
+          0.587951123714447,
+          0.39858028292655945,
+          -0.5087690353393555,
+          0.4864168167114258
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0614103078842163,
+          0.11484766751527786,
+          0.005084895994514227,
+          0.5415138602256775,
+          0.458516389131546,
+          -0.46378910541534424,
+          0.530495285987854
+        ],
+        "pose_id": "train-0752",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0009866817854344845,
+          -0.0002682248887140304,
+          5.560791396419518e-05,
+          0.003467813367024064,
+          -0.002875488717108965,
+          -0.4114932417869568
+        ]
+      },
+      {
+        "axis_angle_deg": 89.8142919545977,
+        "camera_signed_lumen_distance_m": 0.005084425793696427,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043059898260498046
+        },
+        "final_pose_xyzw": [
+          1.0591131448745728,
+          0.11501771956682205,
+          0.005128015764057636,
+          -0.43004053831100464,
+          -0.5598611831665039,
+          0.5892305970191956,
+          0.3929731845855713
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0591070652008057,
+          0.11491535604000092,
+          0.005058035254478455,
+          -0.4610150456428528,
+          -0.5349591970443726,
+          0.560088574886322,
+          0.4331105351448059
+        ],
+        "pose_id": "train-0806",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.00040630207513459027,
+          0.0014143140288069844,
+          0.00010004301293520257,
+          -0.0031584680546075106,
+          -0.0030187221709638834,
+          0.2764861285686493
+        ]
+      },
+      {
+        "axis_angle_deg": 83.53028320022729,
+        "camera_signed_lumen_distance_m": 0.005675928540129265,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306100839700699
+        },
+        "final_pose_xyzw": [
+          1.0506236553192139,
+          0.11632679402828217,
+          0.005579517688602209,
+          -0.7052028179168701,
+          0.24295681715011597,
+          -0.6651801466941833,
+          -0.03458825498819351
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0498145818710327,
+          0.11771124601364136,
+          0.005706158000975847,
+          -0.7310155630111694,
+          0.15986651182174683,
+          -0.6604837775230408,
+          0.061808183789253235
+        ],
+        "pose_id": "train-0817",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0015062279999256134,
+          0.0013626134023070335,
+          9.552253686706536e-06,
+          -0.15858986973762512,
+          -0.05591787025332451,
+          -0.6109607219696045
+        ]
+      },
+      {
+        "axis_angle_deg": 88.58131205767012,
+        "camera_signed_lumen_distance_m": 0.0056446636945052696,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043059898260498046
+        },
+        "final_pose_xyzw": [
+          1.0540755987167358,
+          0.11328014731407166,
+          0.005336444359272718,
+          0.5186015367507935,
+          -0.4676252007484436,
+          0.2300920933485031,
+          0.6778176426887512
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0531775951385498,
+          0.11383603513240814,
+          0.005337120965123177,
+          0.5489171743392944,
+          -0.43623611330986023,
+          0.297014445066452,
+          0.648205578327179
+        ],
+        "pose_id": "train-0921",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.003591628512367606,
+          -0.0012784043792635202,
+          -0.0004261076101101935,
+          -0.004368641879409552,
+          0.10393715649843216,
+          -0.4127563536167145
+        ]
+      },
+      {
+        "axis_angle_deg": 87.42486526228738,
+        "camera_signed_lumen_distance_m": 0.005511466490544024,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306124681558609
+        },
+        "final_pose_xyzw": [
+          1.060869574546814,
+          0.11077906936407089,
+          0.00502947298809886,
+          -0.6444082260131836,
+          0.32741841673851013,
+          0.3205606937408447,
+          0.6121896505355835
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0624107122421265,
+          0.10994312912225723,
+          0.005267861299216747,
+          -0.6001208424568176,
+          0.40034592151641846,
+          0.26053938269615173,
+          0.6416366100311279
+        ],
+        "pose_id": "train-0958",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.012334207072854042,
+          0.019445372745394707,
+          -0.012089896947145462,
+          -2.9193637371063232,
+          1.3263839483261108,
+          1.2710092067718506
+        ]
+      },
+      {
+        "axis_angle_deg": 80.5223511029889,
+        "camera_signed_lumen_distance_m": 0.0052788294697501134,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043060263338947295
+        },
+        "final_pose_xyzw": [
+          1.0476627349853516,
+          0.11527883261442184,
+          0.005948888137936592,
+          0.1089211255311966,
+          -0.6370280385017395,
+          -0.27441680431365967,
+          0.7120581269264221
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0447049140930176,
+          0.11833418905735016,
+          0.006594929378479719,
+          0.0013991035521030426,
+          -0.6376952528953552,
+          -0.3568899631500244,
+          0.6826217174530029
+        ],
+        "pose_id": "train-0961",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.00030537298880517483,
+          -0.0010322669986635447,
+          -0.00029946304857730865,
+          0.08425647020339966,
+          -0.0651095062494278,
+          0.6071742177009583
+        ]
+      },
+      {
+        "axis_angle_deg": 85.62777497287838,
+        "camera_signed_lumen_distance_m": 0.005491323497067432,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043060263338947295
+        },
+        "final_pose_xyzw": [
+          1.0559093952178955,
+          0.10981068015098572,
+          0.005290461704134941,
+          0.4552099108695984,
+          -0.504644513130188,
+          0.6026528477668762,
+          0.4182431995868683
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0575225353240967,
+          0.10995153337717056,
+          0.005191897042095661,
+          0.5321131348609924,
+          -0.4287484884262085,
+          0.6383886933326721,
+          0.35424625873565674
+        ],
+        "pose_id": "validation-0006",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0003656818880699575,
+          -0.0003172351571265608,
+          0.0005744621739722788,
+          0.11111251264810562,
+          0.24502606689929962,
+          -0.7379276752471924
+        ]
+      },
+      {
+        "axis_angle_deg": 85.56810247871603,
+        "camera_signed_lumen_distance_m": 0.005583826114865302,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306037509765625
+        },
+        "final_pose_xyzw": [
+          1.0513510704040527,
+          0.11219819635152817,
+          0.005505263805389404,
+          -0.4064704179763794,
+          -0.5441917777061462,
+          0.2253998965024948,
+          0.6984496116638184
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0520075559616089,
+          0.11343845725059509,
+          0.005487257149070501,
+          -0.4886913299560547,
+          -0.47345930337905884,
+          0.14267399907112122,
+          0.7187916040420532
+        ],
+        "pose_id": "validation-0011",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -4.3434924009488896e-05,
+          -0.0018229758134111762,
+          -8.402591629419476e-05,
+          0.042633406817913055,
+          0.024263743311166763,
+          0.6088451743125916
+        ]
+      },
+      {
+        "axis_angle_deg": 89.0823778716064,
+        "camera_signed_lumen_distance_m": 0.0053936426108763735,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305983865585327
+        },
+        "final_pose_xyzw": [
+          1.0551114082336426,
+          0.11812794208526611,
+          0.005310556851327419,
+          0.5353495478630066,
+          0.4705403745174408,
+          -0.6747415661811829,
+          0.19161513447761536
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0547981262207031,
+          0.11862330138683319,
+          0.00534176966175437,
+          0.517881453037262,
+          0.4970913827419281,
+          -0.6550745368003845,
+          0.23574671149253845
+        ],
+        "pose_id": "validation-0015",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0014155765529721975,
+          -0.0007747524650767446,
+          -0.0001422255445504561,
+          -0.0031413878314197063,
+          0.020059997215867043,
+          -0.19924432039260864
+        ]
+      },
+      {
+        "axis_angle_deg": 84.22805839873463,
+        "camera_signed_lumen_distance_m": 0.005144330400192262,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043061157408618926
+        },
+        "final_pose_xyzw": [
+          1.0627522468566895,
+          0.12042532116174698,
+          0.005533949006348848,
+          -0.4278317391872406,
+          0.5164062976837158,
+          0.6283712983131409,
+          0.3942512571811676
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.064110279083252,
+          0.12082453817129135,
+          0.005519868806004524,
+          -0.34747570753097534,
+          0.5738208293914795,
+          0.5892020463943481,
+          0.45036816596984863
+        ],
+        "pose_id": "validation-0017",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.004155333153903484,
+          -0.0007700460264459252,
+          -0.00043300981633365154,
+          0.015266225673258305,
+          -0.02386237122118473,
+          0.675361156463623
+        ]
+      },
+      {
+        "axis_angle_deg": 88.0150120300427,
+        "camera_signed_lumen_distance_m": 0.005356033288100349,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.0430612170132637
+        },
+        "final_pose_xyzw": [
+          1.0593721866607666,
+          0.10542197525501251,
+          0.005691591650247574,
+          0.10025760531425476,
+          0.687480628490448,
+          0.033651404082775116,
+          0.7184611558914185
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0593881607055664,
+          0.1066286712884903,
+          0.005556347779929638,
+          0.02102457731962204,
+          0.6999207139015198,
+          0.09170109778642654,
+          0.7079970836639404
+        ],
+        "pose_id": "validation-0019",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.00012822591816075146,
+          -0.000773516483604908,
+          0.0001376155996695161,
+          0.0071206181310117245,
+          -0.0491822250187397,
+          -0.5314414501190186
+        ]
+      },
+      {
+        "axis_angle_deg": 89.07196337257534,
+        "camera_signed_lumen_distance_m": 0.00520535820788747,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.0430614628824234
+        },
+        "final_pose_xyzw": [
+          1.0531121492385864,
+          0.11729070544242859,
+          0.005338291171938181,
+          -0.6823379993438721,
+          -0.16222365200519562,
+          -0.486804723739624,
+          0.5206912755966187
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0535255670547485,
+          0.11689724773168564,
+          0.005312354303896427,
+          -0.6909413933753967,
+          -0.13088750839233398,
+          -0.49861598014831543,
+          0.5068041682243347
+        ],
+        "pose_id": "validation-0035",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.000525413197465241,
+          0.00036422154516912997,
+          -1.0313852726540063e-05,
+          -0.0028861179016530514,
+          -0.003811489325016737,
+          0.18307077884674072
+        ]
+      },
+      {
+        "axis_angle_deg": 84.6092891315891,
+        "camera_signed_lumen_distance_m": 0.005459334574608433,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305983865585327
+        },
+        "final_pose_xyzw": [
+          1.0520907640457153,
+          0.11154100298881531,
+          0.005456143990159035,
+          0.3073217570781708,
+          0.598815381526947,
+          -0.7368943691253662,
+          -0.0629294291138649
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0521641969680786,
+          0.11159305274486542,
+          0.005400997586548328,
+          0.28782957792282104,
+          0.6082358360290527,
+          -0.7390750646591187,
+          -0.031169578433036804
+        ],
+        "pose_id": "validation-0040",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.00021340088278520852,
+          8.574062667321414e-05,
+          6.145938095869496e-05,
+          -0.020514845848083496,
+          0.007326061371713877,
+          -0.15558890998363495
+        ]
+      },
+      {
+        "axis_angle_deg": 89.02598690372842,
+        "camera_signed_lumen_distance_m": 0.005383088089531153,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306131387081146
+        },
+        "final_pose_xyzw": [
+          1.0595929622650146,
+          0.11487078666687012,
+          0.0050047109834849834,
+          -0.6905125975608826,
+          0.12121395766735077,
+          -0.687742292881012,
+          0.18844076991081238
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0593104362487793,
+          0.11563371121883392,
+          0.0050357733853161335,
+          -0.6978869438171387,
+          0.06326256692409515,
+          -0.6721743941307068,
+          0.2390260398387909
+        ],
+        "pose_id": "validation-0042",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.00014919690147507936,
+          0.0006908589857630432,
+          -0.00028021555044688284,
+          0.0047077517956495285,
+          -0.01745113730430603,
+          -0.3531716465950012
+        ]
+      },
+      {
+        "axis_angle_deg": 78.92466386698304,
+        "camera_signed_lumen_distance_m": 0.005326252026381178,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305979395236969
+        },
+        "final_pose_xyzw": [
+          1.0515010356903076,
+          0.10466215014457703,
+          0.006256123539060354,
+          -0.11762671917676926,
+          -0.6245912313461304,
+          0.5178420543670654,
+          0.5726162791252136
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0510985851287842,
+          0.10455498844385147,
+          0.006251379381865263,
+          -0.1364476978778839,
+          -0.6193692684173584,
+          0.505604088306427,
+          0.5849173069000244
+        ],
+        "pose_id": "validation-0045",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0006860213470645249,
+          -4.134580376558006e-05,
+          -0.00014251648099161685,
+          0.019494054839015007,
+          0.03302188962697983,
+          0.1256784200668335
+        ]
+      },
+      {
+        "axis_angle_deg": 69.32319361817282,
+        "camera_signed_lumen_distance_m": 0.004698949439783745,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043060010019207
+        },
+        "final_pose_xyzw": [
+          1.039991021156311,
+          0.11157118529081345,
+          0.008042721077799797,
+          0.45231473445892334,
+          -0.3447656035423279,
+          -0.6000847816467285,
+          0.5625356435775757
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0375982522964478,
+          0.1149764284491539,
+          0.008857936598360538,
+          0.36653006076812744,
+          -0.40778642892837524,
+          -0.6405234336853027,
+          0.5376763939857483
+        ],
+        "pose_id": "validation-0046",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.000820307235699147,
+          -0.0019767729099839926,
+          -0.0004302191373426467,
+          0.16243959963321686,
+          -0.03225943073630333,
+          0.42436647415161133
+        ]
+      },
+      {
+        "axis_angle_deg": 78.39986442866768,
+        "camera_signed_lumen_distance_m": 0.005129727258458399,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306009942617416
+        },
+        "final_pose_xyzw": [
+          1.0456024408340454,
+          0.1198129877448082,
+          0.006453949026763439,
+          -0.36959823966026306,
+          -0.512695848941803,
+          0.46420904994010925,
+          0.6205240488052368
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0446066856384277,
+          0.12197348475456238,
+          0.006845633499324322,
+          -0.4352925419807434,
+          -0.42850396037101746,
+          0.425516277551651,
+          0.6677130460739136
+        ],
+        "pose_id": "validation-0051",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.000823304639197886,
+          -0.0012299627996981144,
+          -8.04116134531796e-05,
+          0.10399647802114487,
+          -0.06176723167300224,
+          0.4713149070739746
+        ]
+      },
+      {
+        "axis_angle_deg": 88.23186495673704,
+        "camera_signed_lumen_distance_m": 0.005455840217117521,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043061328771972655
+        },
+        "final_pose_xyzw": [
+          1.061092734336853,
+          0.10799286514520645,
+          0.005466101225465536,
+          -0.571789562702179,
+          0.39702552556991577,
+          -0.5437374114990234,
+          0.46880388259887695
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0610514879226685,
+          0.10907947272062302,
+          0.005316762253642082,
+          -0.6113585829734802,
+          0.35105711221694946,
+          -0.5121630430221558,
+          0.49060043692588806
+        ],
+        "pose_id": "validation-0058",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0003494095872156322,
+          -0.0022381951566785574,
+          0.0002043091953964904,
+          0.018250560387969017,
+          -0.010280965827405453,
+          -0.41957059502601624
+        ]
+      },
+      {
+        "axis_angle_deg": 85.06563700084132,
+        "camera_signed_lumen_distance_m": 0.005250357504227708,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043060576263332366
+        },
+        "final_pose_xyzw": [
+          1.0569101572036743,
+          0.12316247075796127,
+          0.00558508513495326,
+          0.3829805254936218,
+          -0.557062566280365,
+          -0.6655596494674683,
+          0.31628721952438354
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0582817792892456,
+          0.12418811768293381,
+          0.005768085829913616,
+          0.26689767837524414,
+          -0.606620728969574,
+          -0.707605242729187,
+          0.24509552121162415
+        ],
+        "pose_id": "validation-0060",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -6.449619831983e-06,
+          -0.0014529289910569787,
+          0.0002996455878019333,
+          0.05184858292341232,
+          0.00441979942843318,
+          0.6277230978012085
+        ]
+      },
+      {
+        "axis_angle_deg": 86.65430652943328,
+        "camera_signed_lumen_distance_m": 0.003994791458951726,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306005472269058
+        },
+        "final_pose_xyzw": [
+          1.0623656511306763,
+          0.11405633389949799,
+          0.0051348586566746235,
+          -0.6572645306587219,
+          -0.31174251437187195,
+          0.6338167190551758,
+          0.2628616392612457
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.06340491771698,
+          0.11503375321626663,
+          0.005311638582497835,
+          -0.6908392310142517,
+          -0.2327897846698761,
+          0.600836455821991,
+          0.32794189453125
+        ],
+        "pose_id": "validation-0063",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.010602476075291634,
+          -0.00672715762630105,
+          0.004053783603012562,
+          -0.11897745728492737,
+          -0.04588247090578079,
+          0.5618534088134766
+        ]
+      },
+      {
+        "axis_angle_deg": 82.96993627341958,
+        "camera_signed_lumen_distance_m": 0.005333039207228084,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306012922849655
+        },
+        "final_pose_xyzw": [
+          1.0617656707763672,
+          0.10623104125261307,
+          0.0055790976621210575,
+          0.14700081944465637,
+          -0.6459068655967712,
+          0.7225217223167419,
+          0.1978822946548462
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0631024837493896,
+          0.10630695521831512,
+          0.005576636176556349,
+          0.23813533782958984,
+          -0.6173205971717834,
+          0.7379619479179382,
+          0.13273730874061584
+        ],
+        "pose_id": "validation-0067",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.002253125887364149,
+          -0.0006409488269127905,
+          -0.00015923997852951288,
+          0.01667916402220726,
+          -0.05771677568554878,
+          -0.5342661738395691
+        ]
+      },
+      {
+        "axis_angle_deg": 89.79198178325224,
+        "camera_signed_lumen_distance_m": 0.005553390558562052,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043059928062820434
+        },
+        "final_pose_xyzw": [
+          1.0533233880996704,
+          0.11602624505758286,
+          0.005358163267374039,
+          0.14899103343486786,
+          0.6925438642501831,
+          -0.6970013380050659,
+          -0.11123790591955185
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0526612997055054,
+          0.11625908315181732,
+          0.005336280912160873,
+          0.10474438220262527,
+          0.6989944577217102,
+          -0.7061461210250854,
+          -0.042345888912677765
+        ],
+        "pose_id": "validation-0068",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.003299814648926258,
+          -0.0016035967273637652,
+          4.088927380507812e-05,
+          0.04316665232181549,
+          0.04840667173266411,
+          -0.37750306725502014
+        ]
+      },
+      {
+        "axis_angle_deg": 84.10303319173019,
+        "camera_signed_lumen_distance_m": 0.0055643562978066165,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305998766746521
+        },
+        "final_pose_xyzw": [
+          1.0606932640075684,
+          0.10676560550928116,
+          0.005489134695380926,
+          0.499377965927124,
+          0.44637617468833923,
+          -0.6151519417762756,
+          0.4158822000026703
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0622014999389648,
+          0.10686337202787399,
+          0.0055635408498346806,
+          0.4321284592151642,
+          0.5041934251785278,
+          -0.5841969847679138,
+          0.46665605902671814
+        ],
+        "pose_id": "validation-0069",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0017159146955236793,
+          0.0002039229730144143,
+          -8.748273830860853e-05,
+          -0.018034476786851883,
+          -0.02722921408712864,
+          -0.3913881182670593
+        ]
+      },
+      {
+        "axis_angle_deg": 89.86959363006338,
+        "camera_signed_lumen_distance_m": 0.005354901756421072,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043059853557014464
+        },
+        "final_pose_xyzw": [
+          1.059470534324646,
+          0.11469374597072601,
+          0.005146822892129421,
+          -0.0944439098238945,
+          -0.6999588012695312,
+          0.651190996170044,
+          0.2776477634906769
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0587503910064697,
+          0.11511359363794327,
+          0.005115247797220945,
+          -0.06726759672164917,
+          -0.7014500498771667,
+          0.6706867218017578,
+          0.23156486451625824
+        ],
+        "pose_id": "validation-0092",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0016073305159807205,
+          -0.0008657552534714341,
+          4.964176696375944e-05,
+          0.02786657214164734,
+          -0.0002071963099297136,
+          -0.20867124199867249
+        ]
+      },
+      {
+        "axis_angle_deg": 82.96121825786541,
+        "camera_signed_lumen_distance_m": 0.005485151961197504,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306066567029953
+        },
+        "final_pose_xyzw": [
+          1.0516895055770874,
+          0.11937837302684784,
+          0.005609062500298023,
+          -0.12091990560293198,
+          0.7393571138381958,
+          -0.5750835537910461,
+          0.3286462128162384
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0505006313323975,
+          0.119761161506176,
+          0.005691520404070616,
+          -0.2056061029434204,
+          0.723068356513977,
+          -0.5031439065933228,
+          0.42631515860557556
+        ],
+        "pose_id": "validation-0095",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0029372209683060646,
+          0.001416509156115353,
+          -6.590042175957933e-05,
+          -0.05545510724186897,
+          0.005923643708229065,
+          -0.6061093211174011
+        ]
+      },
+      {
+        "axis_angle_deg": 88.02972182570247,
+        "camera_signed_lumen_distance_m": 0.005399881438480582,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306066567029953
+        },
+        "final_pose_xyzw": [
+          1.0576252937316895,
+          0.1172613874077797,
+          0.005160185042768717,
+          0.46185699105262756,
+          -0.5512518882751465,
+          0.694571852684021,
+          -0.019478248432278633
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.058603286743164,
+          0.11843739449977875,
+          0.005187373608350754,
+          0.5375022888183594,
+          -0.4727301597595215,
+          0.6916114091873169,
+          -0.09639094024896622
+        ],
+        "pose_id": "validation-0097",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0019130369182676077,
+          -0.0016875634901225567,
+          -5.950847844360396e-05,
+          0.020049631595611572,
+          0.010265598073601723,
+          -0.6770941019058228
+        ]
+      },
+      {
+        "axis_angle_deg": 85.42967260052666,
+        "camera_signed_lumen_distance_m": 0.005330389795678056,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306017393198013
+        },
+        "final_pose_xyzw": [
+          1.0537246465682983,
+          0.12001214921474457,
+          0.005457951221615076,
+          0.6449337005615234,
+          0.3519969582557678,
+          -0.32980847358703613,
+          0.5927773714065552
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0544273853302002,
+          0.12058498710393906,
+          0.005394708830863237,
+          0.6026535630226135,
+          0.42733585834503174,
+          -0.253824383020401,
+          0.6243125200271606
+        ],
+        "pose_id": "test-0008",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0001426703529432416,
+          -0.0012413716176524758,
+          -3.302735058241524e-05,
+          -0.03898685798048973,
+          0.04973788186907768,
+          -0.5250600576400757
+        ]
+      },
+      {
+        "axis_angle_deg": 84.55805509967594,
+        "camera_signed_lumen_distance_m": 0.003624780203892412,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043059950414562224
+        },
+        "final_pose_xyzw": [
+          1.0639363527297974,
+          0.11766492575407028,
+          0.005546387284994125,
+          -0.5516685247421265,
+          -0.4930318593978882,
+          0.5722665786743164,
+          0.35368406772613525
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0640883445739746,
+          0.11807170510292053,
+          0.005531519651412964,
+          -0.5909314751625061,
+          -0.44187062978744507,
+          0.5377907156944275,
+          0.4078375995159149
+        ],
+        "pose_id": "test-0010",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0006003779708407819,
+          0.0016413492849096656,
+          3.403692608117126e-05,
+          -0.026042386889457703,
+          -0.013111715205013752,
+          0.3902803659439087
+        ]
+      },
+      {
+        "axis_angle_deg": 75.43005603765381,
+        "camera_signed_lumen_distance_m": 0.005134949204478766,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306143308010101
+        },
+        "final_pose_xyzw": [
+          1.0659198760986328,
+          0.1277661919593811,
+          0.006927520968019962,
+          -0.5788028836250305,
+          0.19800586998462677,
+          -0.052861280739307404,
+          0.7892948985099792
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.066927433013916,
+          0.12733644247055054,
+          0.006906358990818262,
+          -0.5603412985801697,
+          0.25132325291633606,
+          -0.07335876673460007,
+          0.7857944369316101
+        ],
+        "pose_id": "test-0011",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0018477239646017551,
+          0.0003638896159827709,
+          0.0001592738408362493,
+          0.003729779040440917,
+          -0.11642372608184814,
+          0.29208406805992126
+        ]
+      },
+      {
+        "axis_angle_deg": 72.8586101668354,
+        "camera_signed_lumen_distance_m": 0.004945306590751687,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043061447981262206
+        },
+        "final_pose_xyzw": [
+          1.068707823753357,
+          0.12731459736824036,
+          0.007260529324412346,
+          -0.4587359130382538,
+          0.37708884477615356,
+          0.23233191668987274,
+          0.7703163027763367
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0696730613708496,
+          0.1269715577363968,
+          0.007394767366349697,
+          -0.4137808680534363,
+          0.4130823612213135,
+          0.211274191737175,
+          0.7832698822021484
+        ],
+        "pose_id": "test-0019",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0006966614164412022,
+          -0.001376778120175004,
+          0.0007849701214581728,
+          -0.05444885790348053,
+          -0.07790694385766983,
+          0.3211964964866638
+        ]
+      },
+      {
+        "axis_angle_deg": 89.55892706796189,
+        "camera_signed_lumen_distance_m": 0.005417695031977511,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305988335933685
+        },
+        "final_pose_xyzw": [
+          1.059059500694275,
+          0.11563772708177567,
+          0.005125589668750763,
+          -0.2512509226799011,
+          -0.6638689637184143,
+          0.7016667127609253,
+          0.06176368519663811
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0584051609039307,
+          0.1163111999630928,
+          0.00510496087372303,
+          -0.21608129143714905,
+          -0.6797444224357605,
+          0.7008945345878601,
+          0.0018382146954536438
+        ],
+        "pose_id": "test-0022",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -5.013499321648851e-05,
+          -0.000320221995934844,
+          1.9466142475721426e-05,
+          0.0008716402226127684,
+          0.0038801836781203747,
+          -0.24037504196166992
+        ]
+      },
+      {
+        "axis_angle_deg": 82.1741918027599,
+        "camera_signed_lumen_distance_m": 0.0053451996888544615,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306015903081894
+        },
+        "final_pose_xyzw": [
+          1.051223635673523,
+          0.10586473345756531,
+          0.006097573786973953,
+          0.09977643191814423,
+          -0.6495873928070068,
+          0.7476590871810913,
+          0.09532494843006134
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0530576705932617,
+          0.10575240105390549,
+          0.00588578637689352,
+          0.20916485786437988,
+          -0.6373581886291504,
+          0.7409120798110962,
+          0.03277336806058884
+        ],
+        "pose_id": "test-0037",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.003096963744610548,
+          0.0003278347721789032,
+          -0.0002595419355202466,
+          -0.010829431004822254,
+          -0.16747353971004486,
+          -0.5632278919219971
+        ]
+      },
+      {
+        "axis_angle_deg": 84.35984933569168,
+        "camera_signed_lumen_distance_m": 0.004144659972111186,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043060024920368194
+        },
+        "final_pose_xyzw": [
+          1.065389633178711,
+          0.11091269552707672,
+          0.0056047262623906136,
+          -0.5978571772575378,
+          -0.4378435015678406,
+          0.5744533538818359,
+          0.3476538360118866
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0652616024017334,
+          0.1089496836066246,
+          0.00568425701931119,
+          -0.6353080868721008,
+          -0.3950396478176117,
+          0.4892873764038086,
+          0.44824686646461487
+        ],
+        "pose_id": "test-0053",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0003115432627964765,
+          0.004090732429176569,
+          -3.942860712413676e-05,
+          -0.0377313569188118,
+          0.0013374141417443752,
+          0.4612125754356384
+        ]
+      },
+      {
+        "axis_angle_deg": 86.16150733441489,
+        "camera_signed_lumen_distance_m": 0.005143491665665635,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043060531559848784
+        },
+        "final_pose_xyzw": [
+          1.0581082105636597,
+          0.12191369384527206,
+          0.005456073209643364,
+          -0.3529573380947113,
+          -0.5847640633583069,
+          0.04338235780596733,
+          0.7291022539138794
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0589855909347534,
+          0.1230744794011116,
+          0.005564824212342501,
+          -0.4337369203567505,
+          -0.5146978497505188,
+          -0.03994688019156456,
+          0.7384868264198303
+        ],
+        "pose_id": "test-0057",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0009490639786235988,
+          -0.001498097786679864,
+          0.00013856783334631473,
+          0.03304709866642952,
+          0.005692599341273308,
+          0.6579431891441345
+        ]
+      },
+      {
+        "axis_angle_deg": 89.38459001354715,
+        "camera_signed_lumen_distance_m": 0.005377238900734664,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305979395236969
+        },
+        "final_pose_xyzw": [
+          1.0585297346115112,
+          0.115357905626297,
+          0.0051835328340530396,
+          -0.2274962216615677,
+          -0.665488600730896,
+          0.6488215923309326,
+          0.29051828384399414
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0584967136383057,
+          0.11539027094841003,
+          0.005165758542716503,
+          -0.22012531757354736,
+          -0.6679868102073669,
+          0.6500517129898071,
+          0.28770026564598083
+        ],
+        "pose_id": "test-0058",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.00026393966982141137,
+          -0.00016748996858950704,
+          2.114655580953695e-05,
+          -0.025839874520897865,
+          -0.033124763518571854,
+          -0.005853284150362015
+        ]
+      },
+      {
+        "axis_angle_deg": 83.51103866320283,
+        "camera_signed_lumen_distance_m": 0.005243014693130444,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306114250745773
+        },
+        "final_pose_xyzw": [
+          1.065146803855896,
+          0.11535956710577011,
+          0.0055080135352909565,
+          0.6641939878463745,
+          0.04837803170084953,
+          0.716255247592926,
+          0.20852887630462646
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0654520988464355,
+          0.11695965379476547,
+          0.0056954482570290565,
+          0.6367296576499939,
+          0.1437118500471115,
+          0.7410264611244202,
+          0.15748727321624756
+        ],
+        "pose_id": "test-0064",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.00042772290180437267,
+          -0.0016192010371014476,
+          -9.508732182439417e-05,
+          0.12407989799976349,
+          0.023171160370111465,
+          -0.5688481330871582
+        ]
+      },
+      {
+        "axis_angle_deg": 78.29049537756507,
+        "camera_signed_lumen_distance_m": 0.005302992004045136,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306109780397415
+        },
+        "final_pose_xyzw": [
+          1.060640573501587,
+          0.12832078337669373,
+          0.006543753668665886,
+          -0.591371476650238,
+          -0.22091828286647797,
+          -0.11297600716352463,
+          0.7672752141952515
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0632456541061401,
+          0.12851254642009735,
+          0.006678970530629158,
+          -0.6174416542053223,
+          -0.09164460748434067,
+          -0.15858577191829681,
+          0.7649952173233032
+        ],
+        "pose_id": "test-0068",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0028203323017805815,
+          -0.0011213715188205242,
+          -0.00011934361100429669,
+          0.0863271951675415,
+          -0.13289442658424377,
+          0.6122308373451233
+        ]
+      },
+      {
+        "axis_angle_deg": 88.28686104309205,
+        "camera_signed_lumen_distance_m": 0.0053332289779691715,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306071037378311
+        },
+        "final_pose_xyzw": [
+          1.059187889099121,
+          0.1182231605052948,
+          0.0052254823967814445,
+          -0.4530942142009735,
+          0.5564649701118469,
+          -0.6912654042243958,
+          0.08487824350595474
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0598043203353882,
+          0.11886943876743317,
+          0.005208434537053108,
+          -0.5266350507736206,
+          0.48385369777679443,
+          -0.6775332689285278,
+          0.17172646522521973
+        ],
+        "pose_id": "test-0071",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0004418371827341616,
+          -0.0007004152867011726,
+          -7.347975042648613e-05,
+          0.01977677270770073,
+          0.04290519654750824,
+          -0.660956084728241
+        ]
+      },
+      {
+        "axis_angle_deg": 89.85749545791755,
+        "camera_signed_lumen_distance_m": 0.005322681052403769,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305986845817566
+        },
+        "final_pose_xyzw": [
+          1.0604621171951294,
+          0.1086539477109909,
+          0.005294131580740213,
+          0.5180614590644836,
+          -0.4799673557281494,
+          -0.30638402700424194,
+          0.6382572650909424
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0604063272476196,
+          0.10929682850837708,
+          0.0053139361552894115,
+          0.4840361475944519,
+          -0.5090684294700623,
+          -0.34134528040885925,
+          0.6245333552360535
+        ],
+        "pose_id": "test-0072",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.00020913445041514933,
+          -0.0002148331404896453,
+          -6.330501037155045e-06,
+          -0.00048417659127153456,
+          -0.008562535978853703,
+          0.22072945535182953
+        ]
+      },
+      {
+        "axis_angle_deg": 85.7774889089955,
+        "camera_signed_lumen_distance_m": 0.005293045341385529,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306034529533386
+        },
+        "final_pose_xyzw": [
+          1.0566792488098145,
+          0.1239212155342102,
+          0.005800697952508926,
+          0.4925575852394104,
+          -0.4696509540081024,
+          -0.6510803699493408,
+          0.336019903421402
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0583553314208984,
+          0.12629763782024384,
+          0.006152750458568335,
+          0.36542776226997375,
+          -0.5462723970413208,
+          -0.6974732875823975,
+          0.285622239112854
+        ],
+        "pose_id": "test-0078",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.00049201789079234,
+          -0.0024756628554314375,
+          -1.0589930752757937e-05,
+          0.026822155341506004,
+          -0.009223287925124168,
+          0.5875362753868103
+        ]
+      },
+      {
+        "axis_angle_deg": 83.85508908242618,
+        "camera_signed_lumen_distance_m": 0.005677280261891905,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.0430614628824234
+        },
+        "final_pose_xyzw": [
+          1.0560470819473267,
+          0.12400397658348083,
+          0.005774492397904396,
+          -0.584312915802002,
+          0.3241245150566101,
+          -0.005585869774222374,
+          0.7439694404602051
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.05616295337677,
+          0.12389828264713287,
+          0.005779035855084658,
+          -0.5771187543869019,
+          0.3362412452697754,
+          -0.0364345982670784,
+          0.743336021900177
+        ],
+        "pose_id": "test-0080",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.0004079226346220821,
+          0.0003086311917286366,
+          2.7409271297074156e-06,
+          0.025915054604411125,
+          0.026674266904592514,
+          0.1881100833415985
+        ]
+      },
+      {
+        "axis_angle_deg": 87.73565098977167,
+        "camera_signed_lumen_distance_m": 0.004940159176293453,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305983865585327
+        },
+        "final_pose_xyzw": [
+          1.0618336200714111,
+          0.10993237793445587,
+          0.005361613351851702,
+          -0.05571801960468292,
+          -0.7187840342521667,
+          0.32760828733444214,
+          0.6106699109077454
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0624293088912964,
+          0.10952534526586533,
+          0.005368868354707956,
+          -0.0879426822066307,
+          -0.7197918891906738,
+          0.2755391299724579,
+          0.631065845489502
+        ],
+        "pose_id": "test-0084",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          -0.001077705412171781,
+          0.0015407248865813017,
+          -0.00015744254051242024,
+          -0.023921458050608635,
+          0.015301506035029888,
+          0.21392300724983215
+        ]
+      },
+      {
+        "axis_angle_deg": 87.2455260335152,
+        "camera_signed_lumen_distance_m": 0.005422540392944961,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.043060188833141326
+        },
+        "final_pose_xyzw": [
+          1.0565372705459595,
+          0.11763191968202591,
+          0.005181377287954092,
+          0.3693762421607971,
+          0.6225666403770447,
+          -0.5878991484642029,
+          0.3610353171825409
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0575306415557861,
+          0.11822954565286636,
+          0.0052323127165436745,
+          0.28136125206947327,
+          0.66456139087677,
+          -0.5433099269866943,
+          0.42896217107772827
+        ],
+        "pose_id": "test-0087",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0019069351255893707,
+          -0.0005314427544362843,
+          -9.346958540845662e-05,
+          0.001288583385758102,
+          0.02220388688147068,
+          -0.5516020655632019
+        ]
+      },
+      {
+        "axis_angle_deg": 85.44968673926105,
+        "camera_signed_lumen_distance_m": 0.005739505184171186,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306066567029953
+        },
+        "final_pose_xyzw": [
+          1.0627983808517456,
+          0.11136652529239655,
+          0.00530724273994565,
+          0.10459548234939575,
+          -0.7271361947059631,
+          -0.49708929657936096,
+          0.46177375316619873
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0615373849868774,
+          0.11009340733289719,
+          0.005316158756613731,
+          0.03330369293689728,
+          -0.7351295948028564,
+          -0.5821143984794617,
+          0.3458588719367981
+        ],
+        "pose_id": "test-0093",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0006594894803129137,
+          0.0026371232233941555,
+          0.00019922385399695486,
+          -0.02078462950885296,
+          0.04316543787717819,
+          0.6325748562812805
+        ]
+      },
+      {
+        "axis_angle_deg": 86.83140457258202,
+        "camera_signed_lumen_distance_m": 0.005335064985429866,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04306138837661743
+        },
+        "final_pose_xyzw": [
+          1.0542309284210205,
+          0.11373519897460938,
+          0.0052917408756911755,
+          -0.5355393886566162,
+          0.4907490313053131,
+          -0.40108734369277954,
+          0.5581144690513611
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0538582801818848,
+          0.11392571032047272,
+          0.005221989005804062,
+          -0.5654487609863281,
+          0.464764267206192,
+          -0.36022335290908813,
+          0.5783606767654419
+        ],
+        "pose_id": "test-0094",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0005106935859657824,
+          -0.0008487104205414653,
+          4.0983857616083696e-05,
+          -0.015020917169749737,
+          -0.03779076784849167,
+          -0.343370258808136
+        ]
+      },
+      {
+        "axis_angle_deg": 88.27926529362446,
+        "camera_signed_lumen_distance_m": 0.005285234309246521,
+        "clearance": {
+          "required_m": 0.005,
+          "self_m": 0.018573003824506017,
+          "world_m": 0.04305982375469208
+        },
+        "final_pose_xyzw": [
+          1.059022307395935,
+          0.11803051084280014,
+          0.005204437766224146,
+          0.7176145315170288,
+          0.006585768889635801,
+          -0.4104691743850708,
+          0.5625842809677124
+        ],
+        "finite": true,
+        "full_env_and_magnetic_filter_reset": true,
+        "hold_steps": 240,
+        "initial_pose_xyzw": [
+          1.0583866834640503,
+          0.11846033483743668,
+          0.005186102353036404,
+          0.7168008685112,
+          0.027130618691444397,
+          -0.374876469373703,
+          0.5873059630393982
+        ],
+        "pose_id": "test-0098",
+        "rgb_device": "cuda:0",
+        "terminated": false,
+        "truncated": false,
+        "velocity_world": [
+          0.0009122337796725333,
+          -0.0008070017211139202,
+          6.792831845814362e-05,
+          -0.008157283067703247,
+          -0.007372325286269188,
+          -0.11685819923877716
+        ]
+      }
+    ],
+    "status": "pass"
+  },
+  "status": "pass",
+  "usd_dependencies": {
+    "layer_count": 19,
+    "unresolved": []
+  }
+}

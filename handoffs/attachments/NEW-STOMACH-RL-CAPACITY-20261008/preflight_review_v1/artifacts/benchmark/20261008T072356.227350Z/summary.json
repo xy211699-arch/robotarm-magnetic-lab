@@ -1,0 +1,36 @@
+{
+  "status": "blocked",
+  "gate": 5,
+  "max_verified_num_envs": 0,
+  "workers": [
+    {
+      "num_envs": 1,
+      "process_exit": 0,
+      "summary": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T072356.227350Z/envs_1/summary.json",
+      "status": "fail",
+      "command": [
+        "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/run_isaaclab.sh",
+        "-p",
+        "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/scripts/new_stomach_rl/benchmark_preflight.py",
+        "--level",
+        "1",
+        "--device",
+        "cuda:0",
+        "--viz",
+        "none",
+        "--output_directory",
+        "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/benchmark/20261008T072356.227350Z/envs_1",
+        "--pose_manifest",
+        "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json",
+        "--mask",
+        "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz"
+      ]
+    }
+  ],
+  "not_run": [
+    2,
+    4,
+    8,
+    12
+  ]
+}

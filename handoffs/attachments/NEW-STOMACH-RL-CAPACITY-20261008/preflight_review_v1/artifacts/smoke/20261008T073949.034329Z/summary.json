@@ -1,0 +1,207 @@
+{
+  "actor_allowed_inputs": [
+    "frozen RGB 512D (or zeros)",
+    "last actually issued quarter-second commands 36D"
+  ],
+  "assets": {
+    "asset": {
+      "bytes": 1375,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/assets/stomach/new_stomach_v1/new_stomach_physics.usda",
+      "sha256": "d24885ab1cf9182d8f13993e5d69d57b6a9a6b39027541f656191309be262954"
+    },
+    "external_dependencies": [
+      {
+        "bytes": 3687,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/config.py",
+        "sha256": "5d32740c62a75e06b7b876ed16f0043378ad45b72317b1f99637466b7f71ee07"
+      },
+      {
+        "bytes": 3808,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/field_models.py",
+        "sha256": "be2f4d4af8db2e3a04552add61cbbc84d89e2348c08864a0c9cc3e6283265965"
+      },
+      {
+        "bytes": 3068,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/magnetics/streamlines.py",
+        "sha256": "a0a1c04e0250dd1eb9a2079475b655dd72081b53f9da0c0b8cf43802d42bb27c"
+      },
+      {
+        "bytes": 2483,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/robotarm/magnetic_sim/visualization/magnetic_field.py",
+        "sha256": "c8c5f502b4d1d4a6d25fa11fcb4e1e3e4b6a86eb9845a38c34682ea082c57069"
+      },
+      {
+        "bytes": 4991,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/config/default.json",
+        "sha256": "326e770eb03ab6eaae130a1d6787e472cc8d7b78ec28c4f6085eb90eaa2fd817"
+      },
+      {
+        "bytes": 116003,
+        "path": "/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/data/planning/robot.xrdf",
+        "sha256": "5293e63d4112c67f479bdfa88ad8cb520c864c69939f0683a8dea5ca08146f40"
+      },
+      {
+        "bytes": 8828,
+        "path": "/home/multirobo/Desktop/robotarm/urdf/robotarm.urdf",
+        "sha256": "1d6e12d461207e65ac30b4ddfcbc2d136f5cbeb9f7ac0f9e9c9852511133a613"
+      }
+    ],
+    "mask": {
+      "excluded_faces": 176109,
+      "file": {
+        "bytes": 1183699,
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz",
+        "sha256": "7261eeec9deeefcd960bb245aae0f495a459f9e3a221abd460017783fdd4d58c"
+      },
+      "offline_mesh_sha": "15f1b86c7f993889ce4ba1b1616ff0b0e079355e95580ac3737f3989255eb538",
+      "runtime_mask_equivalence": "not_run",
+      "runtime_mesh_sha_required": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "summary": {
+        "bytes": 3080,
+        "path": "/mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_summary.json",
+        "sha256": "908aa88bbc44d1cc972bf497279ee0da9031b12305d259564ad612f7f010e45a"
+      },
+      "target_area_m2": 0.04020530122973115,
+      "target_faces": 252920,
+      "total_faces": 429029
+    },
+    "orientation": {
+      "bytes": 1457,
+      "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/configs/new_stomach_v1/orientation_v1.json",
+      "sha256": "8fb79781a11e61babd816414c682866924ab673ebcabf8c6b02de47debdef909"
+    },
+    "poses": {
+      "data": {
+        "bytes": 1935393,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/artifacts/new_stomach_entry_pose_library/20261008_051344_557873Z/pose_library_v1.jsonl",
+        "sha256": "aa9a67f863949b4c9ce20d6d2c75d4ff5cfac5c0765697df9841949c959e6c29"
+      },
+      "live_gpu_reload": "not_run",
+      "manifest": {
+        "bytes": 51627,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json",
+        "sha256": "09bc34bdbeb8b174a4329497c42058737d59bdbc6a85b1603e6537196bea75a2"
+      },
+      "split_counts": {
+        "test": 100,
+        "train": 1000,
+        "validation": 100
+      },
+      "stomach_geometry_sha256": "c4028caa5da750d769a6c5e39709bd7caac975339f35eac5d36fc0e48036c72e",
+      "stored_candidate_stability": "pass",
+      "unique_poses": 1200
+    },
+    "release_semantics": {
+      "action_source": {
+        "bytes": 14017,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/actuator_vector_action.py",
+        "sha256": "0352f9f1573a6d892bca895919fca92e01e1ebcdc38f4c7eb5fefd3d0a543e76"
+      },
+      "committed_ticks": 240,
+      "preview_seconds": 4,
+      "required_clearance_m": 0.005,
+      "single_env_guard": true,
+      "source": {
+        "bytes": 5192,
+        "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/controllers/actuator_vector.py",
+        "sha256": "44e6f09137a857a5fa56008e86983ed375a9355532ca50c43136ff90cffb855b"
+      }
+    },
+    "robot_stage": {
+      "bytes": 166278,
+      "path": "/home/multirobo/Desktop/sim of FF/Stage.usd",
+      "sha256": "0d5afec84d42989a7910899b4ef78369c454e34185c89052ab25b33fac4a6671"
+    }
+  },
+  "checkpoint": {
+    "bytes": 8253205,
+    "path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/artifacts/new_stomach_rl/smoke/20261008T073949.034329Z/update_0002.pt",
+    "sha256": "87be7395c868f90b502079790a3dfb72c0877489f20398b69739a09407b8b414"
+  },
+  "checkpoint_exact_output": true,
+  "command": [
+    "scripts/new_stomach_rl/train_smoke.py",
+    "--group",
+    "D",
+    "--updates",
+    "2",
+    "--num_envs",
+    "1",
+    "--rollout_steps",
+    "8",
+    "--device",
+    "cuda:0",
+    "--viz",
+    "none",
+    "--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false",
+    "--/UJITSO/enabled=false",
+    "--/UJITSO/geometry=false"
+  ],
+  "coverage_hz": 10,
+  "critic_privileged_inputs": [
+    "capsule pose 7",
+    "velocity 6",
+    "joint positions 9",
+    "recovery phase 4",
+    "C10/C1 2"
+  ],
+  "device": "cuda:0",
+  "gae_lambda_provisional": 0.95,
+  "gamma_per_second": 0.9900448802097482,
+  "gate": 4,
+  "group": "D",
+  "initial_critic_phase": [
+    [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "new_c0": [
+    0.11854450205701249
+  ],
+  "observation_shapes": {
+    "critic": [
+      1,
+      28
+    ],
+    "policy": [
+      1,
+      548
+    ]
+  },
+  "physics_hz": 240,
+  "policy_hz": 1,
+  "pose_id": "train-0003",
+  "previous_c10": [
+    0.2645232396741559
+  ],
+  "reset_history_zero": true,
+  "restored_step_rgb_frame": 2,
+  "status": "pass",
+  "task_id": "Template-Robotarm-Magnetic-New-Stomach-RL-Preflight-v0",
+  "updates": [
+    {
+      "entropy_per_dimension": 0.2604021430015564,
+      "gradient_norm": 10.51472282409668,
+      "kl_per_dimension": 0.005096071865409613,
+      "policy_loss": -0.17867513000965118,
+      "reward_mean": 1.7455329895019531,
+      "update": 1,
+      "value_loss": 46.820194244384766,
+      "wall_s": 27.35241573298117
+    },
+    {
+      "entropy_per_dimension": 0.2929256856441498,
+      "gradient_norm": 11.986130714416504,
+      "kl_per_dimension": 0.0021630055271089077,
+      "policy_loss": -0.11072683334350586,
+      "reward_mean": 0.07756537199020386,
+      "update": 2,
+      "value_loss": 0.041395194828510284,
+      "wall_s": 27.228365017974284
+    }
+  ],
+  "visual_forward_count": 19
+}
