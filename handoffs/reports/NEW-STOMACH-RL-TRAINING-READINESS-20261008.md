@@ -1,5 +1,32 @@
 # 新胃8环境训练就绪：R0 / R1 / R2工程记录
 
+## 再次10分钟短测（2026-10-10）
+
+上轮`20261009T182636.386974Z`终态interrupted，墙钟578.604792秒（600秒预算内预留退出宽限），停止原因requested short-test duration reached，worker退出0。仍startup、update=0、effective_samples=0，边界日志为空，没有summary或checkpoint；这不是训练成功，也不证明采样/更新/恢复正确。日志未见Python异常栈，但不能据此断言初始化正常完成。
+
+上轮不可变证据的绝对目录：`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/training_readiness/jobs/20261009T182636.386974Z/`。
+
+- `status.json`：1081字节，SHA-256 `61ca2774a995b1e0229423901b2010d5ad10612551bddcadc8129fa9a7a11644`。
+- `worker.log`：20475字节，SHA-256 `f554b43f1ff09674e5ec24398168340d14e338e80dc8299377d1f8bd6aa3d971`。
+- `boundaries.jsonl`：0字节，SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。
+
+本轮用户明确要求再启动一次10分钟有限R2验收，非自动重试。确认旧PID1644122/1644123均不在、RTX5090占用587MiB后，复用旧冻结配置执行：
+
+```bash
+cd /mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008
+export ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor
+./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_training.py start \
+  --config artifacts/new_stomach_rl_capacity/training_readiness/jobs/20261009T182636.386974Z/frozen_config.json
+```
+
+启动退出0；新任务`20261009T184245.644760Z`、监督PID1660268/worker1660269，10.51秒查询running/startup。新工件绝对目录`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/training_readiness/jobs/20261009T184245.644760Z/`。仍按总600秒含初始化/退出，到时interrupted，非完整R2通过；新最终证据尚未产生。实现HEAD仍`f813fe1afd538ce9fdd4eab90aa796c2e43bfa85`，未改实现/参数或推送，旧数据保留。
+
+## 最新修正及一次短测（2026-10-10）
+
+用户指出R2默认两小时限制未获授权，已删除该默认限制及7200秒拒绝门槛；旧预算描述仅保留为历史，不再适用。仅本次用户明确要求的10分钟短测使用`--wall_seconds 600 --time_limited_probe`，含初始化/退出，到时interrupted，不作为完整R2完成；没有替后续实验新增默认时限。
+
+本地实现HEAD `f813fe1afd538ce9fdd4eab90aa796c2e43bfa85`；监督/配置专项22项CPU回归通过（1.15秒，退出0）。已按用户授权启动一次D组8环境后台短测，run_id `20261009T182636.386974Z`，监督PID1644122/worker1644123；启动8秒状态running/startup，尚无有效样本。绝对工件目录`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/training_readiness/jobs/20261009T182636.386974Z`，最终日志仍在写入，暂不记录最终大小/哈希或称pass。仅启动此进程，不自动重试/切组，不推送；旧物理/模型/控制/覆盖参数不改。
+
 ## 2026-10-10续执行：R2入口交付
 
 最新状态 `needs_input`：R0/R1及R2工程CPU验证通过，真实A/B/C/D GPU验收全部not_run。不是正式训练就绪或研究实验完成。本轮没有启动Kit、GPU验收或训练，仅生成并检查有限配置；运行日志已更新。
@@ -126,3 +153,20 @@ env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u PYTHONHOME -u PYTHONPATH \
 ## 后续未完成
 
 R1：实现回合边界/weights-only区分、所有RNG/位姿库/身份哈希与优化器恢复，并交付假worker覆盖故障/用户停止的只读监督器。R2：真实8环境collector获取TIMEOUT旧终点值、保存逐10Hz/1Hz证据、跨120秒回合及GRU有效掩码，并进行A/B/C/D各三次64边界更新/边界checkpoint恢复的有限验收，由用户人工启动。正式开发种子预算及超参数合同仍需单独冻结；不提供将旧单环境train_smoke的guard改为8的绕过命令。
+# 最新补充：用户批准完整训练入口（2026-10-10）
+
+状态：入口工程已完成，整体真实 GPU 验收仍为 partial。用户批准预算扩展为 A/B/C/D 各 1000 更新、8 环境、64 步 rollout、每 50 更新保存；无墙钟上限。此授权只替代旧 R2 预算，不将未通过的 GPU R2 或正式多种子评测写成通过。两次用户指定的 600 秒短测均在初始化结束、0 更新，不能提供真实 PPO 吞吐或稳定性证据。
+
+实施前 HEAD：f813fe1afd538ce9fdd4eab90aa796c2e43bfa85。实现提交：4387a1994535f7a8395afa2531925242ff31970d。本报告文档提交后的最终远端 HEAD 在终端交付信息单独给出。
+
+修改：scripts/new_stomach_rl/prepare_r2.py、supervise_training.py、train.py、tests/new_stomach_rl/test_full_training_entry.py；新增完整模式和人工 resume，保留有限 R2 模式，不改旧模型/物理/奖励/PPO/资产。操作命令见 docs/NEW_STOMACH_RL_R2_GUIDE.md 首节。完整模式四组各 seed=1008，不宣称多种子统计。每 50 更新 reset 全环境并清 GRU 后保存边界检查点，恢复创建新任务/新物理回合，继续至总计 1000；部分轨迹不是连续恢复。
+
+自动测试命令：
+
+```bash
+env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u PYTHONHOME -u PYTHONPATH WARP_CACHE_PATH=/tmp/new-stomach-scope-warp-cache PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH="$PWD/source/robotarm_magnetic_lab" /mnt/isaac-linux/IsaacLab/_isaac_sim/python.sh -m pytest tests/new_stomach_rl tests/stomach_migration tests/magnetic_following tests/stomach_coverage/test_task010_recovery.py -q --disable-warnings
+```
+
+结果：297 passed，65 warnings，12.79 秒，退出 0；git diff --check 通过。CPU 伪 worker 检查 1000 更新与 20 个检查点；模拟恢复检查复制/哈希、父任务不变与剩余更新入口，不启动 Isaac Lab/GPU。TensorBoard SDK 导入与 --help 已通过，未启动服务器。
+
+测试日志：/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/training_readiness/full_entry/regression_final.log；434 字节；SHA-256 0c237188497f579954cda81e685497e1f8a9fe226bb61727a0d3c93c93be6ad5。实验工件不入 Git。本轮没有启动四组完整训练、验证或新增 GPU 任务；完整 GPU 恢复/学习/性能均待运行，固定两条诊断回放不等于正式位姿库评测。

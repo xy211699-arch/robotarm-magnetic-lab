@@ -81,3 +81,37 @@ artifacts/new_stomach_rl_capacity/training_readiness/jobs/<UTC运行ID>/
 ```
 
 `jobs/latest`仅为最近任务指针。原始日志/张量/checkpoint都留在当前项目artifacts，不入Git。请把实际run_dir及最终summary提供给执行端，随后才能判断R2是否通过；这一步没有训练VLM或正式研究种子。
+# 用户批准的完整训练入口（2026-10-10）
+
+本节取代下文仅限 R2 三次更新的启动预算。用户已批准四组分别运行 1000 次更新、8 环境、64 步 rollout、每 50 次更新保存；无默认墙钟截止时间。A=SingleBlind，B=SingleVisual，C=ChunkBlind，D=ChunkVisual。原模型、奖励、PPO 两轮更新及 seed=1008 不变；这是各组一个种子的开发运行，不是正式多种子结论。CPU 回归通过不代表 GPU 长训练已验收。
+
+配置用 prepare_r2.py 的 --full_training 生成，存放在 artifacts/new_stomach_rl_capacity/training_readiness/configs/full_training_20261010。该步骤绑定干净代码 HEAD 与实际资产哈希，不启动 Isaac Lab。准备后不要更换 HEAD；如代码改动，重新生成配置到新目录。
+
+```bash
+cd /mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008
+export ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor
+./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_training.py start --config artifacts/new_stomach_rl_capacity/training_readiness/configs/full_training_20261010/A.json
+```
+
+B、C、D 分别替换最后的 A.json；每次只启动一组，上一组 completed 后再启动下一组。后台启动立即返回；没有自动四组串行、重试或故障跳过。查询与停止：
+
+```bash
+./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_training.py status
+./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_training.py stop
+```
+
+人工续训只接受已完成的 training_boundary 检查点，创建新任务并保留父任务，继续到总更新 1000（不是再加 1000）：
+
+```bash
+./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_training.py resume --run_dir /绝对路径/原运行目录
+```
+
+每 50 次更新显式全环境 reset 并清 GRU，随后保存 update_0050.pt 至 update_1000.pt，共 20 个边界检查点。因此检查点会截断尚未结束的回合；恢复也从新物理回合开始，不续接原 PhysX 轨迹。两次保存之间的未保存更新可能丢失。异常参数快照 weights_only 不可用于严格续训。完整模式没有 R2 的第 5 边界人工 reset 或第 3 更新回载。
+
+每组最多采集 512000 行样本，WARMUP 不计有效样本，实际数量在日志中记录。保留逐 10 Hz 边界覆盖/位姿/执行历史、1 Hz RGB 哈希、每次 rollout 张量、检查点与摘要；不默认保存所有原始视频。训练后的固定 train/validation 各 120 秒回放是诊断，不等于正式 20 位姿评测。
+
+```bash
+./run_isaaclab.sh -p -m tensorboard.main --logdir artifacts/new_stomach_rl_capacity/training_readiness/jobs --port 6006
+```
+
+服务器桌面浏览器访问 http://localhost:6006。观察 train 下的损失/梯度/有效样本及 episode/c0_mean、episode/c120_mean；c120 只来自自然 TIMEOUT，不由检查点截断伪造。工件保存在 jobs/<运行ID>，可能占用较大磁盘空间，不自动删除。旧 D/N8 容量吞吐约 0.449 样本/秒，粗外推单组采样约 13 天；并非真实 PPO 完整训练耗时测量，其他组未测，不能承诺很快完成。
