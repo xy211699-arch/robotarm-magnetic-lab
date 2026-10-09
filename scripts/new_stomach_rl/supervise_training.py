@@ -69,7 +69,10 @@ def monitor(command,folder,config,poll=.5):
             while child.poll() is None:
                 if (folder/'stop.request').exists():
                     state.update(status='interrupted',stop_reason='user requested stop');break
-                if time.monotonic()-started>=config['max_wall_seconds']-config['stop_grace_seconds']-2:
+                budget=config.get('max_wall_seconds')
+                if budget is not None and time.monotonic()-started>=budget-config['stop_grace_seconds']-2:
+                    if config.get('time_limited_probe',False):
+                        state.update(status='interrupted',stop_reason='requested short-test duration reached');break
                     raise RuntimeError('wall-clock budget exhausted')
                 heartbeat=folder/'heartbeat.json'
                 if heartbeat.exists():
@@ -127,11 +130,11 @@ def validate_config(path):
         raise ValueError('only fixed eight-env R2 smoke is accepted; formal training not approved')
     for name in ('max_wall_seconds','startup_timeout_seconds','heartbeat_timeout_seconds','stop_grace_seconds'):
         value=config.get(name)
+        if name=='max_wall_seconds' and value is None:continue
         if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or value<=0:
             raise ValueError(f'positive finite {name} required')
     if config['stop_grace_seconds']>30: raise ValueError('stop grace must be <=30 seconds')
-    if config['max_wall_seconds']<=config['stop_grace_seconds']+2: raise ValueError('wall budget must include shutdown grace')
-    if config['max_wall_seconds']>7200:raise ValueError('R2 acceptance must remain within two-hour wall budget')
+    if config.get('max_wall_seconds') is not None and config['max_wall_seconds']<=config['stop_grace_seconds']+2: raise ValueError('wall budget must include shutdown grace')
     evidence=config.get('evidence_files',[])
     if not evidence: raise ValueError('approved gate/config identity evidence required')
     for item in evidence:

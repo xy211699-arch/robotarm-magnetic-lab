@@ -17,8 +17,12 @@ def main():
     p.add_argument('--capacity_summary',type=Path,required=True)
     p.add_argument('--capacity_boundaries',type=Path,required=True)
     p.add_argument('--output_dir',type=Path)
+    p.add_argument('--wall_seconds',type=float,help='User-requested wall duration including initialization/shutdown; no default limit')
+    p.add_argument('--time_limited_probe',action='store_true',help='Requested time expiry is interrupted, never full R2 pass')
     p.add_argument('--kit_args')
     args=p.parse_args()
+    if args.time_limited_probe and args.wall_seconds is None:p.error('probe requires explicit --wall_seconds')
+    if args.wall_seconds is not None and args.wall_seconds<=22:p.error('duration must include shutdown grace')
     if subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],cwd=ROOT,text=True).strip():
         p.error('commit implementation before freezing R2 identity')
     assets=audit_assets(args.pose_manifest,args.mask)
@@ -41,7 +45,8 @@ def main():
             item=inventory(ROOT/name);evidence.append(dict(path=item['path'],sha256=item['sha256']))
     for group in 'ABCD':
         config=dict(purpose='r2_smoke',group=group,num_envs=8,max_updates=3,rollout_steps=64,
-            seed=1008,device='cuda:0',visualizer='none',max_wall_seconds=7200,stop_grace_seconds=20,
+            seed=1008,device='cuda:0',visualizer='none',max_wall_seconds=args.wall_seconds,stop_grace_seconds=20,
+            time_limited_probe=args.time_limited_probe,
             pose_manifest=str(args.pose_manifest.resolve()),mask=str(args.mask.resolve()),
             weights=weights,implementation_head=head,assets=assets,evidence_files=evidence,
             fixed_train_pose=manifest['fixed_live_reload_pose_ids']['train'][0],

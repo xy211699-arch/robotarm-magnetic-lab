@@ -55,3 +55,12 @@ def test_timeouts_use_measured_slowest_healthy_step(tmp_path):
     limits=m.capacity_timeouts(summary,steps)
     assert limits['startup_timeout_seconds']==1909 and limits['heartbeat_timeout_seconds']==227
     assert len(limits['evidence_files'])==2
+
+
+def test_requested_short_probe_expiry_is_not_full_acceptance(tmp_path):
+    m=module()
+    config=dict(max_wall_seconds=2.4,startup_timeout_seconds=10,heartbeat_timeout_seconds=10,
+        stop_grace_seconds=.1,max_updates=3,rollout_steps=64,time_limited_probe=True)
+    result=m.monitor([sys.executable,'-c','import time; time.sleep(60)'],tmp_path,config,poll=.01)
+    assert result['status']=='interrupted' and result['stop_reason']=='requested short-test duration reached'
+    assert result['child_pid'] is None and not (tmp_path/'summary.json').exists()

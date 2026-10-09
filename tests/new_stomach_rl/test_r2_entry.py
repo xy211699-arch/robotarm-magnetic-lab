@@ -24,7 +24,7 @@ def config(tmp_path):
 
 
 @pytest.mark.parametrize('field,value',[('num_envs',12),('max_updates',1000),('fixed_replay_seconds',20),
-    ('partial_reset_boundary',17),('epochs',4),('formal_training_allowed',True),('device','cpu'),('max_wall_seconds',14400)])
+    ('partial_reset_boundary',17),('epochs',4),('formal_training_allowed',True),('device','cpu')])
 def test_entry_cannot_silently_expand_r2_or_reduce_acceptance(tmp_path,field,value):
     m=supervisor();cfg=config(tmp_path);p=tmp_path/'config.json';p.write_text(json.dumps(cfg))
     assert m.validate_config(p)['num_envs']==8
@@ -51,3 +51,10 @@ def test_latest_status_cli_is_read_only(tmp_path,monkeypatch,capsys):
     m.main()
     assert json.loads(capsys.readouterr().out)['status']=='queued'
     assert path.stat().st_mtime_ns==before and not (folder/'stop.request').exists()
+
+
+@pytest.mark.parametrize('budget',[None,600,14400])
+def test_no_invented_two_hour_limit(tmp_path,budget):
+    m=supervisor();cfg=config(tmp_path);cfg['max_wall_seconds']=budget
+    p=tmp_path/'config.json';p.write_text(json.dumps(cfg))
+    assert m.validate_config(p)['max_wall_seconds']==budget
