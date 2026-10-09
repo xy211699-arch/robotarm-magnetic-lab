@@ -1,4 +1,4 @@
-"""Create identity-bound finite R2 inputs; never launches Kit or training."""
+"""Prepare frozen R2 or explicitly approved full-training inputs; no Kit launch."""
 import argparse
 from datetime import datetime,timezone
 import hashlib
@@ -17,10 +17,12 @@ def main():
     p.add_argument('--capacity_summary',type=Path,required=True)
     p.add_argument('--capacity_boundaries',type=Path,required=True)
     p.add_argument('--output_dir',type=Path)
+    p.add_argument('--full_training',action='store_true',help='Approved four groups: 1000 updates, 8 envs, 64 rollout, save every 50')
     p.add_argument('--wall_seconds',type=float,help='User-requested wall duration including initialization/shutdown; no default limit')
     p.add_argument('--time_limited_probe',action='store_true',help='Requested time expiry is interrupted, never full R2 pass')
     p.add_argument('--kit_args')
     args=p.parse_args()
+    if args.full_training and (args.wall_seconds is not None or args.time_limited_probe):p.error('full training has no wall duration or probe mode')
     if args.time_limited_probe and args.wall_seconds is None:p.error('probe requires explicit --wall_seconds')
     if args.wall_seconds is not None and args.wall_seconds<=22:p.error('duration must include shutdown grace')
     if subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],cwd=ROOT,text=True).strip():
@@ -54,6 +56,10 @@ def main():
             fixed_replay_seconds=120,partial_reset_boundary=5,restore_before_update=3,
             gamma=.999**10,gae_lambda=.95,epochs=2,sequence_length=64,
             minibatch='whole_valid_sequence',formal_training_allowed=False,**limits)
+        if args.full_training:
+            config.update(purpose='full_training',max_updates=1000,save_interval=50,
+                formal_training_allowed=True,partial_reset_boundary=None,restore_before_update=None,
+                tensorboard=True,approval='user_confirmed_2026-10-10_1000x64_N8_save50')
         write(folder/f'{group}.json',config)
     print(json.dumps(dict(status='prepared_not_started',config_directory=str(folder),head=head),indent=2))
 
