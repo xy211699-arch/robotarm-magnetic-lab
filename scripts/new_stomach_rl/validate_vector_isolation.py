@@ -1,4 +1,4 @@
-"""用户手动启动双环境隔离验收；不训练、不调整容差或参数。"""
+"""双环境隔离验收/独立重复性标定；不训练，不改变物理参数。"""
 import argparse
 from datetime import datetime,timezone
 import hashlib
@@ -29,6 +29,8 @@ def main():
     parser.add_argument('--tolerance_manifest',type=Path,default=ROOT/'artifacts/new_stomach_rl_capacity/evidence/p1_preregistration_20261009/tolerance_registration.json')
     parser.add_argument('--output_root',type=Path,default=ROOT/'artifacts/new_stomach_rl_capacity/isolation')
     parser.add_argument('--check_inputs',action='store_true',help='只读核对输入，不创建Kit或仿真进程')
+    parser.add_argument('--calibrate_repeatability',action='store_true',help='仅采集三次20秒重复性；不冒称120秒隔离通过')
+    parser.add_argument('--acceptance_manifest',type=Path,help='用户授权的独立克隆容差登记；不覆盖P0原登记')
     from isaaclab.app import AppLauncher
     AppLauncher.add_app_launcher_args(parser)
     args = parser.parse_args()
@@ -38,12 +40,19 @@ def main():
         parser.error('需要已确认的--pose_manifest、--mask和--device cuda:0')
     if any(not p.is_file() for p in (args.pose_manifest,args.mask,args.tolerance_manifest)):
         parser.error('needs_input: 位姿库、掩码或预登记清单缺失')
+    if args.calibrate_repeatability and args.acceptance_manifest:
+        parser.error('标定与验收必须独立运行')
     from robotarm_magnetic_lab.runtime.new_stomach_rl_reference_audit import audit_reference_pair
     registered = json.loads(args.tolerance_manifest.read_text())
     roots = [Path(registered['references'][mode]['summary']['path']).parent for mode in ('single','chunk')]
     if audit_reference_pair(*roots) != registered:
         parser.error('优化前参照或预登记内容已变，不自动重登记或放宽')
     assets = audit_assets(args.pose_manifest,args.mask)
+    from robotarm_magnetic_lab.runtime.new_stomach_rl_acceptance import (
+        BOUNDS,measurements,mask_difference,register,load_manifest,compare as relaxed_compare)
+    original_sha=inventory(args.tolerance_manifest)['sha256']
+    acceptance=(load_manifest(args.acceptance_manifest,args.mode,original_sha)
+                if args.acceptance_manifest else None)
     if args.check_inputs:
         print('VECTOR_ISOLATION_INPUTS '+json.dumps(dict(status='inputs_verified',mode=args.mode,
             gpu_simulation='not_run',assets=assets,tolerance_manifest=inventory(args.tolerance_manifest))),flush=True)
@@ -56,7 +65,10 @@ def main():
         task_seconds=120,physics_hz=240,coverage_hz=10,rgb_hz=1,model_updates=0,
         command=sys.argv,head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         assets=assets,tolerance_manifest=inventory(args.tolerance_manifest),
-        runs=[],comparisons=[],unverified=['capacity_P3','P1_speedup','GRU_training_integration_R0'])
+        runs=[],comparisons=[],unverified=['capacity_P3','P1_speedup','GRU_training_integration_R0'],
+        calibration_only=args.calibrate_repeatability,
+        acceptance_manifest=inventory(args.acceptance_manifest) if args.acceptance_manifest else None,
+        predefined_calibration_bounds={name:list(value) for name,value in BOUNDS.items()} if args.calibrate_repeatability else None)
     args.enable_cameras = True
     launcher,env = None,None
     try:
@@ -81,6 +93,13 @@ def main():
             if not gpu_enabled or not str(env.sim.device).startswith('cuda') or not str(env.device).startswith('cuda'):
                 raise RuntimeError('必须是实际GPU PhysX')
             term = env.action_manager.get_term('magnet')
+            weights=(env.runtime.rows[0].visibility.weights.cpu().numpy()
+                if acceptance or args.calibrate_repeatability else None)
+            def compare_signal(key,actual,expected,label):
+                if acceptance:
+                    return relaxed_compare(key,actual,expected,acceptance,label,weights)
+                atol=registered['tolerances'][key]['atol'] if key in registered['tolerances'] else 0.
+                return compare_arrays(actual,expected,atol,label)
             bridge = env.event_manager.get_term_cfg('magnetic_collision_bridge').func
             tapes = [MagneticInputTape(row,env.device) for row in bridge.rows]
             for row,tape in zip(bridge.rows,tapes): row.physics_step = tape.physics_step
@@ -122,7 +141,20 @@ def main():
                 coverage._update = capture
             canonical = canonical_actions(args.mode)
             phase_data = []
-            for phase in ('control','reset_row_0'):
+            phases=('calibration_0','calibration_1','calibration_2') if args.calibrate_repeatability else ('control','reset_row_0')
+            batches=20 if args.calibrate_repeatability else 121
+            report['reset_invariants']=[]
+            def row_snapshot():
+                row=env.runtime.rows[1]; magnetic=bridge.rows[1]
+                return dict(pose=row.capsule.data.root_link_pose_w.torch.clone(),
+                    velocity=row.capsule.data.root_com_vel_w.torch.clone(),
+                    joints=term.rows[1].robot.data.joint_pos.torch.clone(),
+                    targets=term.rows[1]._target.clone(),history=term.rows[1].executed_history.clone(),
+                    filter=magnetic._filtered_wrench.clone(),elapsed=magnetic.elapsed.clone(),
+                    c10=row.coverage.c10.mask.clone(),c1=row.coverage.c1.mask.clone(),
+                    visual=row.visual_features.clone(),pending_reward=row.reward._pending.clone(),
+                    reward_count=row.reward._counts.clone())
+            for phase in phases:
                 mask_records.clear();mask_batch = 0
                 env.reset(seed=1008)
                 report['devices']['camera'] = str(env.runtime.rgb.device)
@@ -130,13 +162,22 @@ def main():
                     raise RuntimeError('相机张量不在CUDA，不能记为GPU双环境验收')
                 folder = output/phase; folder.mkdir()
                 rows,physical,magnetic_inputs,magnetic_outputs,visible,cumulative = [],[],[],[],[],[]
-                for second in range(121):
+                for second in range(batches):
                     mask_batch = second+1
                     if phase=='reset_row_0' and second and second%17==0:
                         before = env._sim_step_counter
+                        preserved=row_snapshot()
+                        preserved_clocks=(env.runtime.rows[1].policy_second,int(env.lifecycle.episode_seconds[1]),
+                            bridge.rows[1].frame_count,len(env.runtime.rows[1].ten_hz_records))
                         env.reset_rows([0])
                         if env._sim_step_counter != before:
                             raise RuntimeError('局部reset额外推进物理')
+                        after=row_snapshot()
+                        checks={name:bool(torch.equal(value,after[name])) for name,value in preserved.items()}
+                        checks['clocks']=preserved_clocks==(env.runtime.rows[1].policy_second,int(env.lifecycle.episode_seconds[1]),
+                            bridge.rows[1].frame_count,len(env.runtime.rows[1].ten_hz_records))
+                        report['reset_invariants'].append(dict(second=second,checks=checks))
+                        if not all(checks.values()): raise RuntimeError('局部reset直接污染未重置行状态')
                     raw = canonical[second] if second<20 else np.zeros(canonical.shape[1])
                     actions = torch.tensor(np.stack((raw,raw)),dtype=torch.float32,device=env.device)
                     for trace,tape in zip(traces,tapes): trace.begin();tape.begin()
@@ -174,12 +215,12 @@ def main():
                             local=np.stack(values)[:,1].astype(np.float64)
                             if key=='physics': local[:,:,:3]-=origin;local[:,:,25:28]-=origin
                             if key=='magnetic_inputs': local[:,:,:3]-=origin;local[:,:,7:10]-=origin
-                            prefix.append(compare_arrays(local,frozen[key],registered['tolerances'][key]['atol'],'prefix-N1-N2-'+key))
+                            prefix.append(compare_signal(key,local,frozen[key],'prefix-N1-N2-'+key))
                         report['paired_prefix_20s']=prefix
                         if not all(v['passed'] for v in prefix):
-                            raise RuntimeError('前20秒N1/N2配对失败，停止剩余GPU批次；不放宽原登记容差')
+                            raise RuntimeError('前20秒N1/N2配对失败，停止剩余GPU批次；不继续放宽已登记标准')
                     if second%10==0 or second==120:
-                        print('VECTOR_ISOLATION_PROGRESS '+json.dumps(dict(phase=phase,seconds=second+1,total=121)),flush=True)
+                        print('VECTOR_ISOLATION_PROGRESS '+json.dumps(dict(phase=phase,seconds=second+1,total=batches)),flush=True)
                 data = dict(physics=np.stack(physical),magnetic_inputs=np.stack(magnetic_inputs),
                     magnetic_outputs=np.stack(magnetic_outputs),visible_packed=np.stack(visible),cumulative_packed=np.stack(cumulative),
                     mask_rows=np.asarray([v['row'] for v in mask_records]),
@@ -190,15 +231,41 @@ def main():
                     mask_cumulative_packed=np.stack([v['cumulative'] for v in mask_records]))
                 np.savez_compressed(folder/'isolation_tape.npz',**data)
                 phase_data.append((data,rows))
-                report['runs'].append(dict(phase=phase,global_batches=121,physics_steps=121*240,
+                report['runs'].append(dict(phase=phase,global_batches=batches,physics_steps=batches*240,
                     row_1_valid_transitions=sum(v['valid_transition'][1] for v in rows),row_1_timeout_count=sum(v['truncated'][1] for v in rows)))
+            if args.calibrate_repeatability:
+                maxima={name:0. for name in BOUNDS}
+                for repeat,(data,_) in enumerate(phase_data):
+                    for index in (0,1):
+                        for key in ('physics','magnetic_inputs','magnetic_outputs'):
+                            local=data[key][:,index].astype(float).copy()
+                            origin=term.rows[index].env_origin
+                            if key=='physics': local[...,:3]-=origin;local[...,25:28]-=origin
+                            if key=='magnetic_inputs': local[...,:3]-=origin;local[...,7:10]-=origin
+                            for name,value in measurements(key,local,frozen[key]).items(): maxima[name]=max(maxima[name],value)
+                            if repeat:
+                                for name,value in measurements(key,data[key][:,index],phase_data[0][0][key][:,index]).items(): maxima[name]=max(maxima[name],value)
+                        for hz in (10,1):
+                            selected=(data['mask_rows']==index)&(data['mask_hz']==hz)
+                            baseline=(phase_data[0][0]['mask_rows']==index)&(phase_data[0][0]['mask_hz']==hz)
+                            for key,target in (('mask_visible_packed','visible_packed'),('mask_cumulative_packed','cumulative_packed')):
+                                value=mask_difference(data[key][selected],frozen[target][frozen['branch_hz']==hz],weights)
+                                maxima['mask_area_fraction']=max(maxima['mask_area_fraction'],value)
+                                if repeat:
+                                    value=mask_difference(data[key][selected],phase_data[0][0][key][baseline],weights)
+                                    maxima['mask_area_fraction']=max(maxima['mask_area_fraction'],value)
+                report['observed_calibration_maxima']=maxima
+                calibrated=register(maxima,args.mode,original_sha,[inventory(output/phase/'isolation_tape.npz') for phase in phases])
+                (output/'acceptance_manifest.json').write_text(json.dumps(calibrated,indent=2)+'\n')
+                report.update(status='calibrated',full_isolation='not_run')
+                return
             for key in ('physics','magnetic_inputs','magnetic_outputs','visible_packed','cumulative_packed'):
-                atol = registered['tolerances'][key]['atol'] if key in registered['tolerances'] else 0.
-                report['comparisons'].append(compare_arrays(phase_data[1][0][key][:,1],phase_data[0][0][key][:,1],atol,'reset-isolation-'+key))
+                report['comparisons'].append(compare_signal(key,phase_data[1][0][key][:,1],phase_data[0][0][key][:,1],'reset-isolation-'+key))
             for key in ('mask_ticks','mask_hz','mask_global_batches','mask_visible_packed','mask_cumulative_packed'):
                 first = phase_data[0][0];second = phase_data[1][0]
-                report['comparisons'].append(compare_arrays(second[key][second['mask_rows']==1],
-                    first[key][first['mask_rows']==1],0.,'reset-isolation-'+key))
+                a,b=second[key][second['mask_rows']==1],first[key][first['mask_rows']==1]
+                report['comparisons'].append(compare_signal(key,a,b,'reset-isolation-'+key) if 'packed' in key
+                    else compare_arrays(a,b,0.,'reset-isolation-'+key))
             # No changed tolerance for clone float32 translation. A discrepancy
             # is retained as a failed pairing, not hidden by final coverage.
             origin = term.rows[1].env_origin
@@ -206,18 +273,20 @@ def main():
                 local = phase_data[0][0][key][:20,1].astype(np.float64)
                 if key=='physics': local[:,:,:3]-=origin;local[:,:,25:28]-=origin
                 if key=='magnetic_inputs': local[:,:,:3]-=origin;local[:,:,7:10]-=origin
-                report['comparisons'].append(compare_arrays(local,frozen[key],registered['tolerances'][key]['atol'],'N1-N2-'+key))
+                report['comparisons'].append(compare_signal(key,local,frozen[key],'N1-N2-'+key))
             original_policy = [json.loads(line) for line in (reference_root/'repeat_0/policy_1hz.jsonl').read_text().splitlines()]
             for key in ('actual_history','reward'):
                 actual = np.asarray([v['history'][1] if key=='actual_history' else v['reward'][1]
                     for v in phase_data[0][1][:20]])
                 expected = np.asarray([v[key] for v in original_policy])
-                report['comparisons'].append(compare_arrays(actual,expected,0.,'N1-N2-'+key))
+                tolerance=(acceptance['limits']['issued_joints_rad'] if key=='actual_history' else
+                    200*acceptance['limits']['mask_area_fraction']+.5) if acceptance else 0.
+                report['comparisons'].append(compare_arrays(actual,expected,tolerance,'N1-N2-'+key))
             first = phase_data[0][0]
             for hz in (10,1):
                 selected = (first['mask_rows']==1)&(first['mask_hz']==hz)&(first['mask_global_batches']<=20)
                 for key,original_key in (('mask_visible_packed','visible_packed'),('mask_cumulative_packed','cumulative_packed')):
-                    report['comparisons'].append(compare_arrays(first[key][selected],frozen[original_key][frozen['branch_hz']==hz],0.,f'N1-N2-{hz}Hz-{key}'))
+                    report['comparisons'].append(compare_signal(key,first[key][selected],frozen[original_key][frozen['branch_hz']==hz],f'N1-N2-{hz}Hz-{key}'))
             left,right = phase_data[0][1],phase_data[1][1]
             for index,(a,b) in enumerate(zip(left,right)):
                 if a['boundaries'][1] != b['boundaries'][1] or a['reward'][1] != b['reward'][1]:
@@ -225,7 +294,19 @@ def main():
                     aa=dict(a['boundaries'][1]['c1']);bb=dict(b['boundaries'][1]['c1'])
                     for key in ('rgb_sha256','forced_capture'):
                         aa.pop(key,None);bb.pop(key,None)
-                    if a['boundaries'][1]['c10']!=b['boundaries'][1]['c10'] or aa!=bb or a['reward'][1]!=b['reward'][1]:
+                    if acceptance:
+                        for x,y in zip(a['boundaries'][1]['c10'],b['boundaries'][1]['c10']):
+                            for key in ('physics_tick','sample_id','sim_time_s'):
+                                if x[key]!=y[key]: raise RuntimeError('未重置行10Hz时钟受到污染')
+                        for key in ('policy_second','sim_time_s','rgb_frame'):
+                            if aa[key]!=bb[key]: raise RuntimeError('未重置行RGB时钟受到污染')
+                        for v in (a,b):
+                            active_records=[x for x in v['boundaries'][1]['c10'] if 'reward_terms' in x]
+                            if active_records:
+                                if any(abs(sum(x['reward_terms'])-x['total_reward'])>1e-5 for x in active_records): raise RuntimeError('奖励项加总不一致')
+                                if abs(sum(x['total_reward'] for x in active_records)-v['reward'][1])>1e-5: raise RuntimeError('10Hz奖励与1Hz加总不一致')
+                        if len(a['boundaries'][1]['c10'])!=len(b['boundaries'][1]['c10']): raise RuntimeError('10Hz帧数不一致')
+                    elif a['boundaries'][1]['c10']!=b['boundaries'][1]['c10'] or aa!=bb or a['reward'][1]!=b['reward'][1]:
                         raise RuntimeError(f'未重置行覆盖/奖励/RGB时钟受到污染: batch {index}')
             report['status'] = 'pass' if all(v['passed'] for v in report['comparisons']) else 'fail'
             report['artifacts'] = [inventory(p) for p in output.rglob('*') if p.is_file()]

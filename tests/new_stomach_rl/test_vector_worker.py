@@ -35,6 +35,10 @@ def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,
         def __init__(self):
             self.coverage=Coverage();self.policy_second=0;self.ready=False;self.ten_hz_records=[];self.one_hz_records=[]
             self.term=SimpleNamespace(executed_history=torch.zeros(1,4,9))
+            self.capsule=SimpleNamespace(data=SimpleNamespace(root_link_pose_w=SimpleNamespace(torch=torch.zeros(1,7)),
+                root_com_vel_w=SimpleNamespace(torch=torch.zeros(1,6))))
+            self.visual_features=torch.zeros(1,512)
+            self.reward=SimpleNamespace(_pending=torch.zeros(1),_counts=torch.zeros(1))
         def boundary(self,active):
             coverage=self.coverage
             if not active:
@@ -60,10 +64,13 @@ def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,
         return original_tensor(*args,**kwargs)
     monkeypatch.setattr(torch,'tensor',cpu_tensor)
     life=VectorLifecycle(2,'cpu');steps=[];closes=[]
-    terms=[SimpleNamespace(capsule=None,env_origin=np.zeros(3)) for _ in range(2)]
+    env.lifecycle=life
+    terms=[SimpleNamespace(capsule=None,env_origin=np.zeros(3),_target=torch.zeros(1,9),
+        executed_history=torch.zeros(1,4,9),robot=SimpleNamespace(data=SimpleNamespace(joint_pos=SimpleNamespace(torch=torch.zeros(1,9))))) for _ in range(2)]
     terms[1].env_origin[0]=origin
     term=SimpleNamespace(rows=terms,executed_history=torch.zeros(2,4,9))
-    bridges=[SimpleNamespace(physics_step=lambda *args:None) for _ in range(2)]
+    bridges=[SimpleNamespace(physics_step=lambda *args:None,_filtered_wrench=torch.zeros(1,12),
+        elapsed=torch.zeros(1),frame_count=0) for _ in range(2)]
     env.action_manager=SimpleNamespace(get_term=lambda name:term)
     env.event_manager=SimpleNamespace(get_term_cfg=lambda name:SimpleNamespace(func=SimpleNamespace(rows=bridges)))
     env.close=lambda:closes.append(1)
