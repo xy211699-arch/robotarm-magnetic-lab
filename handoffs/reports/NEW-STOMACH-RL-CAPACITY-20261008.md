@@ -1,5 +1,39 @@
 # 新胃RL容量阶段执行报告：P0参照、P1准备与P2独立向量适配
 
+## 最新进度：2026-10-09 Single通过，Chunk参照暂缓，已推进P3
+
+总体仍为`partial`。用户本轮授权“非严重错误可跳过，进入多环境测试”；这一授权仅用于暂缓Chunk的跨P0胶囊姿态重复性比较，不将原失败改为pass，不放宽碰撞、5mm间距、数值有限性、240Hz物理/磁场、10Hz覆盖、1HzRGB或局部reset无副作用条件。无训练、PPO、随机化、物理参数或旧控制器修改。
+
+已读取旧后台`acceptance_jobs/20261009T092758.806211Z/status.json`：Single完整验收pass（实现9e96aeee启动；summary HEAD9e96aeee），两段各121批次、各120个有效行1样本和1次TIMEOUT、19项比较均通过、7次局部reset的13项另一行状态检查全不变。相机修复后的真实GPU长序列已通过，而非仅单测。
+
+Chunk三次20秒标定完整执行，环境/PhysX/相机均cuda:0，动力学NPZ三份SHA一致；与旧P0参照的最大位置分量2.295mm、姿态13.67°、力差0.550mN、面积对称差0.769%。唯一触发的登记拒绝为姿态0.238612554rad超过10°上限，非崩溃、丢步、NaN或安全终止。保留原失败与10°清单，不生成更宽的新Chunk清单。三次自身复现不是完整Chunk隔离验收；该项明确`deferred`，正式四组训练尚不获准启动。
+
+本轮新增`scripts/new_stomach_rl/benchmark_capacity.py`、`supervise_capacity.py`及`tests/new_stomach_rl/test_capacity_benchmark.py`，实现HEAD`6b6f5993835680d2dd8b7da9196320eea643f602`。非GPU回归237 passed、65 warnings、11.27s、退出0，`git diff --check`退出0。伪进程验证4环境短筛查/完整阶梯顺序、失败停后续、逐240步计数、拒绝把非有限错误列入豁免及Kit关闭前结果持久化。未更改任何仿真执行模块。
+
+有限后台任务已启动：`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/capacity_jobs/20261009T123005.785406Z/`，监督PID1470990，初始GPU子进程1470991。先4环境D组8边界短筛查，然后完整容量仍按1、4、8、12、16、20，每级顺序A/B/C/D。短筛查不替代完整容量或支持数冻结。各组两次8+32计时、两段64 rollout并追加16边界，使第17秒重置行0后仍实测其120秒TIMEOUT；共224个普通边界及三次初始化HOLD。真实240磁调用/步数、10Hz记录数量与时间戳、每行状态/磁力有限性、RGB单帧规则和安全停止均保留；部分reset直接比较其余行15项状态/缓存与私有时钟，物理counter不变。最高级失败则后续not_run、不自动重试或调参。状态running/结果尚未取得不能写N=4容量pass。
+
+完整启动命令（已执行，不要重复启动）：
+
+```bash
+cd /mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008
+./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_capacity.py start \
+  --allow_deferred_chunk_reference \
+  --single_summary artifacts/new_stomach_rl_capacity/isolation/20261009T092800.674857Z/summary.json \
+  --chunk_summary artifacts/new_stomach_rl_capacity/isolation/20261009T095330.685621Z/summary.json \
+  --pose_manifest /mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json \
+  --mask /mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz
+```
+
+launch.json记录实际完整HEAD、两个摘要与三份Chunk原数据SHA、用户豁免边界及固定级别；status记录各子进程完整命令/摘要。只读入口为`./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_capacity.py status`。有效样本吞吐纳入reset、HOLD、记录与采样墙钟，稳态单列；驱动显存每8边界采样且为整卡显存（非本进程瞬时峰值），Torch峰值及CPU RSS另列。PPO耗时未测，不能据纯采样吞吐称同预算训练已可承受；容量/训练预算仍待实测冻结。外部大工件不入Git。
+
+| 本轮已固定的绝对证据路径 | 字节数 | SHA-256 |
+| --- | ---: | --- |
+| `/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/isolation/20261009T092800.674857Z/summary.json` | 24256 | `57c93477c5a8c79d1108476edf21551752c65d54c0be3bb1b4f5400a14537340` |
+| `/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/isolation/20261009T095330.685621Z/summary.json` | 11894 | `dea9634d2a1fcfca23870488c585d32edeea423fdefa9bac69f65080a0adfda1` |
+| `/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/evidence/p2_approved_20261009/regression_capacity.log` | 354 | `84d8c324a01810ee7045335b6e8515f56bba2d280955c809206f0542903be3eb` |
+
+下文是此前阶段快照，旧“执行中/needs_decision”不代表最新状态。本轮基准336e2c939eb9d044928379d27a27e59f212c0c92，实施分支feature/new-stomach-rl-capacity-20261008；最终文档提交与远端HEAD推送后在终端另行交付，不冒称实现HEAD是最终文档HEAD。
+
 ## 最新状态：2026-10-09用户批准后，代理执行中
 
 当前为`partial`，不是complete。用户明确批准代理执行GPU验收、按克隆重复性适度放宽数值标准。Single独立标定、正式前20秒N1/N2配对及120秒对照段已完成；隔离段首次局部reset的另一行13项状态/缓存检查全部不变，但下一次RGB采集触发真实的部分相机推进错误，有限监督器已正确暂停。现已修复新向量适配层的采集调度并重新启动串行验收，修复后的GPU全程与Chunk尚无通过结论。未改物理、安全、动作、资产、库、覆盖定义或奖励参数，没有启动训练。下文needs_decision是批准前的历史状态，不是当前授权阻塞。
