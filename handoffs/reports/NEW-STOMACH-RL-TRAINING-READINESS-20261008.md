@@ -1,4 +1,51 @@
-# 新胃8环境训练就绪：R0 / R1实施记录
+# 新胃8环境训练就绪：R0 / R1 / R2工程记录
+
+## 2026-10-10续执行：R2入口交付
+
+最新状态 `needs_input`：R0/R1及R2工程CPU验证通过，真实A/B/C/D GPU验收全部not_run。不是正式训练就绪或研究实验完成。本轮没有启动Kit、GPU验收或训练，仅生成并检查有限配置；运行日志已更新。
+
+本轮基准HEAD `80cd768554dd99e4c5068420136d4b62436bf50e`；R2实现审计HEAD `d2dd2878b7c589b8ff8b30efabca4e4742ada0b2`。实现分支及工作目录不变，最终文档提交后的远端HEAD推送核验后单独返回。
+
+实际文件：新增`learning/new_stomach_rl_collector.py`、`scripts/new_stomach_rl/train.py`、`prepare_r2.py`、`tests/new_stomach_rl/test_vector_collector.py`及`test_r2_entry.py`；扩展原R1独立`supervise_training.py`，新增操作指南。旧共享核心、模型、奖励、物理、磁力、覆盖、安全、资产与库均未修改。
+
+复用向量环境真实`env.step`、240次磁力/物理调用与已有10Hz/1Hz输出，不改旧单环境guard。collector从`extras.final_obs`计算TIMEOUT bootstrap，不使用自动reset后观测；invalid WARMUP不推进GRU/不计样本；网络原始sample/latent/logp和实际下发history独立保存。每段采集后无参数更新的序列回放核对联合logp，连续分段保留行顺序。CPU夹具分别覆盖9D/36D、TIMEOUT、真正终止、WARMUP及分段拼接。
+
+有限候选：每组N=8、3×64边界，原2 epochs/全64步序列单minibatch及烟雾超参，正式预算仍未冻结。第5边界后局部reset行0，不额外推进物理，使不同步TIMEOUT在前128边界内出现；并检查每行均超时。第二次更新后显式结束剩余回合并全行reset，确认零秒边界后保存训练状态；新建runner回载并核对参数，再次reset/清GRU后执行第三次更新。此显式reset切断物理轨迹，日志标明checkpoint_reset，不声称原PhysX连续恢复。固定train/validation位姿各120秒确定性回放，不更新网络，单独记录阶段，不计入训练样本预算。
+
+正常/故障均在Kit关闭前写摘要；中断尽量写显式weights-only，强制KILL时不承诺保存成功。每次更新另保存可安全读取的CPU张量字典用于重算GAE/掩码/样本及旧终点值。完整summary包含真实设备、TIMEOUT、checkpoint回载、固定回放与工件哈希。监督器只运行一组，保留7200秒含退出硬上限，失败不启动下一组；status/stop默认定位latest且status只读。
+
+**预算偏差如实披露**：当前短测D/N8最慢步18.012秒；192个训练步+240个固定回放+初始化粗估约2小时20分钟，完整R2可能被两小时上限中断。不延长上限、不缩短120秒回放、不改3×64或删掉组别来声称pass；超预算返回partial/paused_on_error，待实际记录决定后续。四组GPU未运行，没有推断吞吐优化或策略性能。
+
+CPU命令仍为下方R1完整回归命令。最终277 passed、65 warnings、12.62秒、退出0，diff检查退出0。初次collector夹具出现2 failed：用T×N大矩阵重算Critic与采集逐N批次的BLAS舍入不同；改夹具按同批次逐时刻重算，继续使用逐位相等，没有放宽动力学或验收阈值。
+
+实际另执行以下**只准备配置、不启动任务**命令（源身份b17b0a1）：
+
+```bash
+env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u PYTHONHOME -u PYTHONPATH \
+  PYTHONPATH="$PWD/source/robotarm_magnetic_lab" \
+  /mnt/isaac-linux/IsaacLab/_isaac_sim/python.sh scripts/new_stomach_rl/prepare_r2.py \
+  --pose_manifest /mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json \
+  --mask /mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz \
+  --weights /home/multirobo/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth \
+  --capacity_summary artifacts/new_stomach_rl_capacity/capacity/20261009T125733.819352Z/summary.json \
+  --capacity_boundaries artifacts/new_stomach_rl_capacity/capacity/20261009T125733.819352Z/boundaries.jsonl \
+  --output_dir artifacts/new_stomach_rl_capacity/training_readiness/r2/preparation_audit
+```
+
+返回prepared_not_started、退出0；四组随后通过真实`validate_config`的哈希/有限合同检查。它们绑定历史b17b0a1 HEAD；后续代码/文档提交后不可再用作启动配置，用户须按新指南重新prepare，避免身份不匹配。历史配置与日志保留，不替换旧证据。
+
+外部证据均不入Git，前缀绝对路径为`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/training_readiness/r2/`：
+
+| 文件（附上述绝对前缀） | 字节 | SHA-256 |
+|---|---:|---|
+| regression_final.log | 354 | d2f8df52daf5b1c7a1c37eee02b49be7b093146dc64a655ea799dc00a8a2c76d |
+| preparation.log | 262 | fcd7534a1bc09d30778938e7afa3215d84bee042ebc114b7788633d75f0a43c7 |
+| preparation_audit/A.json | 68599 | 8a1ca485980cd07e8b81c04de366a4220d7e6dd8774b0f64b89b038a48c70290 |
+| preparation_audit/B.json | 68599 | 457365850d7dd82bf225f19564a1b614bdc424d4e790d78e9329992bff4a36f9 |
+| preparation_audit/C.json | 68599 | b8011a8fcde7008d66b41987dfc4cf2a9383dcd742e8620c59b50e67d4b99eec |
+| preparation_audit/D.json | 68599 | 2c5e6536b601ec0ed79a09de59385950e74120ee010fd1e5d54526c7b6b4fab6 |
+
+未验证：GPU完整采集/真实TIMEOUT/磁力调用、三次PPO更新、CUDA RNG/Adam回载及固定回放。CPU测试不是这些GPU结论的替代。原Single隔离pass、Chunk跨P0参照deferred及容量短测限制保持原记录。下一步由用户按`docs/NEW_STOMACH_RL_R2_GUIDE.md`人工启动一组，返回实际summary后再审阅，不直接启动正式开发种子。
 
 ## 2026-10-10续执行：R1组件CPU验收
 
