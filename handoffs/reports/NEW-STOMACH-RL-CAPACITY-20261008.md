@@ -1,5 +1,21 @@
 # 新胃RL容量阶段执行报告：P0参照、P1准备与P2独立向量适配
 
+## 最新执行：用户批准总墙钟不超过两小时的快速筛查
+
+用户明确拒绝30–50小时完整矩阵，并要求压缩后重启。仅缩减本轮测试矩阵/样本数，不改变仿真、动作或训练定义；这是对原P3验收预算的显式授权偏离，不能将短测重新解释为完整容量/回合通过。总体`partial`，没有训练。
+
+旧任务`capacity_jobs/20261009T123005.785406Z`：4环境D组8边界已`screened`，原summary/JSONL保留；N=1 A仍在启动阶段。已核对/proc完整命令及PID后，先SIGSTOP监督PID1470990避免后续启动，SIGINT子PID1478636，子进程退出后终止监督器；旧status标`interrupted`并记录用户取消原因，未覆盖已完成结果或删除日志。GPU复核仅Awesun575MiB，无遗留仿真。
+
+修改仅`benchmark_capacity.py`、`supervise_capacity.py`及`test_capacity_benchmark.py`，实现HEAD`912efb3051165497941faeac38d73cdefa778a8d`。新增`--quick --budget_seconds 7200`：D组固定1/4/8/12/16/20，然后4环境A/B/C；每项2步预热+6步采样，第5批次局部reset行0，核对其他行状态/缓存及counter不变，再正常共享物理批次初始化该行。动作索引固定为0/1/4/5/13/16/17/19，复用原9D/36D动作集合，不改幅度或频率。未覆盖本档120秒超时、完整224步及A/B/C其他N，均明确列为unverified；历史Single长隔离通过不代替这些档位长回合。
+
+全局预算从launch创建开始7200秒，启动/模型构建/初始化/退出均计入。监督器使用monotonic截止并每秒检查运行子进程，剩余30秒停止后续、SIGINT独立子进程组，等待最多20秒，不退出则SIGKILL并等待最多2秒；不会跨预算启动下一档、自动重试或延长。到预算标`budget_exhausted`并保留部分日志，全部短测通过标`screening_completed`而非完整P3 `completed`。安全/非有限/内存失败仍paused_on_error停止递进。短测吞吐是少量样本粗估，不声称稳态可靠或已选最佳N。
+
+241项非GPU回归通过，65 warnings、11.18s、退出0，新增快速矩阵、预算中止保留结果、退出预留时间和卡住子进程强制终止测试；`git diff --check`退出0。日志绝对路径`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/evidence/p2_approved_20261009/regression_capacity_quick.log`，354字节，SHA-256 `a7f33c773dc3953b15fca7b18c6f162fe93f6f63bb065728b0085dea14f70666`。
+
+已启动新任务`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/capacity_jobs/20261009T124829.090487Z`，监督PID1490811，初始N=1 D子PID1490812，当前running。截止北京时间2026-10-09 22:48:29.090556（UTC14:48:29）；预计1–1.5小时但高N初始化未测，因此以硬预算为准，不承诺九项都能在预算内完成。完整命令为下方旧启动命令添加`--quick --budget_seconds 7200`，其余两个摘要/位姿库/掩码路径完全相同；launch.json留存启动HEAD、截止、预算及证据哈希。查询命令仍为`./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_capacity.py status`。新GPU结果尚未完成，不能称screening_completed。
+
+本轮基准`2e3066862e228f687b7fbde73d61dde67541bc67`，分支`feature/new-stomach-rl-capacity-20261008`；下文是已取消长测/此前阶段快照。最终远端文档HEAD另行交付。
+
 ## 最新进度：2026-10-09 Single通过，Chunk参照暂缓，已推进P3
 
 总体仍为`partial`。用户本轮授权“非严重错误可跳过，进入多环境测试”；这一授权仅用于暂缓Chunk的跨P0胶囊姿态重复性比较，不将原失败改为pass，不放宽碰撞、5mm间距、数值有限性、240Hz物理/磁场、10Hz覆盖、1HzRGB或局部reset无副作用条件。无训练、PPO、随机化、物理参数或旧控制器修改。
