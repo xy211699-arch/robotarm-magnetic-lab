@@ -11,6 +11,9 @@ from .mdp.new_stomach_rl_vector_terms import actor_observation,privileged_critic
 class RobotarmMagneticNewStomachRLVectorCfg(RobotarmMagneticNewStomachRLPreflightCfg):
     def __post_init__(self):
         super().__post_init__()
+        # User froze development capacity to eight environments on 2026-10-10.
+        # Benchmark tools may explicitly override N; old one-env tasks unchanged.
+        self.scene.num_envs = 8
         self.actions.magnet = NewStomachRLVectorActionCfg(asset_name='robot',
             mode='single' if self.group in ('A','B') else 'chunk',
             collision_mesh_suffix=NEW_STOMACH_GEOMETRY.collision_mesh_suffix)

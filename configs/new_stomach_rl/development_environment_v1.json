@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "purpose": "development_environment_only",
+  "num_envs": 8,
+  "user_approval_date": "2026-10-10",
+  "physics_hz": 240,
+  "magnetic_hz": 240,
+  "decision_hz": 1,
+  "rgb_hz": 1,
+  "coverage_hz": 10,
+  "required_clearance_m": 0.005,
+  "formal_training_allowed": false,
+  "formal_sample_budget": null,
+  "capacity_evidence": "8-environment D quick screening; not complete P3 long-run qualification",
+  "chunk_reference_equivalence": "deferred by user",
+  "next_stage": "R0 mathematics, then R1 checkpoint/supervisor, then user-launched R2 smoke"
+}
