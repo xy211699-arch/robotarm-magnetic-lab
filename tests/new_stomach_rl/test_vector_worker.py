@@ -13,8 +13,8 @@ from robotarm_magnetic_lab.runtime.new_stomach_rl_reference_audit import audit_r
 from robotarm_magnetic_lab.runtime.new_stomach_rl_vector_lifecycle import VectorLifecycle
 
 
-@pytest.mark.parametrize('substeps',[240,239])
-def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,monkeypatch,substeps):
+@pytest.mark.parametrize('substeps,origin',[(240,0.),(239,0.),(240,1.)])
+def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,monkeypatch,substeps,origin):
     scripts=Path(__file__).resolve().parents[2]/'scripts/new_stomach_rl'
     monkeypatch.syspath_prepend(str(scripts))
     spec=importlib.util.spec_from_file_location('_p2_fake_worker',scripts/'validate_vector_isolation.py')
@@ -52,10 +52,16 @@ def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,
                 sim_time_s=float(self.policy_second),coverage=[.1],rgb_sha256='0'*64))
     class Scene(dict):
         def update(self,dt): pass
-    env=SimpleNamespace(num_envs=2,device='cpu',physics_dt=1/240,sim=SimpleNamespace(device='cuda:0'),
-        runtime=SimpleNamespace(rows=[Row(),Row()],rgb=torch.zeros(2,2,2,3)),scene=Scene(),_sim_step_counter=0)
+    env=SimpleNamespace(num_envs=2,device='cuda:0',physics_dt=1/240,sim=SimpleNamespace(device='cuda:0'),
+        runtime=SimpleNamespace(rows=[Row(),Row()],rgb=SimpleNamespace(device='cuda:0')),scene=Scene(),_sim_step_counter=0)
+    original_tensor=torch.tensor
+    def cpu_tensor(*args,**kwargs):
+        if str(kwargs.get('device','')).startswith('cuda'): kwargs['device']='cpu'
+        return original_tensor(*args,**kwargs)
+    monkeypatch.setattr(torch,'tensor',cpu_tensor)
     life=VectorLifecycle(2,'cpu');steps=[];closes=[]
     terms=[SimpleNamespace(capsule=None,env_origin=np.zeros(3)) for _ in range(2)]
+    terms[1].env_origin[0]=origin
     term=SimpleNamespace(rows=terms,executed_history=torch.zeros(2,4,9))
     bridges=[SimpleNamespace(physics_step=lambda *args:None) for _ in range(2)]
     env.action_manager=SimpleNamespace(get_term=lambda name:term)
@@ -132,15 +138,19 @@ def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,
     monkeypatch.setitem(sys.modules,env_module.__name__,env_module);monkeypatch.setitem(sys.modules,cfg_module.__name__,cfg_module)
     monkeypatch.setattr(sys,'argv',[str(scripts/'validate_vector_isolation.py'),'--pose_manifest',str(tmp_path/'poses'),
         '--mask',str(tmp_path/'mask'),'--tolerance_manifest',str(manifest),'--output_root',str(tmp_path/'output')])
-    if substeps==239:
+    if substeps==239 or origin:
         with pytest.raises(SystemExit): script.main()
     else: script.main()
     summary=json.loads(next((tmp_path/'output').glob('*/summary.json')).read_text())
     assert closes==[1]
-    if substeps==240:
+    if substeps==240 and not origin:
         assert summary['status']=='pass' and len(summary['runs'])==2
         assert len(steps)==244  # two initial HOLDs and 2 x 121 batches
         assert all(v['row_1_valid_transitions']==120 for v in summary['runs'])
         assert len(summary['comparisons'])==19
-    else:
+    elif substeps==239:
         assert summary['status']=='fail' and len(summary['runs'])==0 and len(steps)==2
+    else:
+        assert summary['status']=='fail' and len(steps)==21 and not summary['runs']
+        assert any(not item['passed'] for item in summary['paired_prefix_20s'])
+        assert list((tmp_path/'output').glob('*/failed_partial_tape.npz'))

@@ -78,7 +78,7 @@ def main():
             scene = omni.usd.get_context().get_stage().GetPrimAtPath('/physicsScene')
             gpu_enabled = scene.GetAttribute('physxScene:enableGPUDynamics').Get()
             report['devices'] = dict(environment=str(env.device),simulation=str(env.sim.device),gpu_dynamics=gpu_enabled)
-            if not gpu_enabled or not str(env.sim.device).startswith('cuda'):
+            if not gpu_enabled or not str(env.sim.device).startswith('cuda') or not str(env.device).startswith('cuda'):
                 raise RuntimeError('必须是实际GPU PhysX')
             term = env.action_manager.get_term('magnet')
             bridge = env.event_manager.get_term_cfg('magnetic_collision_bridge').func
@@ -126,6 +126,8 @@ def main():
                 mask_records.clear();mask_batch = 0
                 env.reset(seed=1008)
                 report['devices']['camera'] = str(env.runtime.rgb.device)
+                if not str(env.runtime.rgb.device).startswith('cuda'):
+                    raise RuntimeError('相机张量不在CUDA，不能记为GPU双环境验收')
                 folder = output/phase; folder.mkdir()
                 rows,physical,magnetic_inputs,magnetic_outputs,visible,cumulative = [],[],[],[],[],[]
                 for second in range(121):
@@ -165,6 +167,17 @@ def main():
                         raise RuntimeError('TIMEOUT后的正常一秒批次没有执行WARMUP')
                     rows.append(row)
                     with (folder/'boundaries.jsonl').open('a') as stream: stream.write(json.dumps(row)+'\n')
+                    if phase=='control' and second==19:
+                        prefix=[]
+                        origin=term.rows[1].env_origin
+                        for key,values in (('physics',physical),('magnetic_inputs',magnetic_inputs),('magnetic_outputs',magnetic_outputs)):
+                            local=np.stack(values)[:,1].astype(np.float64)
+                            if key=='physics': local[:,:,:3]-=origin;local[:,:,25:28]-=origin
+                            if key=='magnetic_inputs': local[:,:,:3]-=origin;local[:,:,7:10]-=origin
+                            prefix.append(compare_arrays(local,frozen[key],registered['tolerances'][key]['atol'],'prefix-N1-N2-'+key))
+                        report['paired_prefix_20s']=prefix
+                        if not all(v['passed'] for v in prefix):
+                            raise RuntimeError('前20秒N1/N2配对失败，停止剩余GPU批次；不放宽原登记容差')
                     if second%10==0 or second==120:
                         print('VECTOR_ISOLATION_PROGRESS '+json.dumps(dict(phase=phase,seconds=second+1,total=121)),flush=True)
                 data = dict(physics=np.stack(physical),magnetic_inputs=np.stack(magnetic_inputs),
@@ -223,7 +236,12 @@ def main():
         if 'physical' in locals() and physical:
             try:
                 np.savez_compressed(output/'failed_partial_tape.npz',physics=np.stack(physical),
-                    magnetic_inputs=np.stack(magnetic_inputs),magnetic_outputs=np.stack(magnetic_outputs))
+                    magnetic_inputs=np.stack(magnetic_inputs),magnetic_outputs=np.stack(magnetic_outputs),
+                    mask_rows=np.asarray([v['row'] for v in mask_records]),
+                    mask_ticks=np.asarray([v['tick'] for v in mask_records]),
+                    mask_hz=np.asarray([v['hz'] for v in mask_records]),
+                    mask_visible_packed=np.stack([v['visible'] for v in mask_records]),
+                    mask_cumulative_packed=np.stack([v['cumulative'] for v in mask_records]))
             except Exception as secondary:
                 report['partial_tape_error'] = str(secondary)
     finally:
