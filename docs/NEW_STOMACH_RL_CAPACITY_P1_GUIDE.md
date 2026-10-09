@@ -1,5 +1,23 @@
 # 新胃RL容量：P1原链路热点分析入口
 
+## 最新续执行：R1组件已通过CPU回归
+
+8环境冻结不变。R0及R1组件完整264项CPU测试通过，没有启动GPU训练。回合边界checkpoint保存优化器及全部采样RNG；恢复开启新回合、清GRU，不声称续接PhysX轨迹。监督器已提供独立后台/只读状态/停止请求，但真实`train.py`和冻结R2配置尚未交付，当前start明确拒绝，不能把下面历史容量入口当训练入口。
+
+现在可复核组件测试与帮助（无需GPU，不启动训练）：
+
+```bash
+cd /mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008
+env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u PYTHONHOME -u PYTHONPATH \
+  PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH="$PWD/source/robotarm_magnetic_lab" \
+  /mnt/isaac-linux/IsaacLab/_isaac_sim/python.sh -m pytest \
+  tests/new_stomach_rl/test_training_checkpoint.py \
+  tests/new_stomach_rl/test_training_supervisor.py -q --disable-warnings
+/usr/bin/python3 scripts/new_stomach_rl/supervise_training.py --help
+```
+
+后续真实R2运行目录产生后，使用`status --run_dir <绝对运行目录>`只读查询，`stop --run_dir <绝对运行目录>`请求停止；不得直接调用内部worker或用旧配置启动。当前没有训练run_dir可查询。详细身份、测试日志和未验证内容见`handoffs/reports/NEW-STOMACH-RL-TRAINING-READINESS-20261008.md`最新R1段落。
+
 ## 最新：2026-10-10用户冻结8环境，进入R0
 
 后续新向量任务默认8环境，记录在`configs/new_stomach_rl/development_environment_v1.json`，旧单环境入口保持不变。快速容量任务已结束，不再重跑阶梯。R0回合边界/GRU/PPO纯数学验证已完成，完整251项CPU回归通过，未启动GPU训练。当前没有可用的8环境长程训练启动命令；不要把旧单环境`train_smoke.py`的N改成8绕过其保护。下一阶段R1恢复/监督及R2跨回合验收尚未交付，正式训练预算仍未冻结。

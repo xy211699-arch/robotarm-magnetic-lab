@@ -1,4 +1,38 @@
-# 新胃8环境训练就绪：R0实施记录
+# 新胃8环境训练就绪：R0 / R1实施记录
+
+## 2026-10-10续执行：R1组件CPU验收
+
+最新状态仍为 `partial`：R0数学验证与R1恢复/监督组件CPU测试通过；R1与真实GPU collector的集成、R2跨回合8环境训练及恢复尚未验收。未启动GPU训练，也没有通过更改旧单环境入口绕过保护。下方R0记录作为历史保留。
+
+本轮基准HEAD：`dbb9824d4de7e8d493bccca2249b96777aacc861`；R1实现HEAD：`437e40783f09cbe8c1baa0ba81637037a5ee11dd`。分支及工作目录不变；后续报告提交另产生HEAD，远端最终哈希在推送后单独交付。
+
+实际新增文件：
+
+- `learning/new_stomach_rl_checkpoint.py`：Actor/Critic、Adam、更新计数、有效样本、Python/NumPy/Torch CPU及已初始化CUDA RNG、各行位姿库RNG、统计和配置/代码/资产/冻结权重SHA-256。拒绝非有限状态、错误哈希、位姿库变化及覆盖既有checkpoint。
+- `scripts/new_stomach_rl/supervise_training.py`：start/status/stop/worker接口，独立进程组、单任务锁、有限预算及进度心跳；异常paused_on_error，不重启/调参/启动下一种子。只停止自己创建的进程组。只读status不写文件；stop请求可重复。
+- `tests/new_stomach_rl/test_training_checkpoint.py`、`test_training_supervisor.py`：13项新CPU测试。微型网络验证模型/优化器及随机数回载；真实短生命周期CPU假子进程验证健康慢采样（update不推进但心跳推进）、非零退出、无摘要退出、NaN、OOM、心跳停滞、用户停止。退出0缺少完整结果不算通过。
+
+默认仅允许回合边界training checkpoint。中途保存须显式weights-only，回载清Adam和计数，不当作断点续训。恢复均调用新reset并清GRU，**不恢复PhysX接触/求解器内部状态，不承诺原轨迹连续**。当前回合边界由调用者显式声明；R2须在真实collector检查全行生命周期，不能仅传True跳过验收。旧SmokePPO继承的save/load未修改，也不能称为此严格恢复API。
+
+监督阈值函数读取既有N=8容量证据：初始化636.046秒、最慢健康步18.012秒，启动阈值为3倍初始化取整1909秒，进度心跳阈值为10倍最慢步且至少180秒，即181秒。这是诊断等待阈值，不改物理频率。运行预算另包含终止宽限，未冻结实际训练配置或预算；不将短容量测量冒称长训练耗时。status分开记录监督器与worker心跳，避免监督器活跃掩盖采样停滞。
+
+实际CPU命令（完整回归）：
+
+```bash
+cd /mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008
+env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u PYTHONHOME -u PYTHONPATH \
+  WARP_CACHE_PATH=/tmp/new-stomach-scope-warp-cache \
+  PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH="$PWD/source/robotarm_magnetic_lab" \
+  /mnt/isaac-linux/IsaacLab/_isaac_sim/python.sh -m pytest \
+  tests/new_stomach_rl tests/stomach_migration tests/magnetic_following \
+  tests/stomach_coverage/test_task010_recovery.py -q --disable-warnings
+/usr/bin/python3 scripts/new_stomach_rl/supervise_training.py --help
+git diff --check
+```
+
+结果：264 passed、65 warnings、12.24秒、pytest退出0；diff检查退出0。外部最终日志绝对路径：`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/training_readiness/r1/regression_final.log`，354字节，SHA-256 `c318311837e7a2492a3b6a118f19c534b9fd092e6c96b08f88bc74f1c09f0ddd`。日志不入Git。查询新阶段train/supervisor/benchmark进程无匹配（pgrep退出1），实际没有GPU任务。
+
+已交付监督CLI组件，但**不能提供可运行的8环境GPU训练启动命令**：R2的`scripts/new_stomach_rl/train.py`尚未交付，start会明确拒绝，不启动后台；也尚无冻结R2训练配置。CPU假worker没有创建Kit或GPU环境，CUDA RNG实际回载、GPU内存/梯度心跳、真实边界checkpoint后的新回合更新均待R2。下一步接入真实collector及A/B/C/D有限跨回合验收，由用户人工启动；不开放正式开发种子。
 
 ## 当前状态
 
