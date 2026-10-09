@@ -27,7 +27,7 @@ def main():
     args.kit_args='--/UJITSO/enabled=false --/UJITSO/geometry=false'
     interrupted=False;launcher=env=None;collector=None;runner=None;checkpoint=None;started=time.time()
     report=dict(status='running',run_id=folder.name,group=config['group'],num_envs=8,head=head,
-        update_count=0,effective_samples=0,global_boundaries=0,updates=[],fixed_replays=[])
+        update_count=0,effective_samples=0,global_boundaries=0,updates=[],fixed_replays=[],rollouts=[])
     def stop(*unused):
         nonlocal interrupted
         interrupted=True
@@ -92,7 +92,8 @@ def main():
                 if not torch.equal(result[-1]['final_obs']['policy'][:,512:],actual):raise RuntimeError('Actor history not actual issued commands')
                 tape.write(json.dumps(dict(phase=phase,global_tick=env.lifecycle.global_tick,elapsed_s=time.perf_counter()-began,
                     raw_action=action.detach().cpu().tolist(),valid=result[-1]['valid_transition'].cpu().tolist(),
-                    truncated=result[3].cpu().tolist(),rows=captured),allow_nan=False)+'\n');tape.flush()
+                    truncated=result[3].cpu().tolist(),final_critic_inputs=result[-1]['final_obs']['critic'].detach().cpu().tolist(),
+                    rows=captured),allow_nan=False)+'\n');tape.flush()
                 return result
             env.step=audited_step
             observations,_=env.reset(seed=cfg.seed)
@@ -127,6 +128,11 @@ def main():
                         env.reset_rows([0]);collector.observations=env.runtime.observations();collector.hidden[:,0]=0
                         if env.lifecycle.global_tick!=before:raise RuntimeError('partial reset advanced physics')
                 data=join_rollouts(pieces)
+                from dataclasses import fields
+                path=folder/f'rollout_update_{update+1:04d}.pt'
+                with path.open('xb') as stream:
+                    torch.save({f.name:getattr(data,f.name).detach().cpu() for f in fields(data)},stream)
+                report['rollouts'].append(inventory(path))
                 heartbeat('update');metric=runner.update(data);report['updates'].append(metric);heartbeat('sampling',metric)
             if not collector.timeouts.gt(0).all():raise RuntimeError('120s TIMEOUT not exercised in all rows')
             report.update(update_count=runner.update_count,effective_samples=collector.samples,global_boundaries=collector.boundaries,
