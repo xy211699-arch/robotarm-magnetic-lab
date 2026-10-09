@@ -20,6 +20,13 @@ def schedule():
     return [('timing_0', 8, 32), ('timing_1', 8, 32), ('rollout', 0, 144)]
 
 
+def quick_schedule():
+    return [('quick', 2, 6)]
+
+
+QUICK_ACTION_INDICES = (0, 1, 4, 5, 13, 16, 17, 19)
+
+
 def check_batch(substeps, calls, valid, terminated):
     if substeps != 240 or any(n != 240 for n in calls):
         raise RuntimeError('240 physical steps and magnetic calls per row required')
@@ -47,17 +54,20 @@ def main():
     parser.add_argument('--mask', type=Path, required=True)
     parser.add_argument('--output_root', type=Path, default=ROOT/'artifacts/new_stomach_rl_capacity/capacity')
     parser.add_argument('--screening', action='store_true', help='8-boundary multi-env smoke only; no capacity qualification')
+    parser.add_argument('--quick', action='store_true', help='2+6-boundary timing and partial-reset screening; no 120s qualification')
     from isaaclab.app import AppLauncher
     AppLauncher.add_app_launcher_args(parser)
     args = parser.parse_args()
+    if args.screening and args.quick: parser.error('screening and quick are separate plans')
     if not str(args.device).startswith('cuda'): parser.error('GPU PhysX required')
     assets = audit_assets(args.pose_manifest, args.mask)
     output = args.output_root/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
     output.mkdir(parents=True, exist_ok=False)
     report = dict(status='running', stage='P3_capacity', group=args.group, num_envs=args.num_envs,
         physics_hz=240, magnetic_hz=240, rgb_hz=1, coverage_hz=10, model_updates=0,
-        assets=assets, screening_only=args.screening, command=sys.argv, head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
-        blocks=[], partial_reset_checks=[], unverified=['PPO_update_time','formal_training','Chunk_P0_equivalence'])
+        assets=assets, screening_only=args.screening or args.quick, quick=args.quick, command=sys.argv, head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+        blocks=[], partial_reset_checks=[], unverified=['PPO_update_time','formal_training','Chunk_P0_equivalence']+
+            (['120s_timeout_at_this_N','full_224_boundary_capacity'] if args.quick else []))
     launcher = env = None
     rows_log = output/'boundaries.jsonl'
     completed = 0
@@ -134,14 +144,14 @@ def main():
                 return snapshots
             sampling_started=time.perf_counter()
             with rows_log.open('x') as stream:
-                for block,warmup,timed in ([('screening',0,8)] if args.screening else schedule()):
+                for block,warmup,timed in (quick_schedule() if args.quick else [('screening',0,8)] if args.screening else schedule()):
                     started=time.perf_counter(); env.reset(seed=1008)
                     torch.cuda.synchronize(env.device); reset_seconds=time.perf_counter()-started
                     total_seconds+=reset_seconds
                     block_valid=0; block_seconds=0.
                     for k in range(warmup+timed):
                         extra_reset_seconds=0.
-                        if block=='rollout' and k==17 and args.num_envs>1:
+                        if ((block=='rollout' and k==17) or (block=='quick' and k==4)) and args.num_envs>1:
                             before=snapshot_other_rows(); tick=env._sim_step_counter
                             reset_start=time.perf_counter(); env.reset_rows([0]); torch.cuda.synchronize(env.device)
                             extra_reset_seconds=time.perf_counter()-reset_start
@@ -151,7 +161,8 @@ def main():
                             report['partial_reset_checks'].append(dict(batch=k,unchanged=unchanged))
                             if not unchanged: raise RuntimeError('partial reset contaminated another row')
                         calls[:]=[0]*args.num_envs
-                        action=torch.tensor(np.repeat(actions[k%20][None],args.num_envs,axis=0),dtype=torch.float32,device=env.device)
+                        action_index=QUICK_ACTION_INDICES[k] if args.quick else k%20
+                        action=torch.tensor(np.repeat(actions[action_index][None],args.num_envs,axis=0),dtype=torch.float32,device=env.device)
                         torch.cuda.synchronize(env.device); started=time.perf_counter()
                         obs,reward,terminated,truncated,extras=env.step(action)
                         torch.cuda.synchronize(env.device); elapsed=time.perf_counter()-started
@@ -166,23 +177,23 @@ def main():
                             raise RuntimeError('nonfinite boundary output')
                         ended=truncated.cpu().tolist(); timeouts=[a+int(b) for a,b in zip(timeouts,ended)]
                         total_valid+=n; block_valid+=n; total_seconds+=elapsed+extra_reset_seconds; block_seconds+=elapsed+extra_reset_seconds
-                        if block.startswith('timing') and k>=warmup:
+                        if (block.startswith('timing') or block=='quick') and k>=warmup:
                             steady_valid+=n; steady_seconds+=elapsed
                         completed+=1
                         record=dict(block=block,batch=k,elapsed_s=elapsed,partial_reset_seconds=extra_reset_seconds,
                             physical_substeps=extras['physical_substeps'],magnetic_calls=list(calls),
                             valid_transition=valid,truncated=ended,rows=list(boundary))
                         stream.write(json.dumps(record)+'\n'); stream.flush()
-                        if completed%8==0:
+                        if completed%(2 if args.quick else 8)==0:
                             driver_sample()
                             print('CAPACITY_PROGRESS '+json.dumps(dict(group=args.group,num_envs=args.num_envs,
-                                completed=completed,total=8 if args.screening else 224,valid_samples=total_valid,block=block)),flush=True)
+                                completed=completed,total=8 if args.screening or args.quick else 224,valid_samples=total_valid,block=block)),flush=True)
                     report['blocks'].append(dict(name=block,warmup_batches=warmup,timed_batches=timed,
                         valid_samples=block_valid,reset_seconds=reset_seconds,step_seconds=block_seconds))
-            if completed!=(8 if args.screening else 224) or (not args.screening and any(n<1 for n in timeouts)):
+            if completed!=(8 if args.screening or args.quick else 224) or (not args.screening and not args.quick and any(n<1 for n in timeouts)):
                 raise RuntimeError('full budget/120s timeout evidence missing')
             sampling_wall=time.perf_counter()-sampling_started
-            report.update(status='screened' if args.screening else 'pass',global_batches=completed,valid_samples=total_valid,
+            report.update(status='screened' if args.screening or args.quick else 'pass',global_batches=completed,valid_samples=total_valid,
                 sampling_wall_seconds=sampling_wall,q_valid=total_valid/sampling_wall,
                 measured_reset_and_step_seconds=total_seconds,
                 active_commands=active_commands,projected_commands=projected,rejected_hold_commands=rejected,
@@ -193,7 +204,7 @@ def main():
                 cuda_reserved_peak_bytes=torch.cuda.max_memory_reserved(env.device),
                 process_max_rss_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024,
                 driver_memory_samples_mib=driver_samples,driver_sampled_max_mib=max(driver_samples,default=None),
-                driver_memory_note='8-boundary samples; not instantaneous hardware peak',
+                driver_memory_note='2-boundary quick or 8-boundary full samples; not instantaneous hardware peak',
                 sampling_note='sampling only, includes reset/HOLD cost; startup/build reported separately; no PPO updates')
     except BaseException as error:
         report.update(status='interrupted' if isinstance(error,KeyboardInterrupt) else 'fail',

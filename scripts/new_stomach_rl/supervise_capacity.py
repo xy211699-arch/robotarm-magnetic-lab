@@ -4,6 +4,7 @@ from datetime import datetime,timezone
 import hashlib
 import json
 import os
+import signal
 from pathlib import Path
 import subprocess
 import sys
@@ -14,6 +15,26 @@ ROOT=Path(__file__).resolve().parents[2]
 BASE=ROOT/'artifacts/new_stomach_rl_capacity/capacity_jobs'
 LEVELS=(1,4,8,12,16,20)
 STEPS=((4,'D',True),)+tuple((n,g,False) for n in LEVELS for g in 'ABCD')
+QUICK_STEPS=tuple((n,'D',True) for n in LEVELS)+tuple((4,g,True) for g in 'ABC')
+
+
+class CapacityBudgetExceeded(RuntimeError):
+    pass
+
+
+def budget_expiring(state, now=None):
+    # Reserve 30 seconds for SIGINT, bounded shutdown and SIGKILL fallback.
+    return state.get('_deadline_monotonic') is not None and (time.monotonic() if now is None else now)>=state['_deadline_monotonic']-30
+
+
+def stop_child(child):
+    try: os.killpg(child.pid,signal.SIGINT)
+    except ProcessLookupError: return
+    try: child.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        try: os.killpg(child.pid,signal.SIGKILL)
+        except ProcessLookupError: pass
+        child.wait(timeout=2)
 
 
 def evidence(path):
@@ -47,10 +68,15 @@ def gate(single_path,chunk_path):
 
 def run_job(command,log,state,folder):
     with log.open('x') as stream:
-        child=subprocess.Popen(command,cwd=ROOT,stdin=subprocess.DEVNULL,stdout=stream,stderr=subprocess.STDOUT)
+        if budget_expiring(state): raise CapacityBudgetExceeded('no time left to start another stage')
+        child=subprocess.Popen(command,cwd=ROOT,stdin=subprocess.DEVNULL,stdout=stream,stderr=subprocess.STDOUT,start_new_session=True)
         state['child_pid']=child.pid;write(folder/'status.json',state)
         while child.poll() is None:
-            state['heartbeat_epoch_s']=time.time();write(folder/'status.json',state);time.sleep(5)
+            state['heartbeat_epoch_s']=time.time();write(folder/'status.json',state)
+            if budget_expiring(state):
+                stop_child(child);state['child_pid']=None
+                raise CapacityBudgetExceeded(f'global wall-clock budget reached; partial evidence in {log}')
+            time.sleep(1 if state.get('_deadline_monotonic') is not None else 5)
         state['child_pid']=None
     events=[json.loads(line.split('CAPACITY_RESULT ',1)[1]) for line in log.read_text(errors='replace').splitlines()
         if line.startswith('CAPACITY_RESULT ')]
@@ -63,31 +89,40 @@ def run_job(command,log,state,folder):
 
 def worker(folder,job=run_job):
     config=json.loads((folder/'launch.json').read_text())
-    state=dict(status='running',started_epoch_s=time.time(),heartbeat_epoch_s=time.time(),
+    quick=config.get('quick',False)
+    steps=QUICK_STEPS if quick else STEPS
+    state=dict(status='running',started_epoch_s=config.get('started_epoch_s',time.time()),heartbeat_epoch_s=time.time(),
         current_num_envs=None,current_group=None,child_pid=None,results=[],not_run=[],model_updates=0,
-        qualification='provisional capacity; Chunk reference comparison deferred',run_dir=str(folder))
+        qualification='quick screening only; full capacity/timeout deferred' if quick else 'provisional capacity; Chunk reference comparison deferred',run_dir=str(folder),quick=quick)
+    if quick:
+        remaining=max(0.,config['deadline_epoch_s']-time.time())
+        state.update(deadline_epoch_s=config['deadline_epoch_s'],budget_seconds=config['budget_seconds'],
+            _deadline_monotonic=time.monotonic()+remaining)
     try:
-        for n,g,screening in STEPS:
+        for n,g,screening in steps:
+            if budget_expiring(state): raise CapacityBudgetExceeded('budget exhausted before next stage')
             state.update(current_num_envs=n,current_group=g,screening_only=screening);write(folder/'status.json',state)
             command=[sys.executable,str(ROOT/'scripts/new_stomach_rl/benchmark_capacity.py'),
                 '--num_envs',str(n),'--group',g,'--pose_manifest',config['pose_manifest'],'--mask',config['mask'],
                 '--device','cuda:0','--viz','none','--kit_args=--/UJITSO/enabled=false --/UJITSO/geometry=false']
-            if screening: command.append('--screening')
+            if quick: command.append('--quick')
+            elif screening: command.append('--screening')
             data,summary=job(command,folder/f'{"screening_" if screening else ""}n{n}_{g}.log',state,folder)
             state['results'].append(dict(num_envs=n,group=g,screening_only=screening,status=data['status'],summary=str(summary),command=command))
             if (data['status']!=('screened' if screening else 'pass') or data.get('model_updates')!=0 or data.get('global_batches')!=(8 if screening else 224) or
                 data.get('devices',{}).get('gpu_dynamics') is not True or
+                (quick and n>1 and (len(data.get('partial_reset_checks',[]))!=1 or data['partial_reset_checks'][0]['unchanged'] is not True)) or
                 (not screening and (len(data.get('timeouts_by_row',[]))!=n or min(data['timeouts_by_row'])<1 or
                 (n>1 and (len(data.get('partial_reset_checks',[]))!=1 or
                     data['partial_reset_checks'][0]['unchanged'] is not True))))):
                 raise RuntimeError(f'capacity failed or incomplete: {summary}')
             write(folder/'status.json',state)
-        state.update(status='completed',current_num_envs=None,current_group=None)
+        state.update(status='screening_completed' if quick else 'completed',current_num_envs=None,current_group=None)
     except Exception as error:
-        state.update(status='paused_on_error',error=f'{type(error).__name__}: {error}')
+        state.update(status='budget_exhausted' if isinstance(error,CapacityBudgetExceeded) else 'paused_on_error',error=f'{type(error).__name__}: {error}')
         completed={(r['num_envs'],r['group'],r['screening_only']) for r in state['results']}
         attempted=(state['current_num_envs'],state['current_group'],state.get('screening_only'))
-        state['not_run']=[dict(num_envs=n,group=g,screening_only=s) for n,g,s in STEPS if (n,g,s) not in completed and (n,g,s)!=attempted]
+        state['not_run']=[dict(num_envs=n,group=g,screening_only=s) for n,g,s in steps if (n,g,s) not in completed and (n,g,s)!=attempted]
     finally:
         state.update(ended_epoch_s=time.time(),heartbeat_epoch_s=time.time());write(folder/'status.json',state)
     return state
@@ -101,9 +136,12 @@ def main():
     parser.add_argument('--single_summary',type=Path)
     parser.add_argument('--chunk_summary',type=Path)
     parser.add_argument('--allow_deferred_chunk_reference',action='store_true')
+    parser.add_argument('--quick',action='store_true',help='D ladder plus 4-env A/B/C, 8 boundaries each; screening only')
+    parser.add_argument('--budget_seconds',type=int,default=7200)
     parser.add_argument('--run_dir',type=Path,default=BASE/'latest')
     parser.add_argument('--kit_args')
     args=parser.parse_args()
+    if not 60<=args.budget_seconds<=7200: parser.error('budget must be 60..7200 seconds')
     if args.command=='status': print((args.run_dir.resolve()/'status.json').read_text());return
     if args.command=='worker': worker(args.run_dir.resolve());return
     if not args.allow_deferred_chunk_reference: parser.error('explicit user-approved deferral flag required')
@@ -117,9 +155,11 @@ def main():
     if isolation.is_file() and json.loads(isolation.read_text())['status'] in ('queued','running'):
         parser.error('isolation GPU job is still running')
     folder=BASE/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ');folder.mkdir(parents=True,exist_ok=False)
+    started=time.time()
     write(folder/'launch.json',dict(pose_manifest=str(args.pose_manifest.resolve()),mask=str(args.mask.resolve()),
         head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),gate=review,
-        ladder=list(LEVELS),groups=list('ABCD'),model_updates=0))
+        ladder=list(LEVELS),groups=list('ABCD'),model_updates=0,quick=args.quick,
+        budget_seconds=args.budget_seconds,started_epoch_s=started,deadline_epoch_s=started+args.budget_seconds))
     write(folder/'status.json',dict(status='queued',run_dir=str(folder),model_updates=0))
     if pointer.is_symlink(): pointer.unlink()
     elif pointer.exists(): raise RuntimeError('refuse replacing a non-symlink latest')
@@ -130,7 +170,8 @@ def main():
         child=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'worker','--run_dir',str(folder)],
             cwd=ROOT,env=environment,stdin=subprocess.DEVNULL,stdout=stream,stderr=subprocess.STDOUT,start_new_session=True)
     print(json.dumps(dict(status='started',supervisor_pid=child.pid,run_dir=str(folder),
-        ladder=list(LEVELS),groups=list('ABCD'),model_updates=0),indent=2))
+        ladder=list(LEVELS),groups=list('ABCD'),model_updates=0,quick=args.quick,
+        budget_seconds=args.budget_seconds,deadline_epoch_s=started+args.budget_seconds),indent=2))
 
 
 if __name__=='__main__': main()

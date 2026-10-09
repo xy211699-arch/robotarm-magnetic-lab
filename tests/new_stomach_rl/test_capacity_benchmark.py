@@ -71,3 +71,56 @@ def test_finalize_persists_result_before_kit_shutdown(tmp_path,monkeypatch,capsy
         SimpleNamespace(app=SimpleNamespace(close=lambda:events.append('app_close'))))
     assert events==['persist','env_close','app_close']
     assert 'CAPACITY_RESULT' in capsys.readouterr().out
+
+
+@pytest.mark.parametrize('fail_at',[None,3])
+def test_quick_plan_stops_at_global_budget_and_keeps_results(tmp_path,fail_at):
+    module=load('supervise_capacity')
+    import time
+    (tmp_path/'launch.json').write_text(json.dumps(dict(pose_manifest='poses',mask='mask',quick=True,
+        budget_seconds=7200,started_epoch_s=time.time(),deadline_epoch_s=time.time()+7200)))
+    calls=[]
+    def job(command,log,state,folder):
+        assert '--quick' in command and '--screening' not in command
+        if len(calls)==fail_at: raise module.CapacityBudgetExceeded('fixture deadline')
+        n,g=state['current_num_envs'],state['current_group'];calls.append((n,g))
+        return dict(status='screened',model_updates=0,global_batches=8,devices={'gpu_dynamics':True},
+            partial_reset_checks=[] if n==1 else [{'unchanged':True}]),tmp_path/f'{n}_{g}'/'summary.json'
+    state=module.worker(tmp_path,job)
+    expected=[(n,g) for n,g,_ in module.QUICK_STEPS]
+    assert calls==(expected if fail_at is None else expected[:fail_at])
+    assert len(expected)==9 and expected[:6]==[(n,'D') for n in (1,4,8,12,16,20)]
+    assert state['status']==('screening_completed' if fail_at is None else 'budget_exhausted')
+    assert len(state['results'])==len(calls) and state['model_updates']==0
+    bench=load('benchmark_capacity')
+    assert bench.quick_schedule()==[('quick',2,6)]
+    assert len(bench.QUICK_ACTION_INDICES)==8
+
+
+def test_budget_reserves_shutdown_time_and_kills_stuck_child(monkeypatch):
+    module=load('supervise_capacity')
+    assert not module.budget_expiring({'_deadline_monotonic':100},69)
+    assert module.budget_expiring({'_deadline_monotonic':100},70)
+    assert not module.budget_expiring({},10000)
+    import subprocess
+    from types import SimpleNamespace
+    signals=[]; waits=[]
+    monkeypatch.setattr(module.os,'killpg',lambda pid,sig:signals.append((pid,sig)))
+    def wait(timeout):
+        waits.append(timeout)
+        if len(waits)==1: raise subprocess.TimeoutExpired('fake',timeout)
+    module.stop_child(SimpleNamespace(pid=123,wait=wait))
+    assert signals==[(123,module.signal.SIGINT),(123,module.signal.SIGKILL)]
+    assert waits==[20,2]
+
+
+def test_run_job_enforces_deadline_while_child_still_running(tmp_path,monkeypatch):
+    module=load('supervise_capacity')
+    from types import SimpleNamespace
+    fake=SimpleNamespace(pid=123,poll=lambda:None)
+    monkeypatch.setattr(module.subprocess,'Popen',lambda *a,**k:fake)
+    monkeypatch.setattr(module,'stop_child',lambda child:None)
+    checks=iter([False,True]);monkeypatch.setattr(module,'budget_expiring',lambda state:next(checks))
+    state={'child_pid':None}
+    with pytest.raises(module.CapacityBudgetExceeded): module.run_job(['fake'],tmp_path/'job.log',state,tmp_path)
+    assert state['child_pid'] is None
