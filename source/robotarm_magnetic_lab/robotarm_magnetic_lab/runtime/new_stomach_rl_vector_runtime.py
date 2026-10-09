@@ -5,7 +5,7 @@ import torch
 from .new_stomach_rl_runtime import NewStomachRLRuntime
 from .new_stomach_rl_reward import NewStomachReward
 from .new_stomach_rl_optics import LiveMountedOptics
-from .new_stomach_rl_rgb import PolicyRGBBoundary
+from .new_stomach_rl_vector_rgb import VectorPolicyRGBBoundary
 from .new_stomach_rl_vector_lifecycle import prime_zero_compatible_reward
 from robotarm_magnetic_lab.coverage.new_stomach_rl_coverage import frozen_visibility, DualRateCoverage
 
@@ -111,7 +111,7 @@ class VectorRowRuntime(NewStomachRLRuntime):
 class NewStomachRLVectorRuntime:
     def __init__(self,env,mask_path):
         self.env = env
-        self.rgb_clock = PolicyRGBBoundary(env.num_envs,env.device)
+        self.rgb_clock = VectorPolicyRGBBoundary(env.num_envs,env.device)
         self.global_second = -1
         self.rows = [VectorRowRuntime(row,mask_path,self) for row in env.action_manager.get_term('magnet').rows]
         if env.cfg.group in ('B','D'):
