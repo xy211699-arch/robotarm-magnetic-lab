@@ -131,11 +131,17 @@ def validate_config(path):
             raise ValueError(f'positive finite {name} required')
     if config['stop_grace_seconds']>30: raise ValueError('stop grace must be <=30 seconds')
     if config['max_wall_seconds']<=config['stop_grace_seconds']+2: raise ValueError('wall budget must include shutdown grace')
+    if config['max_wall_seconds']>7200:raise ValueError('R2 acceptance must remain within two-hour wall budget')
     evidence=config.get('evidence_files',[])
     if not evidence: raise ValueError('approved gate/config identity evidence required')
     for item in evidence:
         if hashlib.sha256(Path(item['path']).read_bytes()).hexdigest()!=item['sha256']:
             raise ValueError('gate or frozen input bytes changed')
+    fixed=dict(fixed_replay_seconds=120,partial_reset_boundary=5,restore_before_update=3,
+        gamma=.999**10,gae_lambda=.95,epochs=2,sequence_length=64,
+        minibatch='whole_valid_sequence',formal_training_allowed=False)
+    if any(config.get(k)!=v for k,v in fixed.items()):raise ValueError('R2 lifecycle/learning contract changed')
+    if config.get('device')!='cuda:0' or config.get('visualizer')!='none':raise ValueError('GPU no-window R2 required')
     return config
 
 
