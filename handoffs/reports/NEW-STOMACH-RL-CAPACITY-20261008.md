@@ -1,8 +1,8 @@
-# 新胃RL容量阶段执行报告：P0交付与已批准的逐环境几何审计
+# 新胃RL容量阶段执行报告：P0参照、P1准备与P2独立向量适配
 
-当前状态：`partial`。三处已批准的`env_root`接口已实施；2026-10-09已读取并复核用户实际采集的Single/Chunk原参照，两种均通过。P1容差登记和只读热点入口已交付，GPU热点采集待用户手动启动；尚未选择/启用优化候选，未实施完整向量任务或测容量，不将旧吞吐或CPU回归当作GPU多环境能力。Windows端小包复核仍未获得明确确认。
+当前状态：`needs_input`（等待用户启动P2 GPU验收，总阶段尚未完成）。2026-10-09用户同意调整顺序为先P2双环境正确性、再P1优化和P3容量。独立向量任务、逐行绑定、部分reset生命周期及验收入口已实现，218项非仿真回归通过；没有GPU双环境结果，不能称已支持/验收N=2。P0原参照、P1优化前登记保留，不要求用户重复采集同类单环境数据；未启用优化候选或测试容量。Windows小包复核仍待明确确认。
 
-上一轮远端交付状态：本地实施提交已生成，但SSH443推送origin两次均返回`Connection closed by 198.18.0.5 port 443`和Git退出128，未更换凭据或改推upstream。本轮最终远端交付结果及完整HEAD在终端单独给出；未确认推送成功前，本文的“交付”仅指本地已提交工件。
+此前SSH443失败属于历史记录，随后已核对远端`4625f09af718bd1a4434e1117b1d2cdd953a2902`。本轮代码和报告的最终远端HEAD由推送后终端单独交付，未核验前不冒称已上传。
 
 ## 身份与范围
 
@@ -17,8 +17,8 @@
 | --- | --- |
 | P0证据工具/小包/Linux复核 | pass；29份工件已复制并核验，仍待Windows端确认 |
 | P0固定物理参照 | 用户手动运行Single/Chunk均pass；Linux已逐文件/数组/时钟复核 |
-| P1热点优化/等价性/新容差 | partial；优化前严格容差登记和只读计时入口已完成，原链路GPU计时待人工，优化候选/完整等价性未运行 |
-| P2多环境/部分reset | not_run；三处作用域接口已批准并通过CPU回归，原guard仍保留；完整向量隔离未实现/未运行 |
+| P1热点优化/等价性/新容差 | deferred；准备工作保留，用户批准P2先行，原链路GPU计时/优化尚未运行 |
+| P2多环境/部分reset | needs_input；独立向量实现和非仿真测试通过，GPU两环境隔离及N1/N2配对待人工运行 |
 | P3容量1/4/8/12/16/20 | not_run；两环境只用于未来P2隔离门禁 |
 | R0—R2训练就绪 | not_run；依赖容量回报后冻结批量/预算 |
 
@@ -192,3 +192,78 @@ python scripts/new_stomach_rl/profile_capacity.py audit \
 全部本轮红灯/绿灯日志在`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/evidence/p1_implementation_20261009/`，未删除。人工GPU命令及输出目录见P1中文指南，当前尚未运行。Windows旧小包人工确认仍pending，不能标记整个P0/P1或容量任务complete。
 
 上述目录的完整日志清单为`/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/evidence/p1_implementation_20261009/log_inventory.json`，1784字节，SHA-256 `c18d0f3b4c9ec778a0339bdec614ce995439679168574c6d064b739d97995f45`；记录12份日志共8926字节、绝对根目录/完整文件名/每份大小与SHA，已逐条复核。清单的原字节也复制至上述p1_reference_v1附件。
+
+## 2026-10-09用户批准P2先行：独立向量实现交付
+
+本轮基线为`4625f09af718bd1a4434e1117b1d2cdd953a2902`；主适配提交为`2e67b40ddf00eaaa0b09380e9cb735bd68ea4116`，本节审计的最终实现HEAD为`98b84fcdc7d2424b669dd940b861fb352777e790`，位于既有独立feature分支。后续报告/日志提交将产生新HEAD，最终完整远端HEAD在交付终端给出。
+
+**明确的合同顺序偏差**：用户先问为何未到多环境测试，Linux解释P0参照与P1热点的用途，并提出先做P2正确性、后优化；用户本轮回复“可以”批准该顺序调整。因此暂缓P1人工热点采集，保留既有优化前登记，不修改Windows原方案文件的历史表述。P3固定阶梯、全部物理/安全/观察/奖励约束与人工GPU启动边界仍不变。
+
+已实现的新任务为`Template-Robotarm-Magnetic-New-Stomach-RL-Vector-v0`。本轮只新增独立适配/测试并更新文档，**没有再次改任何旧共享模块**：
+
+```text
+runtime/new_stomach_rl_vector_rows.py          真实逐行读写、相机绑定、位姿平移
+runtime/new_stomach_rl_vector_lifecycle.py     WARMUP/ACTIVE与零C0兼容基线
+runtime/new_stomach_rl_vector_runtime.py       每行C10/C1、奖励、视觉缓存
+TASK/mdp/new_stomach_rl_vector_action.py       每行原Single/Chunk执行器
+TASK/mdp/new_stomach_rl_vector_magnetic.py     每行原有限磁体物理桥
+TASK/mdp/new_stomach_rl_vector_terms.py        每行观察与原arm/world安全判定
+TASK/new_stomach_rl_vector_env.py              共享物理批次、局部reset、终点接口
+TASK/robotarm_magnetic_new_stomach_rl_vector_env_cfg.py
+scripts/new_stomach_rl/validate_vector_isolation.py
+```
+
+runtime相对PKG、TASK的定义沿用原合同。新增七份测试为`test_vector_action.py`、`test_vector_runtime.py`、`test_vector_isolation.py`、`test_vector_step.py`、`test_vector_magnetic.py`、`test_vector_cli.py`、`test_vector_worker.py`，均在`tests/new_stomach_rl/`。既有217项阶段结果后来增加一个“20秒配对失败立即停机”用例，最终为218项；不以早先结果覆盖最终结果。
+
+实现方式是每个旧单行控制器只接收真实的一行tensor视图，所有关节/wrench写入强制映射到对应父场景env_ids；没有给完整N行数据伪报N=1，也没有删除旧guard。旧0索引仅指已隔离的一行。轨迹/伺服/限位/停止路径直接继承原方法，几何绑定仅用此前批准的env_root接口；每行都有独立模型可变对象、滤波、coupling elapsed、几何checker及停止缓存。磁体双向force/torque计算、限幅、drag、release/ramp及float32滤波全部调用原`LegacyMagneticCollisionBridge.physics_step`，并非复制成新磁力模型或给胶囊直接施力。
+
+胃壁审计根据实际clone平移更新世界绑定；覆盖在原canonical网格/哈希/BVH上查询该行相机的canonical坐标，不改拓扑、掩码或面积权重，不把平移后的新哈希伪称原哈希。原位姿库逐行独立RNG，显式canonical world→local→clone world，四元数仍为XYZW；partial reset不重新播全局seed。
+
+每批只有240次正常物理推进。reset只写入选中行的合法库位姿并清空该行状态，下一正常批次该行执行HOLD、建立C0且`valid_transition=False`；其他ACTIVE行正常执行并产生一个样本。TIMEOUT先保留旧`final_obs/final_mask`，之后进入WARMUP，不额外调用全局step。安全终止直接报错，不用自动reset掩盖。新适配允许合法零C0，仅建立奖励基线；旧正C0规则和四项奖励/5秒状态机不改。
+
+相机按每个共享一秒边界只采集一个完整batch，再关联到各行独立的回合RGB时钟；避免逐行补采反复渲染整批。视觉骨干权重可只读共享，但frame/feature cache独立；编码缓存构造在inference_mode(False)下，避免跨上下文reset产生inference tensor写入错误。环境提供有效样本/回合起点/旧终点掩码，但GRU/PPO训练器消费这些接口属于R0，尚未实施或验收。
+
+### 本轮实际运行与证据
+
+实际执行的完整回归命令（没有创建SimulationApp或GPU仿真）：
+
+```bash
+cd /mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008
+env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u PYTHONHOME -u PYTHONPATH \
+  WARP_CACHE_PATH=/tmp/new-stomach-scope-warp-cache \
+  PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH="$PWD/source/robotarm_magnetic_lab" \
+  /mnt/isaac-linux/IsaacLab/_isaac_sim/python.sh -m pytest \
+  tests/new_stomach_rl tests/stomach_migration tests/magnetic_following \
+  tests/stomach_coverage/test_task010_recovery.py -q --disable-warnings
+```
+
+最终`218 passed, 65 warnings in 10.73s`，退出0，较旧197项新增21项。真实旧Single/Chunk schedule/servo方法在假资产和已知安全几何fixture中完成240步，逐行写入/局部reset不污染另一行。磁桥测试使用**假有限模型SI输出**验证实际继承的原函数限幅/drag/ramp/filter和双向调用完全相同，不冒称已做真实磁体积分或GPU动力学等价。完整伪worker跑通两个121批次、240步/逐10Hz集合记录、终点后WARMUP和输出保存；239步或前20秒配对不符时停止、不启动下一段、不调整容差，保留失败摘要/部分轨迹。
+
+初次新增fixture分别因SDK stub装载顺序、缺少假omni.usd、缺少假C1 accumulator.mask出现失败；修正的是CPU fixture，未改变旧安全/物理实现。真实Kit内部mask接口由本机源代码核对为Warp bool数组，新的逐行相机绑定按此使用，不用Torch索引冒充mask。仍须用户GPU执行复核SDK接线，不能用伪worker代替。
+
+实际只读输入核对命令：
+
+```bash
+env -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u PYTHONHOME -u PYTHONPATH \
+  PYTHONPATH="$PWD/source/robotarm_magnetic_lab" \
+  /mnt/isaac-linux/IsaacLab/_isaac_sim/python.sh \
+  scripts/new_stomach_rl/validate_vector_isolation.py --check_inputs \
+  --pose_manifest /mnt/isaac-linux/isaacsim/.worktrees/new-stomach-coverage-regenerate/configs/new_stomach_v1/entry/pose_library_manifest_v1.json \
+  --mask /mnt/isaac-linux/robotarm_magnetic_lab/artifacts/new_stomach_coverage/tube_candidate_full_right_appendage_v1/candidate_face_mask.npz \
+  --device cuda:0 --viz none
+```
+
+结果`inputs_verified`、`gpu_simulation: not_run`、退出0。原参照两模式、登记文件、资产、1200位姿库、完整右管排除掩码与七份外部参数/模型/URDF/XRDF身份均通过只读校验；没有替换旧数据或生成新库。CLI help/错误环境数可在启动Kit前正常退出；`git diff --check`通过。
+
+| 完整绝对路径 | 字节 | SHA-256 |
+| --- | ---: | --- |
+| `/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/evidence/p2_implementation_20261009/regression_accepted.log` | 354 | `13572291a6e3a9fe7e3cde79c44733d629f7f6f4e9e137bd6e5e6be67647de00` |
+| `/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008/artifacts/new_stomach_rl_capacity/evidence/p2_implementation_20261009/input_audit.log` | 4827 | `deeb2b60fd2e73d2b780261c0053bb72dbd0dfe3d7b65345ff392626a1b7c5cd` |
+
+### 待用户运行的真实P2入口与未验证边界
+
+完整命令和输出说明已置于现有中文`docs/NEW_STOMACH_RL_CAPACITY_P1_GUIDE.md`最上方“当前下一步：先验收P2双环境”，历史P1命令保留但暂缓。先Single、pass后再Chunk；各模式一个GPU进程完成对照/反复reset行0两段120秒任务，另有终点后的正常WARMUP，合计244个共享一秒批次；墙钟尚未实测。源骨干CPU有限磁模型依旧逐行调用，不能据此承诺N倍加速。
+
+输出默认在`artifacts/new_stomach_rl_capacity/isolation/<UTC运行ID>/`，每段有`boundaries.jsonl`和`isolation_tape.npz`，最终summary记录代码HEAD、完整命令、资产/输入清单、实际GPU PhysX/环境/相机设备、有效样本、TIMEOUT、19项配对比较和每个外部工件路径/大小/SHA。动态轨迹、覆盖集合仍在Git外。前20秒N1/N2物理/模型配对失败会提前终止，记录原预登记容差与真实误差；clone世界坐标的float32平移差异不能被自动放宽。正常行C10/C1集合、四项奖励、历史和帧号仍须严格相符；原RGB像素哈希不同属于已知renderer重复性，既不把它当作力学故障，也不据此声称像素等价。
+
+**尚未验证**：真实GPU两环境构造/窄相、N1/N2动力学/覆盖等价、反复partial reset长期隔离、相机帧/图像等价及实际GRU/rollout接入；更没有P1优化收益、P3容量或R0—R2结果。当前仅可认为独立适配的软件路径交付，整体`needs_input`。遇到真实安全/同步/等价失败保留日志并报告，不擅自调参、更换库、跳过样本或开始训练。
