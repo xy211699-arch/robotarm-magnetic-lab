@@ -8,18 +8,27 @@ from types import ModuleType,SimpleNamespace
 import numpy as np
 import pytest
 import torch
-from test_magnetic_equivalence import make_reference
+from test_magnetic_equivalence import make_reference,refresh_manifest
 from robotarm_magnetic_lab.runtime.new_stomach_rl_reference_audit import audit_reference_pair
 from robotarm_magnetic_lab.runtime.new_stomach_rl_vector_lifecycle import VectorLifecycle
 
 
-@pytest.mark.parametrize('substeps,origin',[(240,0.),(239,0.),(240,1.)])
-def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,monkeypatch,substeps,origin):
+@pytest.mark.parametrize('substeps,origin,calibration',[(240,0.,False),(239,0.,False),(240,1.,False),(240,0.,True)])
+def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,monkeypatch,substeps,origin,calibration):
     scripts=Path(__file__).resolve().parents[2]/'scripts/new_stomach_rl'
     monkeypatch.syspath_prepend(str(scripts))
     spec=importlib.util.spec_from_file_location('_p2_fake_worker',scripts/'validate_vector_isolation.py')
     script=importlib.util.module_from_spec(spec);spec.loader.exec_module(script)
     pair=[make_reference(tmp_path/'single','single'),make_reference(tmp_path/'chunk','chunk')]
+    if calibration:
+        for folder,mode in zip(pair,('single','chunk')):
+            for repeat in (0,1):
+                file=folder/f'repeat_{repeat}/reference_tape.npz'
+                with np.load(file) as tape: arrays={name:tape[name].copy() for name in tape.files}
+                arrays['physics'][...,6]=1;arrays['physics'][...,31]=1
+                arrays['magnetic_inputs'][...,6]=1;arrays['magnetic_inputs'][...,13]=1
+                np.savez_compressed(file,**arrays)
+            refresh_manifest(folder,mode)
     manifest=tmp_path/'registry.json';manifest.write_text(json.dumps(audit_reference_pair(*pair)))
     monkeypatch.setattr(script,'audit_assets',lambda *args:{'fake_cpu_fixture':True})
     for name in ('poses','mask'): (tmp_path/name).write_text('fixture')
@@ -39,6 +48,7 @@ def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,
                 root_com_vel_w=SimpleNamespace(torch=torch.zeros(1,6))))
             self.visual_features=torch.zeros(1,512)
             self.reward=SimpleNamespace(_pending=torch.zeros(1),_counts=torch.zeros(1))
+            self.visibility=SimpleNamespace(weights=torch.ones(8))
         def boundary(self,active):
             coverage=self.coverage
             if not active:
@@ -107,7 +117,9 @@ def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,
         def append(self): self.count+=1
         def finish(self):
             if self.count!=240: raise RuntimeError('trace incomplete')
-            return torch.zeros(240,50)
+            result=torch.zeros(240,50)
+            if calibration: result[:,6]=1;result[:,31]=1
+            return result
     class Tape:
         def __init__(self,*args): self.count=0;self.active=False
         def begin(self): self.count=0;self.active=True
@@ -116,7 +128,9 @@ def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,
         def finish(self):
             self.active=False
             if self.count!=240: raise RuntimeError('magnetic incomplete')
-            return torch.zeros(240,33),torch.zeros(240,25)
+            inputs=torch.zeros(240,33)
+            if calibration: inputs[:,6]=1;inputs[:,13]=1
+            return inputs,torch.zeros(240,25)
     import robotarm_magnetic_lab.runtime.new_stomach_rl_trace as trace_module
     import robotarm_magnetic_lab.runtime.new_stomach_rl_capacity_reference as tape_module
     monkeypatch.setattr(trace_module,'PhysicalStepRecorder',Trace)
@@ -145,12 +159,18 @@ def test_complete_fake_validator_saves_evidence_or_stops_without_retry(tmp_path,
     monkeypatch.setitem(sys.modules,env_module.__name__,env_module);monkeypatch.setitem(sys.modules,cfg_module.__name__,cfg_module)
     monkeypatch.setattr(sys,'argv',[str(scripts/'validate_vector_isolation.py'),'--pose_manifest',str(tmp_path/'poses'),
         '--mask',str(tmp_path/'mask'),'--tolerance_manifest',str(manifest),'--output_root',str(tmp_path/'output')])
+    if calibration: sys.argv.append('--calibrate_repeatability')
     if substeps==239 or origin:
         with pytest.raises(SystemExit): script.main()
     else: script.main()
     summary=json.loads(next((tmp_path/'output').glob('*/summary.json')).read_text())
     assert closes==[1]
-    if substeps==240 and not origin:
+    if calibration:
+        assert summary['status']=='calibrated' and summary['full_isolation']=='not_run'
+        assert len(steps)==63 and len(summary['runs'])==3
+        assert list((tmp_path/'output').glob('*/acceptance_manifest.json'))
+        assert not summary['comparisons']  # never call a 20s calibration a 120s pass
+    elif substeps==240 and not origin:
         assert summary['status']=='pass' and len(summary['runs'])==2
         assert len(steps)==244  # two initial HOLDs and 2 x 121 batches
         assert all(v['row_1_valid_transitions']==120 for v in summary['runs'])

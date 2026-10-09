@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
+import hashlib
+import json
 from robotarm_magnetic_lab.runtime.new_stomach_rl_acceptance import (
-    BOUNDS,measurements,mask_difference,register,compare)
+    BOUNDS,measurements,mask_difference,register,compare,load_manifest)
 
 
 def physics():
@@ -45,3 +47,18 @@ def test_gross_pose_error_and_invalid_quaternion_cannot_be_relaxed():
     assert not compare('physics',a,b,manifest,'position')['passed']
     b=a.copy();b[...,3:7]=0
     assert not compare('physics',a,b,manifest,'quaternion')['passed']
+
+
+def test_manifest_identity_caps_and_evidence_are_checked_before_gpu(tmp_path):
+    data=tmp_path/'calibration.npz';np.savez(data,physics=physics())
+    artifact=dict(path=str(data),bytes=data.stat().st_size,sha256=hashlib.sha256(data.read_bytes()).hexdigest())
+    manifest=register({k:0. for k in BOUNDS},'single','original-sha',[artifact])
+    file=tmp_path/'manifest.json';file.write_text(json.dumps(manifest))
+    assert load_manifest(file,'single','original-sha')['limits']==manifest['limits']
+    with pytest.raises(ValueError,match='identity'): load_manifest(file,'chunk','original-sha')
+    with pytest.raises(ValueError,match='identity'): load_manifest(file,'single','changed-sha')
+    manifest['limits']['capsule_position_m']=.5;file.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError,match='limit'): load_manifest(file,'single','original-sha')
+    manifest['limits']['capsule_position_m']=.003;file.write_text(json.dumps(manifest))
+    data.write_bytes(b'changed fixture')
+    with pytest.raises(ValueError,match='changed'): load_manifest(file,'single','original-sha')
