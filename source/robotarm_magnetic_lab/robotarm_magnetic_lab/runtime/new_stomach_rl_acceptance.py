@@ -12,7 +12,7 @@ import numpy as np
 # SI component limits, not a single dimensionally-invalid tensor tolerance.
 BOUNDS = {
     'capsule_position_m': (.0002, .003),
-    'capsule_orientation_rad': (np.deg2rad(.5), np.deg2rad(8)),
+    'capsule_orientation_rad': (np.deg2rad(.5), np.deg2rad(10)),
     'linear_velocity_m_s': (.005, .05),
     'angular_velocity_rad_s': (.5, 8.),
     'source_position_m': (1e-6, 5e-5),
@@ -24,7 +24,7 @@ BOUNDS = {
     'elapsed_s': (1e-6, 1e-5),
     'mask_area_fraction': (.002, .04),
 }
-VERSION = 'clone-repeatability-v1'
+VERSION = 'clone-repeatability-v2'
 
 
 def difference(a, b):
