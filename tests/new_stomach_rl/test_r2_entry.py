@@ -39,3 +39,15 @@ def test_gpu_entry_modules_have_no_import_time_launch():
         # GPU packages are imported only in main, not while CPU tests load code.
         assert not any(isinstance(x,ast.ImportFrom) and x.module and x.module.startswith('isaaclab') for x in tree.body)
         compile(path.read_text(),str(path),'exec')
+
+
+def test_latest_status_cli_is_read_only(tmp_path,monkeypatch,capsys):
+    import sys
+    m=supervisor();m.BASE=tmp_path
+    folder=tmp_path/'fixture';folder.mkdir();(tmp_path/'latest').symlink_to(folder.name)
+    path=folder/'status.json';path.write_text(json.dumps(dict(status='queued',run_id='fixture')))
+    before=path.stat().st_mtime_ns
+    monkeypatch.setattr(sys,'argv',['supervise_training.py','status'])
+    m.main()
+    assert json.loads(capsys.readouterr().out)['status']=='queued'
+    assert path.stat().st_mtime_ns==before and not (folder/'stop.request').exists()

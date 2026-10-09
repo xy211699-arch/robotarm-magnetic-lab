@@ -152,7 +152,8 @@ def main():
     parser.add_argument('--run_dir',type=Path)
     parser.add_argument('--kit_args')
     args=parser.parse_args()
-    if args.command in ('status','stop','worker') and args.run_dir is None: parser.error('--run_dir required')
+    if args.command in ('status','stop') and args.run_dir is None:args.run_dir=BASE/'latest'
+    if args.command=='worker' and args.run_dir is None: parser.error('--run_dir required')
     if args.command=='status': print(json.dumps(read(args.run_dir/'status.json'),indent=2));return
     if args.command=='stop':
         state=read(args.run_dir/'status.json')
@@ -186,6 +187,8 @@ def main():
             head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()))
         write(folder/'status.json',dict(status='queued',run_id=folder.name))
         write(lock,dict(run_dir=str(folder.resolve())))
+        temporary=BASE/'latest.tmp'
+        temporary.symlink_to(folder.name,target_is_directory=True);temporary.replace(BASE/'latest')
         with (folder/'supervisor.log').open('x') as stream:
             child=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'worker','--run_dir',str(folder)],
                 cwd=ROOT,stdin=subprocess.DEVNULL,stdout=stream,stderr=subprocess.STDOUT,start_new_session=True)
