@@ -79,6 +79,8 @@ def test_reset_discards_only_selected_visual_reward_and_cover_states():
     from types import SimpleNamespace
     from robotarm_magnetic_lab.runtime.new_stomach_rl_vector_runtime import NewStomachRLVectorRuntime
     runtime=NewStomachRLVectorRuntime.__new__(NewStomachRLVectorRuntime)
+    from robotarm_magnetic_lab.runtime.finite_magnet_cache import SameTickPoseCache
+    runtime.live_pose_cache=SameTickPoseCache()
     runtime.env=SimpleNamespace(device='cpu')
     sync_resets=[]
     runtime.rgb_clock=SimpleNamespace(sync=SimpleNamespace(reset_rows=lambda ids:sync_resets.append(ids.tolist())))
