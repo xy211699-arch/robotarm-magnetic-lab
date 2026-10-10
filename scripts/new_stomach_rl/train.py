@@ -83,6 +83,19 @@ def main():
                 return result
             env.runtime.finish_batch=record
             calls=[0]*8;bridge=env.event_manager.get_term_cfg('magnetic_collision_bridge').func
+            performance={}
+            def timed(owner,name,label):
+                method=getattr(owner,name)
+                def measured(*args,**kwargs):
+                    began=time.perf_counter()
+                    try:return method(*args,**kwargs)
+                    finally:performance[label]=performance.get(label,0.)+time.perf_counter()-began
+                setattr(owner,name,measured)
+            timed(bridge,'physics_step','magnetic_bridge_host_s')
+            timed(env.action_manager,'process_action','planning_host_s')
+            for row in bridge.rows:
+                timed(row.model,'force_torque_si','magnetic_getFT_host_s')
+                timed(row.model,'force_torque_on_cube_si','magnetic_getFT_host_s')
             for i,row in enumerate(bridge.rows):
                 original=row.physics_step
                 def counted(*a,_i=i,_original=original,**kw):
@@ -90,14 +103,14 @@ def main():
                 row.physics_step=counted
             original_step=env.step
             def audited_step(action):
-                calls[:]=[0]*8;began=time.perf_counter();result=original_step(action)
+                calls[:]=[0]*8;performance.clear();began=time.perf_counter();result=original_step(action)
                 if calls!=[240]*8 or result[-1]['physical_substeps']!=240:raise RuntimeError('240 magnetic/physical steps required')
                 actual=torch.tensor([x['actual_issued_history'] for x in captured],device=env.device).reshape(8,36)
                 if not torch.equal(result[-1]['final_obs']['policy'][:,512:],actual):raise RuntimeError('Actor history not actual issued commands')
                 tape.write(json.dumps(dict(phase=phase,global_tick=env.lifecycle.global_tick,elapsed_s=time.perf_counter()-began,
                     raw_action=action.detach().cpu().tolist(),valid=result[-1]['valid_transition'].cpu().tolist(),
                     truncated=result[3].cpu().tolist(),final_critic_inputs=result[-1]['final_obs']['critic'].detach().cpu().tolist(),
-                    rows=captured),allow_nan=False)+'\n');tape.flush()
+                    rows=captured,performance=dict(performance)),allow_nan=False)+'\n');tape.flush()
                 if writer:
                     step=collector.boundaries if collector else 0
                     c0=[x['c10'][-1]['coverage'][0] for x in captured if not x['valid']]
@@ -120,7 +133,7 @@ def main():
                 collector.boundaries=int(statistics['global_boundaries'])
                 collector.samples=report['restoration']['effective_samples']
                 collector.timeouts=torch.tensor(statistics['timeouts'],dtype=torch.int64)
-                if collector.boundaries!=runner.update_count*64 or not 0<=runner.update_count<=1000:
+                if collector.boundaries!=runner.update_count*config['rollout_steps'] or not 0<=runner.update_count<=config['max_updates']:
                     raise RuntimeError('resume iteration/boundary counters mismatch')
                 report['resume_checkpoint']=inventory(args.resume_checkpoint)
                 checkpoint=dict(report['resume_checkpoint'],kind='training_boundary')
@@ -147,7 +160,7 @@ def main():
                 phase='training'
                 # Controlled asynchronous reset is a boundary event, never an extra physics step.
                 pieces=[]
-                for part in ((5,59) if not full and update==0 else (64,)):
+                for part in ((5,59) if not full and update==0 else (config['rollout_steps'],)):
                     pieces.append(collector.collect(part))
                     if not full and update==0 and part==5:
                         before=env.lifecycle.global_tick

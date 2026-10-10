@@ -322,25 +322,26 @@ class LegacyMagneticCollisionBridge(ManagerTermBase):
         release_delay = float(self.config["external_magnet"]["release_delay_s"])
 
         for local_index, env_id in enumerate(env_id_list):
-            main_position = magnet_positions[env_id].detach().cpu().numpy().astype(np.float64)
+            host = getattr(self, '_batch_host_state', None)
+            main_position = (host[:3] if host is not None else magnet_positions[env_id].detach().cpu().numpy()).astype(np.float64)
             main_rotation = _quat_xyzw_to_matrix(
-                magnet_quaternions[env_id].detach().cpu().numpy()
+                host[3:7] if host is not None else magnet_quaternions[env_id].detach().cpu().numpy()
             )
             capsule_position = (
-                capsule_positions[env_id].detach().cpu().numpy().astype(np.float64)
+                (host[7:10] if host is not None else capsule_positions[env_id].detach().cpu().numpy()).astype(np.float64)
             )
             capsule_rotation = _quat_xyzw_to_matrix(
-                capsule_quaternions[env_id].detach().cpu().numpy()
+                host[10:14] if host is not None else capsule_quaternions[env_id].detach().cpu().numpy()
             )
             capsule_linear_velocity = (
-                capsule_linear_velocities[env_id]
+                host[14:17].astype(np.float64) if host is not None else capsule_linear_velocities[env_id]
                 .detach()
                 .cpu()
                 .numpy()
                 .astype(np.float64)
             )
             capsule_angular_velocity = (
-                capsule_angular_velocities[env_id]
+                host[17:20].astype(np.float64) if host is not None else capsule_angular_velocities[env_id]
                 .detach()
                 .cpu()
                 .numpy()
@@ -375,7 +376,7 @@ class LegacyMagneticCollisionBridge(ManagerTermBase):
             capsule_force = _clip_norm(capsule_force, float(sim_cfg["max_force_n"]))
             capsule_torque = _clip_norm(capsule_torque, float(sim_cfg["max_torque_nm"]))
             ramp = min(
-                max((float(self.elapsed[env_id]) - release_delay) / ramp_seconds, 0.0),
+                max(((float(host[20]) if host is not None else float(self.elapsed[env_id])) - release_delay) / ramp_seconds, 0.0),
                 1.0,
             )
             # Lumped viscous resistance of fluid, mucosa and rolling contact.

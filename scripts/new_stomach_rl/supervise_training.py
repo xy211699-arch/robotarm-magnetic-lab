@@ -122,7 +122,7 @@ def monitor(command,folder,config,poll=.5):
                 state.update(status='completed',update_count=summary['update_count'],effective_samples=summary['effective_samples'])
                 if config.get('purpose')=='full_training':
                     ck=summary.get('checkpoint')
-                    if not ck or summary.get('checkpoint_update')!=1000 or ck.get('kind')!='training_boundary':
+                    if not ck or summary.get('checkpoint_update')!=config['max_updates'] or ck.get('kind')!='training_boundary':
                         raise RuntimeError('full training lacks final boundary checkpoint')
                     p=Path(ck['path']).resolve()
                     if not p.is_relative_to(folder.resolve()) or hashlib.sha256(p.read_bytes()).hexdigest()!=ck['sha256']:
@@ -141,12 +141,15 @@ def monitor(command,folder,config,poll=.5):
 def validate_config(path):
     config=read(path)
     full=config.get('purpose')=='full_training'
+    revised=full and config.get('approval')=='user_confirmed_2026-10-10_500x32_N8_save50'
+    budget=config.get('max_wall_seconds')
+    probe=revised and config.get('time_limited_probe') is True and isinstance(budget,(int,float)) and not isinstance(budget,bool) and 22<budget<=900
     if (config.get('purpose') not in ('r2_smoke','full_training') or config.get('num_envs')!=8 or
-        config.get('max_updates')!=(1000 if full else 3) or config.get('rollout_steps')!=64 or config.get('group') not in ('A','B','C','D')):
+        config.get('max_updates')!=(500 if revised else 1000 if full else 3) or config.get('rollout_steps')!=(32 if revised else 64) or config.get('group') not in ('A','B','C','D')):
         raise ValueError('only fixed eight-env R2 or approved full training accepted; unapproved formal config rejected')
-    if full and (config.get('save_interval')!=50 or config.get('max_wall_seconds') is not None or
-        config.get('time_limited_probe',False) or config.get('tensorboard') is not True or
-        config.get('approval')!='user_confirmed_2026-10-10_1000x64_N8_save50'):
+    if full and (config.get('save_interval')!=50 or (budget is not None and not probe) or
+        (config.get('time_limited_probe',False) and not probe) or config.get('tensorboard') is not True or
+        config.get('approval') not in ('user_confirmed_2026-10-10_1000x64_N8_save50','user_confirmed_2026-10-10_500x32_N8_save50')):
         raise ValueError('approved full training requires 1000 updates/save50/no wall limit')
     for name in ('max_wall_seconds','startup_timeout_seconds','heartbeat_timeout_seconds','stop_grace_seconds'):
         value=config.get(name)
@@ -161,7 +164,7 @@ def validate_config(path):
         if hashlib.sha256(Path(item['path']).read_bytes()).hexdigest()!=item['sha256']:
             raise ValueError('gate or frozen input bytes changed')
     fixed=dict(fixed_replay_seconds=120,partial_reset_boundary=None if full else 5,restore_before_update=None if full else 3,
-        gamma=.999**10,gae_lambda=.95,epochs=2,sequence_length=64,
+        gamma=.999**10,gae_lambda=.95,epochs=2,sequence_length=32 if revised else 64,
         minibatch='whole_valid_sequence',formal_training_allowed=full)
     if any(config.get(k)!=v for k,v in fixed.items()):raise ValueError('R2 lifecycle/learning contract changed')
     if config.get('device')!='cuda:0' or config.get('visualizer')!='none':raise ValueError('GPU no-window R2 required')

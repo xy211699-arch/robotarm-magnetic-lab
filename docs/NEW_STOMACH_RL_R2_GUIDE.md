@@ -115,3 +115,10 @@ B、C、D 分别替换最后的 A.json；每次只启动一组，上一组 compl
 ```
 
 服务器桌面浏览器访问 http://localhost:6006。观察 train 下的损失/梯度/有效样本及 episode/c0_mean、episode/c120_mean；c120 只来自自然 TIMEOUT，不由检查点截断伪造。工件保存在 jobs/<运行ID>，可能占用较大磁盘空间，不自动删除。旧 D/N8 容量吞吐约 0.449 样本/秒，粗外推单组采样约 13 天；并非真实 PPO 完整训练耗时测量，其他组未测，不能承诺很快完成。
+# 最新预算与性能优化（2026-10-10）
+
+用户将完整训练改为 500 更新、rollout 32、N8、保存间隔50；本节取代下文1000×64预算。新配置使用 --full_training 重新准备，保留原PPO/GRU/奖励/240Hz磁力；采集隐状态跨32步rollout延续，回合并非每32秒重置。最多128000行样本，WARMUP另扣。原配置绑定旧HEAD，不能直接继续使用。
+
+磁控链路仅复用有限磁体对象/不变局部积分网格、批量搬运状态，以及同tick共享光学位姿同步；每个物理步仍双向计算getFT与原滤波，不使用旧力、不改网格数量。嵌套主机计时记录到boundaries.jsonl的performance：magnetic_bridge_host_s包含magnetic_getFT_host_s，不能相加。
+
+仅用户要求的短测允许 --full_training --wall_seconds 900 --time_limited_probe；该时限含启动和退出，结束interrupted而非训练通过。完整训练不传墙钟参数，继续无时限。500×32与原1000×64不是等样本预算比较；完整训练时间需优化后的实测估算，不能沿用旧13天估算。

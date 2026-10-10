@@ -18,6 +18,8 @@ class ScopedMagneticRow(LegacyMagneticCollisionBridge):
         config_module,field_module,streamline_module,visual_module = modules
         self.config = config_module.load_config(LEGACY_EXTENSION_ROOT)
         self.model = field_module.FiniteMagnetSystem(self.config)
+        from robotarm_magnetic_lab.runtime.finite_magnet_cache import cache_finite_geometry
+        cache_finite_geometry(self.model)
         self.robot,self.capsule = env.scene['robot'],env.scene['capsule']
         self.collision_model = XrdfSphereCollisionModel(self.robot,LEGACY_EXTENSION_ROOT/self.config['planning']['robot_xrdf'])
         self.arm_indices = [self.robot.data.joint_names.index(n) for n in self.config['robot']['arm_joint_names']]
@@ -61,9 +63,19 @@ class NewStomachRLVectorMagnetic(ManagerTermBase):
     def __call__(self,env,env_ids): pass
 
     def physics_step(self,env,env_ids=None):
-        for index in row_ids(env_ids,len(self.rows)):
+        ids = row_ids(env_ids,len(self.rows))
+        robot,capsule = env.scene['robot'],env.scene['capsule']
+        body = self.rows[0].magnet_body_index
+        # One device-to-host transfer per batch instead of six per row.
+        packed = torch.cat((robot.data.body_pos_w.torch[:,body],robot.data.body_quat_w.torch[:,body],
+            capsule.data.root_pos_w.torch,capsule.data.root_quat_w.torch,
+            capsule.data.root_lin_vel_w.torch,capsule.data.root_ang_vel_w.torch,
+            torch.cat([row.elapsed for row in self.rows])[:,None]+float(env.physics_dt)),dim=1).detach().cpu().numpy()
+        for index in ids:
             row = self.rows[index]
-            row.physics_step(row._env)
+            row._batch_host_state = packed[index]
+            try: row.physics_step(row._env)
+            finally: row._batch_host_state = None
 
     def reset(self,env_ids=None):
         for index in row_ids(env_ids,len(self.rows)): self.rows[index].reset()

@@ -75,7 +75,9 @@ class VectorRowRuntime(NewStomachRLRuntime):
         row._geometry()
         reference = canonical_reference(omni.usd.get_context().get_stage(),row)
         self.visibility = CloneVisibility(frozen_visibility(reference,mask_path,env.device),row.env_origin)
-        self.optics = LiveMountedOptics(self.camera,env.device,env.sim.physics_manager.forward)
+        # Shared transform propagation/read once per global physical tick.
+        self.camera._view = SimpleNamespace(get_world_poses=lambda:owner.live_camera_poses(env.row),_fabric_hierarchy=None)
+        self.optics = LiveMountedOptics(self.camera,env.device,None)
         self.coverage = DualRateCoverage(self.visibility,1,geometry_optics=self.optics)
         self.reward = ZeroCompatibleReward(1,env.device)
         self.policy_second = 0
@@ -111,6 +113,8 @@ class VectorRowRuntime(NewStomachRLRuntime):
 class NewStomachRLVectorRuntime:
     def __init__(self,env,mask_path):
         self.env = env
+        from .finite_magnet_cache import SameTickPoseCache
+        self.live_pose_cache = SameTickPoseCache()
         self.rgb_clock = VectorPolicyRGBBoundary(env.num_envs,env.device)
         self.global_second = -1
         self.rows = [VectorRowRuntime(row,mask_path,self) for row in env.action_manager.get_term('magnet').rows]
@@ -123,6 +127,7 @@ class NewStomachRLVectorRuntime:
                 row.encoder = FrozenResNet18Encoder(backbone=first.backbone).to(env.device)
 
     def reset_rows(self,ids):
+        self.live_pose_cache.invalidate()
         self.rgb_clock.sync.reset_rows(torch.tensor(ids,dtype=torch.int64,device=self.env.device))
         for index in ids:
             row = self.rows[index]
@@ -134,6 +139,17 @@ class NewStomachRLVectorRuntime:
             row.reward._initialized.zero_()
             row.visual_features.zero_()
             if row.encoder is not None: row.encoder.reset()
+
+    def live_camera_poses(self,index):
+        def fetch():
+            self.env.sim.physics_manager.forward()
+            view=self.env.scene['capsule_camera']._view
+            hierarchy=getattr(view,'_fabric_hierarchy',None)
+            if hierarchy is not None:hierarchy.update_world_xforms()
+            positions,quats=view.get_world_poses()
+            return positions.torch.clone(),quats.torch.clone()
+        positions,quats=self.live_pose_cache.read(self.env._sim_step_counter,fetch)
+        return SimpleNamespace(torch=positions[index:index+1]),SimpleNamespace(torch=quats[index:index+1])
 
     def finish_batch(self,valid):
         # Account for tick-zero baseline only inside the first completed HOLD.
