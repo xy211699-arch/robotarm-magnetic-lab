@@ -122,3 +122,18 @@ B、C、D 分别替换最后的 A.json；每次只启动一组，上一组 compl
 磁控链路仅复用有限磁体对象/不变局部积分网格、批量搬运状态，以及同tick共享光学位姿同步；每个物理步仍双向计算getFT与原滤波，不使用旧力、不改网格数量。嵌套主机计时记录到boundaries.jsonl的performance：magnetic_bridge_host_s包含magnetic_getFT_host_s，不能相加。
 
 仅用户要求的短测允许 --full_training --wall_seconds 900 --time_limited_probe；该时限含启动和退出，结束interrupted而非训练通过。完整训练不传墙钟参数，继续无时限。500×32与原1000×64不是等样本预算比较；完整训练时间需优化后的实测估算，不能沿用旧13天估算。
+# 最终确认：200更新 × rollout8，每组总12小时
+
+用户最终确定A/B/C/D统一200更新、rollout8、N8。序列长度8，GRU采集隐状态跨rollout保留；原模型/PPO/奖励/物理/控制频率保持不变。保存间隔仍50，即update_0050/0100/0150/0200；checkpoint仍在显式新回合边界保存。此预算取代下文500×32及1000×64，不是等样本比较，每组最多12800行样本，WARMUP另扣。
+
+四组新配置目录：artifacts/new_stomach_rl_capacity/training_readiness/configs/final_200x8_12h_20261010。完整prepare使用--full_training，默认总墙钟43200秒；包含Kit初始化、全部采样/PPO/检查点/固定train与validation各120秒回放及退出宽限。监督器提前预留20秒SIGINT及2秒KILL退出时间，到期interrupted/budget_exhausted，不冒称completed。数据和已完成检查点保留；原生Kit退出可能不执行Python finally，不保证额外中途快照。
+
+人工resume不会重置这组总时限，父运行耗时从剩余预算扣除；用尽预算后禁止resume。每组一次启动，GPU锁禁止并发；上一组completed或interrupted且进程已退出后，再人工启动下一组。未自动训练。8步rollout真实GPU PPO更新尚未验证，短测79–86小时估算对应旧500×32；新预算仍1600采样边界，初步约9–11.5小时，不承诺一定完成，12小时硬限优先。
+
+```bash
+cd /mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-capacity-20261008
+export ROBOTARM_MAGPYLIB_VENDOR=/mnt/isaac-linux/isaacsim/extsUser/robotarm.magnetic_sim/vendor
+./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_training.py start --config artifacts/new_stomach_rl_capacity/training_readiness/configs/final_200x8_12h_20261010/A.json
+```
+
+B/C/D分别换末尾A.json，查询用supervise_training.py status。TensorBoard继续读取jobs目录。旧配置不要用于本轮对照。

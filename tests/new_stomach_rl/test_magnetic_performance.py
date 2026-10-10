@@ -2,12 +2,64 @@ import importlib.util
 import json
 import os
 import sys
+import time
 from pathlib import Path
 import numpy as np
 import pytest
 from test_full_training_entry import full_config, supervisor
 from robotarm_magnetic_lab.runtime.finite_magnet_cache import cache_finite_geometry
 from robotarm_magnetic_lab.runtime.finite_magnet_cache import SameTickPoseCache
+
+
+def bounded_config(tmp_path):
+    cfg=full_config(tmp_path)
+    cfg.update(max_updates=200,rollout_steps=8,sequence_length=8,max_wall_seconds=43200,
+        approval='user_confirmed_2026-10-10_200x8_N8_total12h_save50')
+    return cfg
+
+
+@pytest.mark.parametrize('group',list('ABCD'))
+def test_final_four_group_200x8_budget(tmp_path,group):
+    cfg=bounded_config(tmp_path);cfg['group']=group
+    p=tmp_path/'final.json';p.write_text(json.dumps(cfg))
+    checked=supervisor().validate_config(p)
+    assert (checked['max_updates'],checked['rollout_steps'],checked['sequence_length'],checked['max_wall_seconds'])==(200,8,8,43200)
+
+
+@pytest.mark.parametrize('field,value',[('max_updates',201),('rollout_steps',32),('sequence_length',32),
+    ('max_wall_seconds',None),('max_wall_seconds',43201),('save_interval',10),('num_envs',12)])
+def test_final_budget_is_not_silently_changed(tmp_path,field,value):
+    cfg=bounded_config(tmp_path);cfg[field]=value
+    p=tmp_path/'bad.json';p.write_text(json.dumps(cfg))
+    with pytest.raises(ValueError):supervisor().validate_config(p)
+
+
+def test_budget_expiry_retains_data_and_consumes_previous_run_time(tmp_path):
+    m=supervisor();cfg=bounded_config(tmp_path)
+    # CPU fixture scales twelve hours to seconds. No Kit/GPU/learning process.
+    cfg.update(max_wall_seconds=2.5,stop_grace_seconds=.1,startup_timeout_seconds=10,heartbeat_timeout_seconds=10)
+    evidence=tmp_path/'boundaries.jsonl';evidence.write_text('existing evidence\n')
+    start=time.monotonic()
+    result=m.monitor([sys.executable,'-c','import time;time.sleep(60)'],tmp_path,cfg,poll=.01,budget_used_seconds=.2)
+    assert result['status']=='interrupted' and result['budget_exhausted']
+    assert result['stop_reason']=='twelve-hour group budget reached'
+    assert result['child_pid'] is None and time.monotonic()-start<2.5
+    assert result['group_elapsed_seconds']>=result['elapsed_seconds']+.19
+    assert evidence.read_text()=='existing evidence\n'
+
+
+def test_fake_200_update_completion_and_checkpoint_schedule(tmp_path):
+    m=supervisor();cfg=bounded_config(tmp_path)
+    script=tmp_path/'fixture.py'
+    script.write_text('''import json,pathlib,hashlib,sys
+p=pathlib.Path(sys.argv[1]); ck=p/'update_0200.pt';ck.write_bytes(b'CPU fixture only')
+(p/'summary.json').write_text(json.dumps(dict(run_id=p.name,status='completed',update_count=200,
+ effective_samples=12800,global_boundaries=1600,checkpoint_update=200,
+ checkpoint=dict(path=str(ck),sha256=hashlib.sha256(ck.read_bytes()).hexdigest(),kind='training_boundary'))))
+''')
+    result=m.monitor([sys.executable,str(script),str(tmp_path)],tmp_path,cfg,poll=.01)
+    assert result['status']=='completed' and result['update_count']==200
+    assert [u for u in range(1,201) if m.checkpoint_due(u,50)]==[50,100,150,200]
 
 
 def test_pose_cache_only_reuses_same_tick_and_invalidates_on_reset():

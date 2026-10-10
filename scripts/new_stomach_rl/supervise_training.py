@@ -61,7 +61,7 @@ def stop_owned(child,grace):
         child.wait(timeout=2)
 
 
-def monitor(command,folder,config,poll=.5):
+def monitor(command,folder,config,poll=.5,budget_used_seconds=0.):
     """Only the Popen-owned process group can be stopped, never an arbitrary PID."""
     folder=Path(folder);started=time.monotonic();last_progress=started
     state=dict(status='running',run_id=folder.name,started_epoch_s=time.time(),
@@ -77,9 +77,11 @@ def monitor(command,folder,config,poll=.5):
                 if (folder/'stop.request').exists():
                     state.update(status='interrupted',stop_reason='user requested stop');break
                 budget=config.get('max_wall_seconds')
-                if budget is not None and time.monotonic()-started>=budget-config['stop_grace_seconds']-2:
+                if budget is not None and time.monotonic()-started+budget_used_seconds>=budget-config['stop_grace_seconds']-2:
                     if config.get('time_limited_probe',False):
                         state.update(status='interrupted',stop_reason='requested short-test duration reached');break
+                    if config.get('approval')=='user_confirmed_2026-10-10_200x8_N8_total12h_save50':
+                        state.update(status='interrupted',stop_reason='twelve-hour group budget reached',budget_exhausted=True);break
                     raise RuntimeError('wall-clock budget exhausted')
                 heartbeat=folder/'heartbeat.json'
                 if heartbeat.exists():
@@ -133,7 +135,8 @@ def monitor(command,folder,config,poll=.5):
         if child is not None: stop_owned(child,config['stop_grace_seconds'])
     finally:
         state.update(child_pid=None,exit_code=child.returncode if child is not None else None,
-            ended_epoch_s=time.time(),elapsed_seconds=time.monotonic()-started)
+            ended_epoch_s=time.time(),elapsed_seconds=time.monotonic()-started,
+            group_elapsed_seconds=budget_used_seconds+time.monotonic()-started)
         write(folder/'status.json',state)
     return state
 
@@ -142,15 +145,16 @@ def validate_config(path):
     config=read(path)
     full=config.get('purpose')=='full_training'
     revised=full and config.get('approval')=='user_confirmed_2026-10-10_500x32_N8_save50'
+    bounded=full and config.get('approval')=='user_confirmed_2026-10-10_200x8_N8_total12h_save50'
     budget=config.get('max_wall_seconds')
-    probe=revised and config.get('time_limited_probe') is True and isinstance(budget,(int,float)) and not isinstance(budget,bool) and 22<budget<=900
+    probe=(revised or bounded) and config.get('time_limited_probe') is True and isinstance(budget,(int,float)) and not isinstance(budget,bool) and 22<budget<=900
     if (config.get('purpose') not in ('r2_smoke','full_training') or config.get('num_envs')!=8 or
-        config.get('max_updates')!=(500 if revised else 1000 if full else 3) or config.get('rollout_steps')!=(32 if revised else 64) or config.get('group') not in ('A','B','C','D')):
+        config.get('max_updates')!=(200 if bounded else 500 if revised else 1000 if full else 3) or config.get('rollout_steps')!=(8 if bounded else 32 if revised else 64) or config.get('group') not in ('A','B','C','D')):
         raise ValueError('only fixed eight-env R2 or approved full training accepted; unapproved formal config rejected')
-    if full and (config.get('save_interval')!=50 or (budget is not None and not probe) or
+    if full and (config.get('save_interval')!=50 or (bounded and not probe and budget!=43200) or (not bounded and budget is not None and not probe) or
         (config.get('time_limited_probe',False) and not probe) or config.get('tensorboard') is not True or
-        config.get('approval') not in ('user_confirmed_2026-10-10_1000x64_N8_save50','user_confirmed_2026-10-10_500x32_N8_save50')):
-        raise ValueError('approved full training requires 1000 updates/save50/no wall limit')
+        config.get('approval') not in ('user_confirmed_2026-10-10_1000x64_N8_save50','user_confirmed_2026-10-10_500x32_N8_save50','user_confirmed_2026-10-10_200x8_N8_total12h_save50')):
+        raise ValueError('approved full-training budget/save50/wall policy changed')
     for name in ('max_wall_seconds','startup_timeout_seconds','heartbeat_timeout_seconds','stop_grace_seconds'):
         value=config.get(name)
         if name=='max_wall_seconds' and value is None:continue
@@ -164,7 +168,7 @@ def validate_config(path):
         if hashlib.sha256(Path(item['path']).read_bytes()).hexdigest()!=item['sha256']:
             raise ValueError('gate or frozen input bytes changed')
     fixed=dict(fixed_replay_seconds=120,partial_reset_boundary=None if full else 5,restore_before_update=None if full else 3,
-        gamma=.999**10,gae_lambda=.95,epochs=2,sequence_length=32 if revised else 64,
+        gamma=.999**10,gae_lambda=.95,epochs=2,sequence_length=8 if bounded else 32 if revised else 64,
         minibatch='whole_valid_sequence',formal_training_allowed=full)
     if any(config.get(k)!=v for k,v in fixed.items()):raise ValueError('R2 lifecycle/learning contract changed')
     if config.get('device')!='cuda:0' or config.get('visualizer')!='none':raise ValueError('GPU no-window R2 required')
@@ -193,12 +197,12 @@ def main():
                 str(args.run_dir/'frozen_config.json'),'--run_dir',str(args.run_dir)]
             if launch.get('resume'):
                 command+=['--resume_checkpoint',launch['resume']['path'],'--resume_sha256',launch['resume']['sha256']]
-            monitor(command,args.run_dir,config)
+            monitor(command,args.run_dir,config,budget_used_seconds=launch.get('budget_used_seconds',0.))
         finally:
             lock=BASE/'active.lock'
             if lock.exists() and read(lock).get('run_dir')==str(args.run_dir.resolve()): lock.unlink()
         return
-    resume=None
+    resume=None;budget_used_seconds=0.
     if args.command=='resume':
         if args.run_dir is None:parser.error('--run_dir parent run required')
         parent=args.run_dir.resolve();state=read(parent/'status.json')
@@ -206,6 +210,10 @@ def main():
         if state['status']=='completed':parser.error('parent already completed; no automatic retraining')
         args.config=parent/'frozen_config.json';config=validate_config(args.config)
         if config['purpose']!='full_training':parser.error('resume is only for full training')
+        if config.get('approval')=='user_confirmed_2026-10-10_200x8_N8_total12h_save50':
+            budget_used_seconds=state.get('group_elapsed_seconds',state.get('elapsed_seconds',0.))
+            if not isinstance(budget_used_seconds,(int,float)) or not math.isfinite(budget_used_seconds) or budget_used_seconds<0:parser.error('invalid parent elapsed group budget')
+            if budget_used_seconds>=43200-config['stop_grace_seconds']-2:parser.error('group twelve-hour budget exhausted; resume cannot reset its clock')
         resume=state.get('latest_checkpoint')
         if not resume or resume.get('kind')!='training_boundary':parser.error('no boundary checkpoint; weights-only is not strict resume')
         if hashlib.sha256(Path(resume['path']).read_bytes()).hexdigest()!=resume['sha256']:parser.error('parent checkpoint changed')
@@ -231,6 +239,7 @@ def main():
             if hashlib.sha256(Path(resume['path']).read_bytes()).hexdigest()!=resume['sha256']:raise ValueError('resume copy mismatch')
         write(folder/'frozen_config.json',config)
         write(folder/'launch.json',dict(config=config,source_config=str(args.config.resolve()),resume=resume,
+            budget_used_seconds=budget_used_seconds,
             head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()))
         write(folder/'status.json',dict(status='queued',run_id=folder.name))
         write(lock,dict(run_dir=str(folder.resolve())))
