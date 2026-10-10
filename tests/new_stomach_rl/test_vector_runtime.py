@@ -51,6 +51,8 @@ def test_batch_rgb_captured_once_and_associated_with_private_row_clocks():
     from types import SimpleNamespace
     from robotarm_magnetic_lab.runtime.new_stomach_rl_vector_runtime import NewStomachRLVectorRuntime,SharedFrameRow
     runtime=NewStomachRLVectorRuntime.__new__(NewStomachRLVectorRuntime)
+    from robotarm_magnetic_lab.runtime.finite_magnet_cache import SameTickPoseCache
+    runtime.live_pose_cache=SameTickPoseCache()
     runtime.env=SimpleNamespace(num_envs=2,device='cpu',scene={'capsule_camera':None})
     runtime.global_second=-1
     calls=[]
