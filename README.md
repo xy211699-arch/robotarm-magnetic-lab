@@ -1,165 +1,59 @@
 # Robotarm Magnetic Lab
 
-Isaac Lab 3.0 single-environment task for the AUBO-style six-axis arm, the
-three-axis magnetic ball assembly, and the external capsule magnet.
+Isaac Lab 仿真项目，用于研究外部磁控胶囊在胃部模型中的运动、覆盖率和强化学习控制。
 
-## 当前归档主版本：A版（新胃模型联合磁控）
+## 当前主线
 
-用户于2026-10-08确认选择A版，归档分支为
-`release/new-stomach-magnetic-v1-20261008`。版本入口、文件索引、依赖与限制见
-[`docs/RELEASE_A_NEW_STOMACH_MAGNETIC.md`](docs/RELEASE_A_NEW_STOMACH_MAGNETIC.md)。
+`main` 当前对应新胃 RL 容量训练版本，包含四组实验：
 
-- 任务：`Template-Robotarm-Magnetic-New-Stomach-Vector-Lab-v0`。
-- 控制：240 Hz物理、1 Hz动作；4×9相对增量chunk，首秒执行、后三秒预览。
-- 胶囊由真实计算的磁力/磁矩、重力和接触驱动，不采用MOVE/VIEW/UP直接施力。
-- 新胃双管口水平；不可达区是候选掩码，尚未启用正式新胃覆盖率或训练。
-- 旧开环演示与TASK-010直接施力训练代码保留，不能与A版入口或指标混用。
-- 本仓库仍依赖外部Isaac Lab/Isaac Sim安装和机器人原始USD资产；不是独立安装包。
+| 组 | 视觉 | 动作 |
+|---|---|---|
+| A | Blind | Single，9 维 |
+| B | ResNet18 | Single，9 维 |
+| C | Blind | Chunk，36 维 |
+| D | ResNet18 | Chunk，36 维 |
 
-下面保留的bring-up、训练和数据接口说明属于历史入口，不代表A版控制时序。
+训练框架使用 8 个环境、240 Hz 物理更新和 1 Hz 动作边界。训练、检查点和评测结果保存在 Git 仓库外的 `artifacts/` 目录。
 
-## Project status and execution history
+## 环境要求
 
-- Incremental work since the 2026-07-17 handover:
-  [`docs/POST_HANDOVER_WORK_SUMMARY.md`](docs/POST_HANDOVER_WORK_SUMMARY.md)
-- Concise per-conversation execution log:
-  [`docs/PROJECT_RUN_LOG.md`](docs/PROJECT_RUN_LOG.md)
+- Isaac Sim / Isaac Lab
+- CUDA、PyTorch 和项目磁场 vendor
+- 项目依赖的胃部 USD、机器人资产和冻结位姿库
 
-## Current bring-up status
+项目不是独立安装包。请先确认外部依赖路径，再使用项目启动器运行命令。
 
-- Task ID: `Template-Robotarm-Magnetic-Lab-v0`
-- Workflow: Manager-Based, single agent
-- Physics: 240 Hz
-- Low-level control: 20 Hz (`decimation=12`); VLA inference: nominal 1 Hz
-- Action: 9 absolute normalized offsets about the reset pose in this exact order:
-  `j1..j6, ballxj, ballyj, ballzj`
-- State observation: 31 values: nine relative joint positions, nine joint
-  velocities, 12 magnetic wrench values, and one ASM clearance value
-- Vision observation: capsule-mounted `1280x720` circular RGB and aligned
-  metric depth; inactive pixels outside the optical circle are zero
-- Capsule camera: provisional DS01/CX93510-series model, 120-degree horizontal
-  circular FOV, 1 Hz policy acquisition plus a separate 30 Hz engineering
-  preview, local `+Z` optical direction, equidistant
-  wide-angle remap, soft optical border and nominal edge lens shading
-- Illumination: four 5600 K close-range LEDs mounted around the camera axis
-- Reset: directly restores the validated initialization pose; it does not
-  replay the old Script Editor trajectory
-- Asset source: `/home/multirobo/Desktop/sim of FF/Stage.usd`
-
-## TASK-010 visual-dependence validation
-
-The visual-dependence implementation is complete and awaits manual V3 execution. Do not start
-the formal three-seed experiment from Codex.
-
-Manual start, read-only status, watch, and error-recovery commands are documented in
-[`docs/TASK010_VISUAL_DEPENDENCE_AUTOMATION.md`](docs/TASK010_VISUAL_DEPENDENCE_AUTOMATION.md).
-
-The training asset
-[`assets/robotarm_magnetic_training.usda`](assets/robotarm_magnetic_training.usda)
-is a non-destructive compatibility layer. It leaves the source stage unchanged
-and relocates `PhysicsArticulationRootAPI` so Isaac Lab's PhysX tensor API can
-bind the robot and attached ASM as one nine-DOF articulation.
-
-## Installation
-
-Always use the project launcher below. It removes Conda/virtual-environment
-variables before calling Isaac Lab, so the simulator cannot accidentally mix a
-Conda interpreter with Isaac Sim's Python 3.12 standard library.
+## 安装与基础检查
 
 ```bash
-cd /mnt/isaac-linux/robotarm_magnetic_lab
-./run_isaaclab.sh -p -m pip install -e \
-  source/robotarm_magnetic_lab
+./run_isaaclab.sh -p -m pip install -e source/robotarm_magnetic_lab
+./run_isaaclab.sh -p scripts/list_envs.py --keyword Robotarm-Magnetic
 ```
 
-## Validation
-
-List the registered task:
+运行基础任务冒烟测试：
 
 ```bash
-./run_isaaclab.sh -p \
-  scripts/list_envs.py --keyword Robotarm-Magnetic
+./run_isaaclab.sh -p scripts/zero_agent.py \
+  --task Template-Robotarm-Magnetic-New-Stomach-Lab-v0 \
+  --num_envs 1 --max_steps 100
 ```
 
-Run the finite 100-step headless smoke test:
+## 训练入口
+
+训练监督器支持启动、状态查询、停止和从边界检查点恢复：
 
 ```bash
-./run_isaaclab.sh -p \
-  scripts/zero_agent.py \
-  --task Template-Robotarm-Magnetic-Lab-v0 \
-  --num_envs 1
+./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_training.py status
+./run_isaaclab.sh -p scripts/new_stomach_rl/supervise_training.py start \
+  --config artifacts/new_stomach_rl_capacity/training_readiness/configs/<CONFIG>.json
 ```
 
-Run interactively with the Kit viewport:
+训练配置、检查点和实验约束见 [`docs/NEW_STOMACH_RL_R2_GUIDE.md`](docs/NEW_STOMACH_RL_R2_GUIDE.md)。
 
-```bash
-./run_isaaclab.sh -p \
-  scripts/zero_agent.py \
-  --task Template-Robotarm-Magnetic-Lab-v0 \
-  --num_envs 1 \
-  --viz kit
-```
+## 相关文档
 
-Close the Kit window to stop the visual run. The headless version terminates
-automatically after 100 environment steps.
+- [容量与训练指南](docs/NEW_STOMACH_RL_CAPACITY_P1_GUIDE.md)
+- [项目运行日志](docs/PROJECT_RUN_LOG.md)
+- [历史交接记录](handoffs/reports/NEW-STOMACH-RL-CAPACITY-20261008.md)
 
-Run the permanent nine-axis interface acceptance test:
-
-```bash
-./run_isaaclab.sh -p \
-  scripts/validate_interfaces.py \
-  --task Template-Robotarm-Magnetic-Lab-v0 \
-  --num_envs 1
-```
-
-This test excites `j1..j6` and `ballxj/ballyj/ballzj` one at a time and records
-joint tracking, capsule motion, field anchoring and collision clearance in:
-
-`logs/interface_validation.jsonl`
-
-The zero-agent camera diagnostics save the processed policy RGB and depth
-previews (not the raw rectangular RTX buffers) in:
-
-`logs/camera/`
-
-For a finite interactive regression, add both `--viz kit` and
-`--max_steps 100` to the zero-agent command.
-
-## Main configuration
-
-The environment configuration is:
-
-`source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/robotarm_magnetic_lab_env_cfg.py`
-
-It currently provides the stable simulation/control foundation, analytical
-magnetic coupling, approximate ASM collision clearance, and the first
-capsule-view RGB-D interface. The next migration stages are:
-
-1. replace provisional camera intrinsics/extrinsics with measured endoscope
-   calibration;
-2. add PhysX contact sensors and stomach/capsule contact observations;
-3. add task goal, progress, and success terms;
-4. add deterministic episode recording for behavior cloning;
-5. add lighting, material, friction, magnetic and camera randomization;
-6. scale from one environment to multiple environments.
-
-Do not start PPO training with the current neutral reward. First complete the
-task reward, contact safety, demonstration recorder, and reset randomization
-interfaces.
-
-## Model fine-tuning data interface
-
-The versioned model contract is:
-
-`configs/interfaces/robotarm_magnetic_v2.json`
-
-It freezes image shapes, units, state layout, joint order, action semantics and
-the asynchronous 1 Hz camera / 20 Hz control / 240 Hz physics rates. The 30 Hz
-camera window is preview-only. The episode recorder, integrity validator and temporal
-fine-tuning index are documented in:
-
-[`docs/TRAINING_DATA_WORKFLOW.md`](docs/TRAINING_DATA_WORKFLOW.md)
-
-Generated data belongs under `datasets/` and is intentionally ignored by Git.
-Do not place recorded images or episode JSONL files in `logs/` or source
-directories.
+大尺寸检查点、视频和仿真日志不提交到 Git；请根据文档中的路径和哈希进行核对。
