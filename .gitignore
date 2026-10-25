@@ -19,6 +19,9 @@
 **/*.jpg
 **/*.jpeg
 
+# Small source illustration used by the repository README.
+!docs/assets/readme/research-framework.png
+
 # Python
 .DS_Store
 **/*.egg-info/

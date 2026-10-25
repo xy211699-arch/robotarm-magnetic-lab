@@ -26,7 +26,8 @@
     "handoffs/active/README.md",
     "handoffs/reports/README.md",
     "version_history/2026-10-25-research-mainline-reset.md",
-    "version_history/README.md"
+    "version_history/README.md",
+    "version_history/2026-10-25-readme-visual-refresh.md"
   ],
   "required_paths": [
     "AGENTS.md",
@@ -34,7 +35,8 @@
     "docs/research_state.json",
     "docs/repository_layout.json",
     ".github/workflows/research-workflow.yml",
-    "tests/research_workflow/test_workflow.py"
+    "tests/research_workflow/test_workflow.py",
+    "docs/assets/readme/research-framework.png"
   ],
   "components": [
     {
@@ -78,5 +80,14 @@
     "baseline_commit": "46d01fbb9bedd4b1fe8babed089a2919e39e407b",
     "entry": "docs/archive/README.md",
     "policy": "Old narrative documents remain in Git history. Runtime code and artifacts keep their paths."
+  },
+  "media": {
+    "readme_framework": {
+      "path": "docs/assets/readme/research-framework.png",
+      "source_document": "261017任务.docx",
+      "source_member": "word/media/image3.png",
+      "role": "proposed_research_framework",
+      "unmodified": true
+    }
   }
 }
