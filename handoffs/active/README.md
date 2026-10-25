@@ -1,40 +1,5 @@
-# 活动任务合同
+# 历史合同存放区
 
-## 当前导航（2026-10-25）
+本目录保留旧合同用于溯源，目录名active不表示旧四组仍活动。当前下一步见 [NEXT](../../docs/NEXT.md)，本地方案采用前不根据旧合同继续训练或扩展任务。
 
-当前研究上下文见 [STATUS](../../docs/STATUS.md) 与 [研究登记](../../docs/research_state.json)。容量适配与训练入口已经在main实现，旧文中“尚未执行”只代表当时；最新预算以 [R2指南](../../docs/NEW_STOMACH_RL_R2_GUIDE.md) 最后“最终确认”及项目日志为准，即N8、200更新、rollout8、每组累计12小时。代码交付和历史CPU回归不等于真实完整GPU验收，实时作业需另查。
-
-新增合同可由 [任务模板](../../docs/templates/task.md) 生成draft，文件存在不授予执行权限；已有用户批准的开发预算保留，本次文档与工作流改造不启动实验。以下记录保留原文，不作为2026-10-25实时状态。
-
-## 2026-10-08 新胃 RL 容量与长程训练就绪
-
-当前新胃 RL 下一阶段入口为 `NEW-STOMACH-RL-CAPACITY-20261008.md`，完整方案为 `docs/superpowers/plans/2026-10-08-new-stomach-rl-capacity-and-training-readiness-plan.md`。用户确认仅将容量阶梯改为 1、4、8、12、16、20，其余不变；P2 两环境隔离门禁仍保留，不属于容量阶梯。
-
-Windows 交接分支为 `workflow/new-stomach-rl-capacity-20261008`，以 Linux 预验证交付提交 `3ff631e08ecffd97a3bba78cfbbc923906d5dc01` 为起点。先实施 P0—P3，容量报告和批量预算冻结后才接入 R0—R2；GPU 实验由用户人工启动，不启动正式四组多种子训练。以下预验证及历史任务登记保留原文，不作为新阶段状态。
-
-## 2026-10-08 新胃连续 RL 预验证
-
-当前新胃 RL 预验证交接入口为 `NEW-STOMACH-RL-PREFLIGHT-20261008.md`。完整冻结规格及实施计划分别位于 `docs/superpowers/specs/2026-10-08-new-stomach-rl-preflight-design.md` 和 `docs/superpowers/plans/2026-10-08-new-stomach-rl-preflight-implementation-plan.md`。
-
-规划分支为 `workflow/new-stomach-rl-preflight-20261008`，以发布提交 `1e89c9ccb48545c4513915be94d4c17d9cdebaaa` 为代码基准。Linux 按交接入口在独立 feature 分支完成预验证，不启动正式多种子长训练。本次仅上传文档，尚无新 Gate 执行结果。
-
-## 历史任务登记（原文保留）
-
-当前授权 Linux 执行的任务为
-`TASK-009D0A-12-env-incremental-closeout.md`。
-
-Linux 必须从远端 feature 提交
-`6dbb8d5bc8c4bbd2d688eb997912d385b697df0a` 继续，获取本合同所在的最新 Windows 规划
-提交并纳入现有 feature 分支。不得重建或覆盖既有 TASK-009D0 实现。
-
-TASK-009D0A 只授权十二环境吞吐增量测试、必要的十二环境稳定性验证、两个过期力度测试
-修正和 D0 文档收尾。原 Gate 3 失败事实必须保留，最终状态使用用户豁免后的验收表述。
-
-本任务不授权 CNN、GRU、Actor、Critic、PPO、VLM、奖励塑形、扰动范围、控制器重新标定、
-覆盖区域变化、位姿库重建或 USD 修改。
-
-Linux 执行状态（2026-08-28）：TASK-009D0A `complete`。TASK-009D0 的原始 Gate 3 结果保持
-为 `fail_with_manual_waiver`，D0 总状态按合同收尾为 `accepted_with_manual_waiver`。用户
-进一步接受少见非正C0 reset直接中止的运行策略，最终冻结12环境；不重采样或修改位姿库。
-完整证据见
-`handoffs/reports/TASK-009D0-vectorized-training-infrastructure-report.md`。
+任务生成器仍在此保存draft以兼容原工具，生成草稿不更新活动登记。旧合同的完整上下文见 [历史入口](../../docs/archive/README.md)，当前依据以后续明确采用的本地设计为准。

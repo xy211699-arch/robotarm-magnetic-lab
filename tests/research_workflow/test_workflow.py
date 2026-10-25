@@ -62,6 +62,22 @@ class WorkflowTests(unittest.TestCase):
         self.save_registry()
         self.assertTrue(any("source/missing" in e for e in workflow.check_repository(self.root)))
 
+    def test_declared_reading_order_must_reference_existing_documents(self):
+        self.layout["reading_order"] = ["docs/not-present.md"]
+        self.save_registry()
+        self.assertTrue(workflow.check_repository(self.root))
+
+    def test_context_uses_declared_mainline_reading_order(self):
+        self.write("docs/FOCUS.md", "# Current research direction\n")
+        self.layout["reading_order"] = ["AGENTS.md", "docs/FOCUS.md"]
+        self.save_registry()
+        script = REPOSITORY / "scripts/research_workflow.py"
+        result = subprocess.run([sys.executable, str(script), "--root", str(self.root), "context"],
+                                capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("docs/FOCUS.md", result.stdout)
+        self.assertNotIn("docs/TODO.md", result.stdout)
+
     def test_broken_document_link(self):
         self.write("README.md", "# Project\n\n[Missing](docs/missing.md).\n")
         self.assertTrue(any("missing.md" in e for e in workflow.check_repository(self.root)))

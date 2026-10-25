@@ -82,7 +82,10 @@ def check_repository(root: Path) -> list[str]:
     errors = []
     try:
         layout = _object(root / "docs/repository_layout.json")
-        for field in ("required_paths", "managed_documents"):
+        fields = ["required_paths", "managed_documents"]
+        if "reading_order" in layout:
+            fields.append("reading_order")
+        for field in fields:
             values = layout.get(field)
             if not isinstance(values, list) or not values:
                 errors.append(f"repository_layout.json: {field} must be a nonempty list")
@@ -273,7 +276,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "context":
             state = _object(root / "docs/research_state.json")
             print(f"Repository: {root}\nRecorded as of: {state['as_of']}\nActive task: {state['active_task']}")
-            print("Read AGENTS.md, docs/STATUS.md, docs/TODO.md, then the active contract and its plan.")
+            layout = _object(root / "docs/repository_layout.json")
+            reading_order = layout.get("reading_order", ["AGENTS.md", "docs/README.md"])
+            print("Read: " + " -> ".join(reading_order))
             for task in state["tasks"]:
                 print(f"{task['id']} [{task['status']}]: {task['summary']}")
                 print(f"Contract: {task['contract']} | Plan: {task.get('plan')} | Report: {task.get('report')}")

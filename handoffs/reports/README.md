@@ -1,13 +1,5 @@
-# Handoff report contract
+# 历史执行报告
 
-## 当前报告导航
+本目录保留旧仿真、覆盖、容量与训练可行性报告，不改原结论。报告可帮助判断已有实现，不能决定新主线；完整上下文见 [历史入口](../../docs/archive/README.md)，旧预算不自动成为现任务。
 
-新胃主线依次查阅 [容量报告](NEW-STOMACH-RL-CAPACITY-20261008.md)、[训练就绪](NEW-STOMACH-RL-TRAINING-READINESS-20261008.md) 与 [性能短测](NEW-STOMACH-RL-PERFORMANCE-500X32-20261010.md)，后续预算修订见 [R2指南](../../docs/NEW_STOMACH_RL_R2_GUIDE.md) 最后“最终确认”及运行日志。当前证据摘要见 [STATUS](../../docs/STATUS.md)，不以旧报告中暂时状态推断现在正在运行的作业。
-
-新报告可使用 [中文模板](../../docs/templates/report.md)，完整日志及数据留Git外，精选附件继续保存在handoffs/attachments。下面的证据字段合同保持有效，状态仅适用于实际报告范围。
-
-Every report must use exactly one status: `complete`, `partial`, `needs_decision`, or `blocked`.
-
-`complete` means every authorized requirement was executed and verified. `partial` means useful authorized work was completed but one or more requirements remain. `needs_decision` means a design-changing ambiguity requires Windows-side approval. `blocked` means no further authorized progress is possible because of an external dependency or access failure.
-
-Every report must include task ID, status, base commit, HEAD immediately before the report commit, branch, environment identity, commands and exit codes, observed results, deviations, unverified claims, and artifact paths. The final report commit hash is verified from the pushed remote branch rather than embedded recursively in its own content. Credentials, private keys, access tokens, large logs, datasets, recordings, generated assets, and checkpoints must never be committed.
+后续报告应引用本地设计版本、代码身份、实际命令退出码、环境和工件，区分直接验证、历史、推测和未知。complete、partial、needs_decision、blocked按实际范围填写；哈希只核验字节，原始日志、数据与权重留Git外。
