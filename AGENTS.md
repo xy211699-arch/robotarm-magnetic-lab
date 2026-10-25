@@ -4,6 +4,8 @@
 
 先读 [项目介绍](docs/PROJECT.md)、[已有实现](docs/IMPLEMENTED.md)、[下一阶段](docs/NEXT.md) 和 [基础入口](docs/ENTRYPOINTS.md)，核对分支、HEAD与已有修改。用户最新指示及之后明确采用的本地方案优先于旧合同；261017任务.docx是暂定研究材料，不是完整实施规格。正文GRU与配图Transformer尚未统一，不替用户选型。
 
+当前下一阶段已指定为 [视觉编码器Linear Probe方案](docs/design/2026-10-25-gastric-vision-linear-probe.md)，优先读取该方案与NEXT。本次授权仅整合提交计划，不自动采集、下载模型或训练；三模型、两任务和主指标保持用户指定，准确checkpoint、距离标签与划分等细节在实施配置明确，不将原材料DINOv2写成已选骨干。
+
 ## 已有实现和新方向
 
 旧A/B/C/D、容量测试与训练预算仅为历史可行性验证，不再作为活动任务、固定论文基线或默认实验。已有磁控仿真可复用，不代表压阻触觉、效果预测、技能选择和实物接入已完成。后续设计放docs/design/并在 [NEXT](docs/NEXT.md) 登记，再按明确范围实施，不为凑齐框架创建虚假模型代码。

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-25",
-  "source_commit": "46d01fbb9bedd4b1fe8babed089a2919e39e407b",
-  "scope": "Provisional research direction; four-group experiments are feasibility history.",
+  "source_commit": "cb4c1ffda9b5d5e2ddf17fd0c186d4c17f2e5c0a",
+  "scope": "User-selected next stage: frozen vision encoder linear probes; plan publication only, no experiments started.",
   "direction": {
     "status": "provisional",
     "source_document": "261017任务.docx",
@@ -11,17 +11,62 @@
     "pending_local_design": true,
     "architecture_unresolved": "Text proposes GRU; embedded figure proposes Transformer."
   },
-  "active_task": "RESEARCH-DESIGN-INTAKE",
+  "active_task": "VISION-ENCODER-LINEAR-PROBE",
   "tasks": [
     {
-      "id": "RESEARCH-DESIGN-INTAKE",
-      "title": "本地设计入库与团队任务准备",
-      "status": "draft",
-      "contract": "docs/NEXT.md",
+      "id": "VISION-ENCODER-LINEAR-PROBE",
+      "title": "胃部视觉编码器Linear Probe对比",
+      "status": "authorized",
+      "authorization_scope": "plan_integration_and_publication_only",
+      "execution_started": false,
+      "contract": "docs/design/2026-10-25-gastric-vision-linear-probe.md",
       "plan": null,
       "report": null,
-      "summary": "接收本地方案并明确观测/动作映射与时序，再拆分团队任务；不继续旧四组，不冻结待定模型或预算。"
+      "summary": "已确定下一阶段为RADIOv2.5/DINOv2/SigLIP2冻结特征的病灶分类与距离回归；本次仅提交方案，未采集/训练；checkpoint、距离定义与划分待明确。"
     }
   ],
-  "history_entry": "docs/archive/README.md"
+  "history_entry": "docs/archive/README.md",
+  "next_stage": {
+    "models": [
+      "RADIOv2.5",
+      "DINOv2",
+      "SigLIP2"
+    ],
+    "protocol": "frozen_encoder_linear_probe",
+    "data_source": "own_Isaac_Lab_simulation",
+    "tasks": [
+      {
+        "name": "lesion_classification",
+        "target_images": [
+          300,
+          500
+        ],
+        "metrics": [
+          "Accuracy",
+          "Macro-F1"
+        ]
+      },
+      {
+        "name": "wall_distance_regression",
+        "target_images": [
+          300,
+          500
+        ],
+        "metrics": [
+          "MAE",
+          "RMSE"
+        ]
+      }
+    ],
+    "record_efficiency": [
+      "feature_extraction_time",
+      "GPU_memory"
+    ],
+    "excluded": [
+      "encoder_fine_tuning",
+      "zero_shot",
+      "downstream_action_prediction"
+    ],
+    "experiment_results_available": false
+  }
 }

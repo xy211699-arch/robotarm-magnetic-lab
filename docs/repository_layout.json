@@ -27,7 +27,9 @@
     "handoffs/reports/README.md",
     "version_history/2026-10-25-research-mainline-reset.md",
     "version_history/README.md",
-    "version_history/2026-10-25-readme-visual-refresh.md"
+    "version_history/2026-10-25-readme-visual-refresh.md",
+    "docs/design/2026-10-25-gastric-vision-linear-probe.md",
+    "version_history/2026-10-25-vision-linear-probe-plan.md"
   ],
   "required_paths": [
     "AGENTS.md",
