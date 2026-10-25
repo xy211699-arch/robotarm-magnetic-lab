@@ -1,5 +1,11 @@
 # 活动任务合同
 
+## 当前导航（2026-10-25）
+
+当前研究上下文见 [STATUS](../../docs/STATUS.md) 与 [研究登记](../../docs/research_state.json)。容量适配与训练入口已经在main实现，旧文中“尚未执行”只代表当时；最新预算以 [R2指南](../../docs/NEW_STOMACH_RL_R2_GUIDE.md) 最后“最终确认”及项目日志为准，即N8、200更新、rollout8、每组累计12小时。代码交付和历史CPU回归不等于真实完整GPU验收，实时作业需另查。
+
+新增合同可由 [任务模板](../../docs/templates/task.md) 生成draft，文件存在不授予执行权限；已有用户批准的开发预算保留，本次文档与工作流改造不启动实验。以下记录保留原文，不作为2026-10-25实时状态。
+
 ## 2026-10-08 新胃 RL 容量与长程训练就绪
 
 当前新胃 RL 下一阶段入口为 `NEW-STOMACH-RL-CAPACITY-20261008.md`，完整方案为 `docs/superpowers/plans/2026-10-08-new-stomach-rl-capacity-and-training-readiness-plan.md`。用户确认仅将容量阶梯改为 1、4、8、12、16、20，其余不变；P2 两环境隔离门禁仍保留，不属于容量阶梯。

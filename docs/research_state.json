@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-25",
+  "source_commit": "0552cc5ca7bc98b97ac0a414b3e4945b34b2f7ff",
+  "scope": "Repository evidence mainly through 2026-10-10; not live Linux job state.",
+  "active_task": "NEW-STOMACH-RL-TRAINING-READINESS-20261008",
+  "development_budget": {
+    "num_envs": 8,
+    "max_updates": 200,
+    "rollout_steps": 8,
+    "save_interval": 50,
+    "total_wall_seconds": 43200,
+    "seed": 1008,
+    "groups": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "source": "docs/NEW_STOMACH_RL_R2_GUIDE.md",
+    "gpu_full_training_verified": false,
+    "formal_multiseed_verified": false
+  },
+  "tasks": [
+    {
+      "id": "NEW-STOMACH-RL-TRAINING-READINESS-20261008",
+      "title": "新胃八环境训练就绪与开发运行",
+      "status": "partial",
+      "contract": "handoffs/active/NEW-STOMACH-RL-CAPACITY-20261008.md",
+      "plan": "docs/superpowers/plans/2026-10-08-new-stomach-rl-capacity-and-training-readiness-plan.md",
+      "report": "handoffs/reports/NEW-STOMACH-RL-TRAINING-READINESS-20261008.md",
+      "summary": "N8/200 updates/rollout8/每组累计12小时已由用户确认，最新314项CPU回归为历史报告；真实完整GPU及多种子未验收，当前作业未核验。"
+    },
+    {
+      "id": "NEW-STOMACH-RL-CAPACITY-20261008",
+      "title": "多环境容量与隔离",
+      "status": "partial",
+      "contract": "handoffs/active/NEW-STOMACH-RL-CAPACITY-20261008.md",
+      "plan": "docs/superpowers/plans/2026-10-08-new-stomach-rl-capacity-and-training-readiness-plan.md",
+      "report": "handoffs/reports/NEW-STOMACH-RL-CAPACITY-20261008.md",
+      "summary": "仓库报告D组短容量测量至N20，开发冻结N8；长期稳定和Chunk跨P0姿态等价存在未闭合项，不外推所有组。"
+    },
+    {
+      "id": "NEW-STOMACH-RL-PREFLIGHT-20261008",
+      "title": "新胃单环境预验证历史阶段",
+      "status": "historical",
+      "contract": "handoffs/active/NEW-STOMACH-RL-PREFLIGHT-20261008.md",
+      "plan": "docs/superpowers/plans/2026-10-08-new-stomach-rl-preflight-implementation-plan.md",
+      "report": "handoffs/reports/NEW-STOMACH-RL-PREFLIGHT-20261008.md",
+      "summary": "早期单环境总体partial；后续主线已多环境适配，本记录不作为当前并行上限。"
+    }
+  ]
+}

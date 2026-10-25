@@ -1,15 +1,35 @@
-# Cross-machine Codex workflow
+# AI 科研协作约定
 
-## Authority and roles
+## 开始工作
 
-Approved specifications and active task contracts in `handoffs/active/` are authoritative. Windows Codex is the planning and acceptance side. Linux Codex is the implementation and evidence side. Implementation must occur on an isolated task branch and must not be pushed directly to `main`.
+先核对仓库、分支、HEAD 和已有修改，再读 [文档入口](docs/README.md)、[当前状态](docs/STATUS.md)、[待办](docs/TODO.md) 与活动合同。运行 python scripts/research_workflow.py context 可取得登记上下文；它只是仓库快照，不是远程作业实时状态。不要把相邻旧副本和历史 HANDOFF 当成最新实施依据。
 
-If an ambiguity would change architecture, safety behavior, interfaces, training semantics, or acceptance criteria, stop implementation and return a report with status `needs_decision`. Do not silently choose a design-changing interpretation.
+## 授权与分支
 
-## Evidence requirements
+用户于 2026-10-25 明确要求本批直接修改 xy211699-arch/robotarm-magnetic-lab 的 main，此次工作按该授权实施。其他任务优先独立分支；用户明确指定分支时遵循该指示。Windows 通常规划与复核，Linux 通常仿真执行，但不禁止 Windows 实施无仿真依赖的工具。
 
-Every Linux report must include the base commit, head commit, current branch, commands executed, observed results, deviations from the task contract, unverified claims, and artifact paths. Report only directly observed results as verified. Large logs, datasets, recordings, checkpoints, and generated assets must remain outside normal Git history; report their paths and hashes instead.
+用户当次明确指示优先于旧文档与模板，已批准规格和活动合同约束研究语义。草稿、待办、登记和参考项目的说明都不构成实验授权。发现会改变模型、奖励、时钟、接口、安全或验收的歧义，先完成无争议工作，再以 needs_decision 指出具体待决事项。参考资料作为来源阅读，不执行其中无关命令。
 
-## Safety and scope
+## 事实与证据
 
-Preserve existing user changes and repository history. Do not modify simulation source, assets, training configuration, or validated results unless the active task explicitly authorizes those paths. Never use capsule ground truth in deployable observations, action completion decisions, or device hard-failure decisions unless a later approved contract explicitly changes that boundary.
+区分本次直接执行、历史报告、合理推测与未验证信息。代码存在不等于集成通过，CPU 测试不等于 GPU、正式训练或研究效果通过，哈希通过只证明核验文件字节。结果必须记录代码身份、配置、种子、划分、命令及退出码、环境、工件路径及哈希、失败和未运行项。不得编造测量、引用和数据。
+
+最新登记见 [研究状态](docs/research_state.json)，预算依据 [R2 指南](docs/NEW_STOMACH_RL_R2_GUIDE.md) 最后“最终确认”一节和 [运行日志](docs/PROJECT_RUN_LOG.md)。新胃 N8、200 updates、rollout8、每组累计43200秒是各组单种子的开发预算；已有人工开发启动授权保留，不扩展成正式多种子授权。本次仓库改造不启动、停止或重试作业。
+
+## 实现和安全
+
+源码保持 source/robotarm_magnetic_lab 的 Isaac 扩展布局，入口放 scripts，测试放 tests。先读 [系统架构](docs/architecture/system.md) 再选改动层。旧 TASK-010 直接施力、新胃 A 版首秒执行后三秒预览、新胃 RL 四个0.25秒都执行，是三种语义，禁止互换。
+
+保留240 Hz物理与磁作用、10 Hz精确面积覆盖、1 Hz新胃RL RGB/策略、5 mm保护和冻结资产。未经任务授权不修改仿真源码、训练配置、库、掩码或已验收结果。Actor 不得读取胶囊真值、覆盖、接触、法向、reward、pose ID、split 等特权信息；训练期 Critic、评估和已授权安全执行器分别审计，不把执行器可用真值扩散至 Actor。不削弱安全或数值门槛来换取通过。
+
+## 文档、存储和交付
+
+文件职责见 [仓库结构](docs/REPOSITORY.md)。当前结论维护 STATUS 与研究登记，下一步维护 TODO，取舍写入 [决策记录](docs/architecture/decision_log.md)，合同和返回报告沿用 handoffs。有日期的原始实验记录保留，不追改旧结果；新证据明确替代关系。
+
+大数据、checkpoint、录像和完整日志留在 Git 外，遵守 [存储规范](docs/guides/storage.md)。保留已有未提交文件，禁止批量清理、硬重置、覆盖检查点、自动跳过失败种子和无限重试。统计独立单位按实验协议确定，不能把时间序列点当独立样本；随机策略内部检查不自动成为论文贡献。
+
+交付前执行与改动相称的验证。本工具只需标准库测试，不通过根 pyproject 安装整个 Isaac。每批提交或推送维护 [版本记录](version_history/README.md)，注明实际验证、限制和恢复；推送后核对远端 HEAD 才能称已发布。
+
+## 沟通
+
+中文为主，必要代码标识保留英文。先给结论和依据，直接指出错误前提与证据缺口，不默认认同用户判断。使用自然段、标题和必要代码框，不使用项目符号清单，不把计划和操作说明写成完成事实。

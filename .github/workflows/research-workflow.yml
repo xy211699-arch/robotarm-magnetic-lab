@@ -1,0 +1,47 @@
+name: Research workflow
+
+on:
+  push:
+    paths:
+      - "AGENTS.md"
+      - "README.md"
+      - "docs/**"
+      - "handoffs/**"
+      - "experiments/**"
+      - "version_history/**"
+      - "scripts/research_workflow.py"
+      - "tests/research_workflow/**"
+      - ".github/workflows/research-workflow.yml"
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "README.md"
+      - "docs/**"
+      - "handoffs/**"
+      - "experiments/**"
+      - "version_history/**"
+      - "scripts/research_workflow.py"
+      - "tests/research_workflow/**"
+      - ".github/workflows/research-workflow.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  records:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test workflow behavior without simulator dependencies
+        run: python -m unittest discover -s tests/research_workflow -v
+      - name: Check managed documentation and task references
+        run: python scripts/research_workflow.py check

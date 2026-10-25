@@ -71,8 +71,7 @@ _build
 # Teleop Recorded Dataset
 /datasets/
 
-# Tests
-/tests/
+# Tests are source. Python caches and generated artifacts remain ignored above.
 
 # Docker history
 .isaac-lab-docker-history
@@ -90,5 +89,7 @@ _build
 # Isaac Lab CI environments in native mode
 **/_isaaclab_install_ci_*
 
-# Superpowers (Claude Code plugin artifacts)
-docs/superpowers/
+# Research plans are source; local agent scratch state is not.
+/.superpowers/
+/.worktrees/
+/.local-preflight-pytest*/

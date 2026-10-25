@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "managed_documents": [
+    "AGENTS.md",
+    "README.md",
+    "docs/PROJECT_STATE.md",
+    "docs/README.md",
+    "docs/REPOSITORY.md",
+    "docs/STATUS.md",
+    "docs/TODO.md",
+    "docs/architecture/README.md",
+    "docs/architecture/decision_log.md",
+    "docs/architecture/system.md",
+    "docs/archive/PROJECT_STATE_before_20261025.md",
+    "docs/guides/ai_research_workflow.md",
+    "docs/guides/development.md",
+    "docs/guides/storage.md",
+    "docs/guides/training_validation.md",
+    "docs/plans/2026-10-25-ai-research-workflow-design.md",
+    "docs/plans/2026-10-25-ai-research-workflow-plan.md",
+    "docs/templates/README.md",
+    "docs/templates/experiment.md",
+    "docs/templates/handoff.md",
+    "docs/templates/report.md",
+    "docs/templates/task.md",
+    "experiments/README.md",
+    "handoffs/active/README.md",
+    "handoffs/reports/README.md",
+    "version_history/2026-10-25-ai-research-workflow.md",
+    "version_history/README.md",
+    "version_history/TEMPLATE.md"
+  ],
+  "required_paths": [
+    "AGENTS.md",
+    "README.md",
+    "docs/research_state.json",
+    "docs/repository_layout.json",
+    ".github/workflows/research-workflow.yml",
+    "tests/research_workflow/test_workflow.py",
+    "handoffs/active/README.md",
+    "handoffs/reports/README.md"
+  ],
+  "components": [
+    {
+      "path": "scripts/research_workflow.py",
+      "purpose": "无仿真依赖的记录和检查"
+    },
+    {
+      "path": "scripts/new_stomach_rl/prepare_r2.py",
+      "purpose": "代码和输入哈希绑定"
+    },
+    {
+      "path": "scripts/new_stomach_rl/supervise_training.py",
+      "purpose": "后台状态、停止与人工恢复"
+    },
+    {
+      "path": "scripts/new_stomach_rl/train.py",
+      "purpose": "真实collector及PPO训练入口"
+    },
+    {
+      "path": "scripts/stomach_coverage/train_task010.py",
+      "purpose": "旧胃直接施力训练入口"
+    },
+    {
+      "path": "configs/new_stomach_rl/development_environment_v1.json",
+      "purpose": "N8环境冻结配置"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/new_stomach_rl_vector_env.py",
+      "purpose": "新胃RL向量环境"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/robotarm_magnetic_new_stomach_rl_vector_env_cfg.py",
+      "purpose": "新胃RL任务接线"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_vector_rows.py",
+      "purpose": "新胃运行时：new_stomach_rl_vector_rows"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_vector_lifecycle.py",
+      "purpose": "新胃运行时：new_stomach_rl_vector_lifecycle"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_vector_runtime.py",
+      "purpose": "新胃运行时：new_stomach_rl_vector_runtime"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_rgb.py",
+      "purpose": "新胃运行时：new_stomach_rl_rgb"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_vector_rgb.py",
+      "purpose": "新胃运行时：new_stomach_rl_vector_rgb"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_optics.py",
+      "purpose": "新胃运行时：new_stomach_rl_optics"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/new_stomach_rl_reward.py",
+      "purpose": "新胃运行时：new_stomach_rl_reward"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/runtime/finite_magnet_cache.py",
+      "purpose": "新胃运行时：finite_magnet_cache"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_actor.py",
+      "purpose": "学习模块：new_stomach_rl_actor"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_distribution.py",
+      "purpose": "学习模块：new_stomach_rl_distribution"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_runner.py",
+      "purpose": "学习模块：new_stomach_rl_runner"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_collector.py",
+      "purpose": "学习模块：new_stomach_rl_collector"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_long_rollout.py",
+      "purpose": "学习模块：new_stomach_rl_long_rollout"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning/new_stomach_rl_checkpoint.py",
+      "purpose": "学习模块：new_stomach_rl_checkpoint"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/new_stomach_rl_vector_action.py",
+      "purpose": "执行层：mdp/new_stomach_rl_vector_action"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/new_stomach_rl_vector_magnetic.py",
+      "purpose": "执行层：mdp/new_stomach_rl_vector_magnetic"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/mdp/legacy_bridge.py",
+      "purpose": "执行层：mdp/legacy_bridge"
+    },
+    {
+      "path": "source/robotarm_magnetic_lab/robotarm_magnetic_lab/tasks/manager_based/robotarm_magnetic_lab/controllers/actuator_vector.py",
+      "purpose": "执行层：controllers/actuator_vector"
+    },
+    {
+      "path": "tests/research_workflow",
+      "purpose": "工作流标准库回归"
+    },
+    {
+      "path": "assets",
+      "purpose": "已跟踪资产和LFS指针，外部依赖另行准备"
+    },
+    {
+      "path": "configs",
+      "purpose": "版本化配置"
+    },
+    {
+      "path": "handoffs/attachments",
+      "purpose": "历史精选证据"
+    }
+  ],
+  "reference": {
+    "repository": "https://github.com/bl9cksheep/Hierarchy_Tactile_WAM",
+    "verified_source": "local_checkout",
+    "head": "498c2bb078cd3cab1f2026eff9e70789611cc926",
+    "upstream_main_verified": false
+  },
+  "legacy_policy": "Existing historical files keep their paths and evidence. Only managed_documents receive Markdown link checks."
+}
