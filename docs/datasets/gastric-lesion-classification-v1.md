@@ -3,6 +3,7 @@
 ## 文件
 
 - Release 附件：`gastric_lesion_classification_v1.zip`
+- 下载页：[胃部病灶分类数据集 v1（初步标注）](https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-lesion-classification-v1)
 - SHA-256：`79d011e4c0bc145ede4ef11696f63cb91a133d11306e2e22ee330396ee8a925c`
 - 包含 52 张胶囊相机画面、`labels.csv`、`review_required.csv` 和数据说明。
 
