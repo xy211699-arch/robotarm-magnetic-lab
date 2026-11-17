@@ -4,7 +4,7 @@
 
 先读 [项目介绍](docs/PROJECT.md)、[已有实现](docs/IMPLEMENTED.md)、[下一阶段](docs/NEXT.md) 和 [基础入口](docs/ENTRYPOINTS.md)，核对分支、HEAD与已有修改。用户最新指示及之后明确采用的本地方案优先于旧合同；261017任务.docx是暂定研究材料，不是完整实施规格。正文GRU与配图Transformer尚未统一，不替用户选型。
 
-当前下一阶段已指定为 [视觉编码器Linear Probe方案](docs/design/2026-10-25-gastric-vision-linear-probe.md)，优先读取该方案与NEXT。本次授权仅整合提交计划，不自动采集、下载模型或训练；三模型、两任务和主指标保持用户指定，准确checkpoint、距离标签与划分等细节在实施配置明确，不将原材料DINOv2写成已选骨干。
+当前视觉任务为 [DINOv3胃部视觉表征Linear Probe](docs/design/2026-11-17-dinov3-gastric-vision-linear-probe.md)，优先读取该方案与NEXT。冻结DINOv3，仅训练病灶分类与胃壁距离回归的线性头；每种病灶50张，正常胃壁总数与全部病灶总数相等，距离图像500张。采集需标注、保留复现信息、无软件界面，并按轨迹或场景分组划分数据。准确checkpoint、特征读取、距离口径与训练配置在实施前明确；本次提交发布方案和上下文，不自动采集、下载模型或训练。
 
 ## 已有实现和新方向
 

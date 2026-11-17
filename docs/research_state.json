@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "as_of": "2026-10-25",
-  "source_commit": "cb4c1ffda9b5d5e2ddf17fd0c186d4c17f2e5c0a",
-  "scope": "User-selected next stage: frozen vision encoder linear probes; plan publication only, no experiments started.",
+  "as_of": "2026-11-17",
+  "source_commit": "04873ed682162167daf878164764091df7a0ceb9",
+  "scope": "DINOv3冻结视觉特征的病灶分类与胃壁距离回归；本次发布任务文档，不执行采集或训练。",
   "direction": {
     "status": "provisional",
     "source_document": "261017任务.docx",
@@ -11,36 +11,41 @@
     "pending_local_design": true,
     "architecture_unresolved": "Text proposes GRU; embedded figure proposes Transformer."
   },
-  "active_task": "VISION-ENCODER-LINEAR-PROBE",
+  "active_task": "DINOV3-GASTRIC-LINEAR-PROBE",
   "tasks": [
     {
-      "id": "VISION-ENCODER-LINEAR-PROBE",
-      "title": "胃部视觉编码器Linear Probe对比",
+      "id": "DINOV3-GASTRIC-LINEAR-PROBE",
+      "title": "DINOv3胃部视觉表征Linear Probe",
       "status": "authorized",
-      "authorization_scope": "plan_integration_and_publication_only",
+      "authorization_scope": "task_documentation_and_publication",
       "execution_started": false,
-      "contract": "docs/design/2026-10-25-gastric-vision-linear-probe.md",
+      "contract": "docs/design/2026-11-17-dinov3-gastric-vision-linear-probe.md",
       "plan": null,
       "report": null,
-      "summary": "已确定下一阶段为RADIOv2.5/DINOv2/SigLIP2冻结特征的病灶分类与距离回归；本次仅提交方案，未采集/训练；checkpoint、距离定义与划分待明确。"
+      "summary": "数据准备中：每类病灶50张，正常胃壁与病灶总数相等，距离图像500张；DINOv3冻结编码器，仅训练分类与回归线性头，正式评测未执行。"
     }
   ],
   "history_entry": "docs/archive/README.md",
   "next_stage": {
     "models": [
-      "RADIOv2.5",
-      "DINOv2",
-      "SigLIP2"
+      "DINOv3"
     ],
+    "checkpoint": null,
+    "official_source": "https://github.com/facebookresearch/dinov3",
     "protocol": "frozen_encoder_linear_probe",
     "data_source": "own_Isaac_Lab_simulation",
     "tasks": [
       {
         "name": "lesion_classification",
-        "target_images": [
-          300,
-          500
-        ],
+        "lesion_type_count": null,
+        "images_per_lesion_type": 50,
+        "normal_images_equal_total_lesion_images": true,
+        "target_count_rule": {
+          "lesion": "50 * lesion_type_count",
+          "normal": "50 * lesion_type_count",
+          "total": "100 * lesion_type_count"
+        },
+        "label_mapping": "fixed_in_dataset_description_before_training",
         "metrics": [
           "Accuracy",
           "Macro-F1"
@@ -48,25 +53,44 @@
       },
       {
         "name": "wall_distance_regression",
-        "target_images": [
-          300,
-          500
-        ],
+        "target_images": 500,
+        "distance_definition": "fixed_before_collection",
+        "distance_unit": "fixed_before_collection",
         "metrics": [
           "MAE",
           "RMSE"
         ]
       }
     ],
+    "data_requirements": {
+      "direct_camera_export": true,
+      "software_ui_in_images": false,
+      "annotate_during_collection": true,
+      "retain_collection_metadata": true,
+      "version_collection_scripts_and_config": true,
+      "split_grouping": "trajectory_or_scene_or_collection_group",
+      "split_manifests": [
+        "train",
+        "validation",
+        "test"
+      ]
+    },
     "record_efficiency": [
       "feature_extraction_time",
+      "linear_head_training_time",
       "GPU_memory"
     ],
+    "expected_result_groups": 2,
     "excluded": [
       "encoder_fine_tuning",
       "zero_shot",
       "downstream_action_prediction"
     ],
     "experiment_results_available": false
+  },
+  "data_preparation": {
+    "status": "preliminary_samples_available",
+    "preliminary_release": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-lesion-classification-v1",
+    "formal_dataset_accepted": false
   }
 }
