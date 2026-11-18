@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "source_archive": "脚本(1).zip",
+  "source_archive_sha256": "a58c0a984d3fe8f67419e80e889eda88d59882eeb7f806cee0412fe3d559efec",
+  "preserved_bytes": true,
+  "files": [
+    {
+      "path": "capture_one_frame.py",
+      "source_member": "脚本/capture_one_frame.py",
+      "bytes": 62154,
+      "sha256": "c004542d9e30311b5b6d72f9d096ed943b45c1fa568f01346383978cebf71d45"
+    },
+    {
+      "path": "export_image_review.py",
+      "source_member": "脚本/export_image_review.py",
+      "bytes": 8101,
+      "sha256": "97a06a851a4e438b2becec3ad5cedf0d3eeee418dc0c5d9b86e636eae7414ebc"
+    },
+    {
+      "path": "gastric_normal_views_v10.py",
+      "source_member": "脚本/gastric_normal_views_v10.py",
+      "bytes": 133764,
+      "sha256": "1efdc22163777409a9de759d8c2745954c03564b44cc500d1d323e77384d77e5"
+    },
+    {
+      "path": "gastric_orbit_v8.py",
+      "source_member": "脚本/gastric_orbit_v8.py",
+      "bytes": 127066,
+      "sha256": "bcb26f8b24487a9800aee72077adccb142c5ad9bba9a3e225daa584c7840cf4a"
+    },
+    {
+      "path": "gastric_small_views_v9.py",
+      "source_member": "脚本/gastric_small_views_v9.py",
+      "bytes": 129717,
+      "sha256": "bed903a4f04d36803f42aea3f1484f91c995ff841b4dda7222add9612b4393f9"
+    },
+    {
+      "path": "move_camera_closer.py",
+      "source_member": "脚本/move_camera_closer.py",
+      "bytes": 2573,
+      "sha256": "1a59a24cfbc181624130bbe17f499dcf5dba7117ddf11e9f1ff86939a8d6c221"
+    },
+    {
+      "path": "start_normal_views.py",
+      "source_member": "脚本/start_normal_views.py",
+      "bytes": 8602,
+      "sha256": "3711f83dcfdc70834554d88d22a8c6b1c1b396931d6ebe5d62bdfd6220269e8b"
+    },
+    {
+      "path": "start_small_views.py",
+      "source_member": "脚本/start_small_views.py",
+      "bytes": 5591,
+      "sha256": "bab0a518f4bad2857633266fa9c5e248f677274f15c94c1986976e70e91dd333"
+    }
+  ]
+}
