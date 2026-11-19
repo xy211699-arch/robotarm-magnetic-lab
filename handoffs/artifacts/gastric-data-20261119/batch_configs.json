@@ -1,0 +1,2228 @@
+{
+  "collect_small_normal_20261117T184508_a9cdb1": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_normal_20261117T184508_a9cdb1",
+    "class_name": "normal",
+    "class_id": 0,
+    "target_count": 20,
+    "region": {
+      "region_id": "normal_1af0c171",
+      "class_name": "normal",
+      "class_id": 0,
+      "abnormal": false,
+      "center_world_m": [
+        0.08200272099906375,
+        1.142384632987781,
+        0.1171265401582207
+      ],
+      "inward_normal_world": [
+        -0.020225266430762265,
+        -0.718846447437048,
+        -0.6948746099872553
+      ],
+      "center_triangle_index": 178519,
+      "visible_region_enclosing_radius_m": 0.014967456750792488,
+      "landmark_points_world_m": [
+        [
+          0.09114740864682973,
+          1.1390883000227687,
+          0.11735714722931524
+        ],
+        [
+          0.09082121213588167,
+          1.1427197543463912,
+          0.11198411782417537
+        ],
+        [
+          0.08786128656846696,
+          1.1477293192229123,
+          0.10683682562618291
+        ],
+        [
+          0.0822788898383059,
+          1.1504444413812793,
+          0.1045174965378993
+        ],
+        [
+          0.0763293760146537,
+          1.1505521564144319,
+          0.1061665160792589
+        ],
+        [
+          0.07244178170086542,
+          1.1481840485281614,
+          0.11105945071797145
+        ],
+        [
+          0.07200431346712721,
+          1.14314670490473,
+          0.11709411150149758
+        ],
+        [
+          0.07406089457629822,
+          1.1390136658732644,
+          0.12193419470325512
+        ],
+        [
+          0.07764238826295732,
+          1.1356832934013392,
+          0.12483322990613598
+        ],
+        [
+          0.08170917749528855,
+          1.1338177562826592,
+          0.1256686409041812
+        ],
+        [
+          0.08563094089609469,
+          1.1335959795771315,
+          0.12462359094707326
+        ],
+        [
+          0.08912593574591779,
+          1.1359969732829815,
+          0.1218474655714932
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        90
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T183539.374565Z_f5c6836b/sample.json",
+      "source_image_sha256": "ffc919875332efd117a5555c902a6128c45df2ba4fead432198775fa8ce0f8d7",
+      "source_camera_matrix": [
+        [
+          0.9994134734174375,
+          -0.034244841242047366,
+          0.0,
+          0.0
+        ],
+        [
+          0.0026410416269410635,
+          0.07707708636068429,
+          0.9970216385100538,
+          0.0
+        ],
+        [
+          -0.03414284772566273,
+          -0.9964368588156776,
+          0.07712232065185552,
+          0.0
+        ],
+        [
+          0.08049488866029063,
+          1.098379524470178,
+          0.12053245199236137,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T183539.374565Z_f5c6836b/sample.json",
+      "source_image_sha256": "ffc919875332efd117a5555c902a6128c45df2ba4fead432198775fa8ce0f8d7",
+      "depth_sha256": "cd14795bc3fb6b83086171a9c627abf91ee20f2168073e1471ef0a97d85715f6",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 722,
+      "cloud_sha256": "ffac3fb6e8876ce1ae0431e78cf5664e38b02a6f9f63a07d18fd90ba5ea03ae5"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "1efdc22163777409a9de759d8c2745954c03564b44cc500d1d323e77384d77e5"
+  },
+  "collect_small_normal_20261117T184605_71fb6a": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_normal_20261117T184605_71fb6a",
+    "class_name": "normal",
+    "class_id": 0,
+    "target_count": 20,
+    "region": {
+      "region_id": "normal_ac6ae680",
+      "class_name": "normal",
+      "class_id": 0,
+      "abnormal": false,
+      "center_world_m": [
+        0.09291407104921191,
+        1.106258368697121,
+        0.13618192664137557
+      ],
+      "inward_normal_world": [
+        -0.14821026573015675,
+        -0.09502616587495903,
+        -0.9843798783657156
+      ],
+      "center_triangle_index": 380562,
+      "visible_region_enclosing_radius_m": 0.008053518727479602,
+      "landmark_points_world_m": [
+        [
+          0.09551642148732943,
+          1.1016320033196998,
+          0.13586207318468876
+        ],
+        [
+          0.09835098955072441,
+          1.10394870631683,
+          0.13442082146002185
+        ],
+        [
+          0.0993105581187165,
+          1.1070798193800646,
+          0.1329668966955765
+        ],
+        [
+          0.09866982827572059,
+          1.110477982112678,
+          0.13250286640984804
+        ],
+        [
+          0.0964573603384853,
+          1.112884499218114,
+          0.13328388260700494
+        ],
+        [
+          0.09256172314312103,
+          1.1123757889053671,
+          0.13453658832567778
+        ],
+        [
+          0.08965031847764132,
+          1.1105730516242263,
+          0.13614115630639398
+        ],
+        [
+          0.08812058218411126,
+          1.1081396221982343,
+          0.13760779526636008
+        ],
+        [
+          0.08740285475117912,
+          1.1050587634835636,
+          0.13803640547175122
+        ],
+        [
+          0.08819103922495065,
+          1.1027958584376596,
+          0.13823147085091064
+        ],
+        [
+          0.09012952476810739,
+          1.1013728409158332,
+          0.13805166201042188
+        ],
+        [
+          0.09279435649030757,
+          1.1009184452431937,
+          0.1372818863189138
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        90
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T184600.544444Z_6a929a6b/sample.json",
+      "source_image_sha256": "1efd059ef2e5d3961d8d113c7a23483c8860b65335326b518c15379a455e1023",
+      "source_camera_matrix": [
+        [
+          0.5912474625496456,
+          -0.806490197106329,
+          0.0,
+          0.0
+        ],
+        [
+          -0.3620992034474517,
+          -0.2654591909457862,
+          0.8935410370011719,
+          0.0
+        ],
+        [
+          -0.7206320870536688,
+          -0.5283038708109219,
+          -0.44898153101755794,
+          0.0
+        ],
+        [
+          0.07550158809833543,
+          1.093493072357087,
+          0.12533327946821768,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T184600.544444Z_6a929a6b/sample.json",
+      "source_image_sha256": "1efd059ef2e5d3961d8d113c7a23483c8860b65335326b518c15379a455e1023",
+      "depth_sha256": "0f9d90402dc245b14cd150fa58b553088f5f0b2b91bbf171e44702e0040b7354",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 722,
+      "cloud_sha256": "3049b2062fa975cf0374e57284f8ffea7a77b879cd3254042a6d1b6b1ca57b05"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "1efdc22163777409a9de759d8c2745954c03564b44cc500d1d323e77384d77e5"
+  },
+  "collect_small_normal_20261118T074044_e8a930": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_normal_20261118T074044_e8a930",
+    "class_name": "normal",
+    "class_id": 0,
+    "target_count": 20,
+    "region": {
+      "region_id": "normal_2ebb80b5",
+      "class_name": "normal",
+      "class_id": 0,
+      "abnormal": false,
+      "center_world_m": [
+        0.023912793657106548,
+        1.0356905953279025,
+        0.0861695203164504
+      ],
+      "inward_normal_world": [
+        0.3759862560411401,
+        0.2965809511458269,
+        0.8778804444146157
+      ],
+      "center_triangle_index": 30244,
+      "visible_region_enclosing_radius_m": 0.011615092657488526,
+      "landmark_points_world_m": [
+        [
+          0.01980890057333215,
+          1.0421435333430689,
+          0.08699985127339294
+        ],
+        [
+          0.025360590622942925,
+          1.0452925465121568,
+          0.08612692980808032
+        ],
+        [
+          0.028925791986828965,
+          1.0455234289385118,
+          0.08514152110305882
+        ],
+        [
+          0.031644479287005256,
+          1.0442567520348218,
+          0.0848457476641557
+        ],
+        [
+          0.03309244783753762,
+          1.0415513666955305,
+          0.08503902221376966
+        ],
+        [
+          0.03271154894250663,
+          1.0370481884305707,
+          0.08547678326126722
+        ],
+        [
+          0.030275155785596704,
+          1.0313880922085106,
+          0.08660451886447813
+        ],
+        [
+          0.026437813683264613,
+          1.0274260637908992,
+          0.08897802990872328
+        ],
+        [
+          0.021790018095014775,
+          1.026519743859224,
+          0.09137046497511242
+        ],
+        [
+          0.017757833058839035,
+          1.0288713375963432,
+          0.09241605309003316
+        ],
+        [
+          0.015378779705652906,
+          1.0329716450731576,
+          0.09146753784708209
+        ],
+        [
+          0.015368942744917381,
+          1.0373103699675785,
+          0.0889558043836809
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        90
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T074008.101267Z_783959f9/sample.json",
+      "source_image_sha256": "4aadf2f979328062c3ce482e7df8326221a121864be54733eabb6b475a89edcb",
+      "source_camera_matrix": [
+        [
+          -0.7423391711778478,
+          0.6700242942871446,
+          0.0,
+          0.0
+        ],
+        [
+          -0.2525349867371997,
+          -0.27979076929942065,
+          0.9262522366442527,
+          0.0
+        ],
+        [
+          0.6206115011894546,
+          0.6875933176521222,
+          0.37690422405634993,
+          0.0
+        ],
+        [
+          0.04563419619873747,
+          1.0597563614457268,
+          0.09936116815842265,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T074008.101267Z_783959f9/sample.json",
+      "source_image_sha256": "4aadf2f979328062c3ce482e7df8326221a121864be54733eabb6b475a89edcb",
+      "depth_sha256": "2afe4ea9bc95a4de1028a76d0668344947974117142b950f4700320c755732e7",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 722,
+      "cloud_sha256": "cb6cdcb3ca37d4acfa239278d1caafdbf4b8125fb07582ff12337acf3cb7f0da"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "1efdc22163777409a9de759d8c2745954c03564b44cc500d1d323e77384d77e5"
+  },
+  "collect_small_normal_20261118T074325_89ad4b": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_normal_20261118T074325_89ad4b",
+    "class_name": "normal",
+    "class_id": 0,
+    "target_count": 20,
+    "region": {
+      "region_id": "normal_bc538b28",
+      "class_name": "normal",
+      "class_id": 0,
+      "abnormal": false,
+      "center_world_m": [
+        0.0567121247552399,
+        1.0253837983100829,
+        0.0951200358704109
+      ],
+      "inward_normal_world": [
+        -0.2306154076569366,
+        0.7500360532742342,
+        0.619889064704351
+      ],
+      "center_triangle_index": 342843,
+      "visible_region_enclosing_radius_m": 0.010899648872045883,
+      "landmark_points_world_m": [
+        [
+          0.04664189494839763,
+          1.023177558722655,
+          0.09431933060187522
+        ],
+        [
+          0.048642207979281406,
+          1.0276515524228813,
+          0.09093264152285274
+        ],
+        [
+          0.05236573113435198,
+          1.0308045454503736,
+          0.08889832225985271
+        ],
+        [
+          0.056785088201600505,
+          1.0320694704510796,
+          0.08836278585041185
+        ],
+        [
+          0.06103752174604078,
+          1.0318963173759805,
+          0.08958581035114417
+        ],
+        [
+          0.06429624440923301,
+          1.0301022200314118,
+          0.09218197923567648
+        ],
+        [
+          0.06570899207809495,
+          1.0274786448466475,
+          0.09587818218646871
+        ],
+        [
+          0.06481347012184926,
+          1.0243316584714772,
+          0.09973888087265716
+        ],
+        [
+          0.06151079773706326,
+          1.021837584301407,
+          0.10278340890355499
+        ],
+        [
+          0.05665394599616509,
+          1.0200528534583029,
+          0.10384348491204907
+        ],
+        [
+          0.05149618308888468,
+          1.0191581390447746,
+          0.10238897422338597
+        ],
+        [
+          0.04776079340458702,
+          1.0205562238494323,
+          0.09884900847620234
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        90
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T074320.256640Z_4726d5b6/sample.json",
+      "source_image_sha256": "f0e7ca6ebdc7eb989d4b58a50268c4a3d5d501fa9437df26f2b58220086fccfa",
+      "source_camera_matrix": [
+        [
+          -0.9999404541169473,
+          0.010912754940579736,
+          0.0,
+          0.0
+        ],
+        [
+          -0.0035657489694089595,
+          -0.3267311199740378,
+          0.9451106076406074,
+          0.0
+        ],
+        [
+          0.010313760452924354,
+          0.9450543301948929,
+          0.326750576625661,
+          0.0
+        ],
+        [
+          0.057147903889020454,
+          1.0653144287787324,
+          0.10892596862346939,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T074320.256640Z_4726d5b6/sample.json",
+      "source_image_sha256": "f0e7ca6ebdc7eb989d4b58a50268c4a3d5d501fa9437df26f2b58220086fccfa",
+      "depth_sha256": "e0c2edd436e6e0ee13f87ce87f82808b9410fd7b2c7e1c742f4aa05cc01d9d5e",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 722,
+      "cloud_sha256": "557048dce7d85f4fd57ff22436e820ae2a3242b77c92aebdbdb503a536d19873"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "1efdc22163777409a9de759d8c2745954c03564b44cc500d1d323e77384d77e5"
+  },
+  "collect_small_normal_20261118T075051_0b9c0c": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_normal_20261118T075051_0b9c0c",
+    "class_name": "normal",
+    "class_id": 0,
+    "target_count": 20,
+    "region": {
+      "region_id": "normal_3b08e43d",
+      "class_name": "normal",
+      "class_id": 0,
+      "abnormal": false,
+      "center_world_m": [
+        -0.003517686850445248,
+        1.0432893612038001,
+        0.09892774120827631
+      ],
+      "inward_normal_world": [
+        0.6027167918965726,
+        0.5155434097849816,
+        0.6090545635599312
+      ],
+      "center_triangle_index": 47808,
+      "visible_region_enclosing_radius_m": 0.02122907303776645,
+      "landmark_points_world_m": [
+        [
+          -0.018460437358614842,
+          1.0550779074136225,
+          0.10121252313065549
+        ],
+        [
+          -0.004887856075818035,
+          1.0521809367213177,
+          0.09370645965737205
+        ],
+        [
+          0.015180411266676692,
+          1.0486381367902728,
+          0.09041626257228969
+        ],
+        [
+          0.011897774254253458,
+          1.0452312628517761,
+          0.089452441230626
+        ],
+        [
+          0.010916004532856856,
+          1.041545230449851,
+          0.09029918649214302
+        ],
+        [
+          0.008382649998104112,
+          1.0379493567670794,
+          0.09304997415871483
+        ],
+        [
+          0.0037675809273114355,
+          1.0350280329335293,
+          0.09786757003907716
+        ],
+        [
+          0.0017590294928542041,
+          1.0354489778682463,
+          0.10313864005315075
+        ],
+        [
+          -0.00016051794672753555,
+          1.0385536742258112,
+          0.10745945341507113
+        ],
+        [
+          -0.003368801024780453,
+          1.0433081165059126,
+          0.10996526432090696
+        ],
+        [
+          -0.006700333935155234,
+          1.048667978492157,
+          0.10943682422570118
+        ],
+        [
+          -0.01307174433832732,
+          1.0531300279581355,
+          0.10675289637048063
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        90
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T075044.584004Z_a967d9c0/sample.json",
+      "source_image_sha256": "c7ce301010a3050299abd84decb591ab8198f09cb3e2de40acfbe99ed4873e54",
+      "source_camera_matrix": [
+        [
+          -0.12498328066807055,
+          0.99215884794394,
+          0.0,
+          0.0
+        ],
+        [
+          0.16734234089319308,
+          0.02108028850707548,
+          0.985673456262694,
+          0.0
+        ],
+        [
+          0.977944640814516,
+          0.12319270223114744,
+          -0.16866486776787623,
+          0.0
+        ],
+        [
+          0.04226205547017972,
+          1.049056282897063,
+          0.09103216730490629,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T075044.584004Z_a967d9c0/sample.json",
+      "source_image_sha256": "c7ce301010a3050299abd84decb591ab8198f09cb3e2de40acfbe99ed4873e54",
+      "depth_sha256": "4c0bd43a1b16beaa8d1b1b235fd00ce64e7ec21a89091c821bc96bb5e46216fb",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 722,
+      "cloud_sha256": "f806a8b6f6479e11c234320018ae0e739b5c6d3b73978909ba08b8d6c05d1aae"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "1efdc22163777409a9de759d8c2745954c03564b44cc500d1d323e77384d77e5"
+  },
+  "collect_small_normal_20261118T080139_f27acc": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_normal_20261118T080139_f27acc",
+    "class_name": "normal",
+    "class_id": 0,
+    "target_count": 20,
+    "region": {
+      "region_id": "normal_8bcd6733",
+      "class_name": "normal",
+      "class_id": 0,
+      "abnormal": false,
+      "center_world_m": [
+        0.048564987074698765,
+        1.0596610369033581,
+        0.0767516366585331
+      ],
+      "inward_normal_world": [
+        0.6560008442557009,
+        0.10452719951853169,
+        0.7474870948027269
+      ],
+      "center_triangle_index": 26601,
+      "visible_region_enclosing_radius_m": 0.014330426466959527,
+      "landmark_points_world_m": [
+        [
+          0.04647070833043143,
+          1.0684149967863943,
+          0.07840187825056603
+        ],
+        [
+          0.047404688331809844,
+          1.0688582348154156,
+          0.0759963477683131
+        ],
+        [
+          0.049280798998235995,
+          1.0686268505015017,
+          0.07422863717554211
+        ],
+        [
+          0.05082587363663145,
+          1.0656335325720452,
+          0.07255113894534765
+        ],
+        [
+          0.052885070559068534,
+          1.0628565664199754,
+          0.07259918225940717
+        ],
+        [
+          0.05419970875758488,
+          1.0591209512641075,
+          0.07384808053779603
+        ],
+        [
+          0.05416652597565441,
+          1.0548436216035353,
+          0.07619259502413438
+        ],
+        [
+          0.0519886698010846,
+          1.0494445749815702,
+          0.07894039888521732
+        ],
+        [
+          0.04833157207129378,
+          1.047192013194551,
+          0.08158299171724298
+        ],
+        [
+          0.043941604388476725,
+          1.0474476275563014,
+          0.08265232199016229
+        ],
+        [
+          0.041604176456600216,
+          1.0524667427322156,
+          0.0817353749559347
+        ],
+        [
+          0.04430864290955282,
+          1.0631167354371416,
+          0.08021560333456133
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        74
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T080135.428254Z_bf3568a4/sample.json",
+      "source_image_sha256": "c7eba67a126187aae445b0738c2f2cd479b82c008dc4e87ba5ba1a0eccad0490",
+      "source_camera_matrix": [
+        [
+          -0.9352332076595238,
+          0.35403226871413596,
+          0.0,
+          0.0
+        ],
+        [
+          -0.07660901942910836,
+          -0.2023750525243436,
+          0.9763070194656391,
+          0.0
+        ],
+        [
+          0.34564418906295624,
+          0.9130747454753586,
+          0.21638993447505897,
+          0.0
+        ],
+        [
+          0.060662533691902214,
+          1.0916186529949956,
+          0.08432528436516015,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T080135.428254Z_bf3568a4/sample.json",
+      "source_image_sha256": "c7eba67a126187aae445b0738c2f2cd479b82c008dc4e87ba5ba1a0eccad0490",
+      "depth_sha256": "3f894f9f3d7deb1aa6f059a49b28b6f8c02faa37f20ab387ae56ca67eb1b9854",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 487,
+      "cloud_sha256": "3a703fdd41d648052e550b0cdc4fec99593c24c4d2ab720c534c5e3c7b344089"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "1efdc22163777409a9de759d8c2745954c03564b44cc500d1d323e77384d77e5"
+  },
+  "collect_small_normal_20261118T081019_916b31": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_normal_20261118T081019_916b31",
+    "class_name": "normal",
+    "class_id": 0,
+    "target_count": 20,
+    "region": {
+      "region_id": "normal_ce778a40",
+      "class_name": "normal",
+      "class_id": 0,
+      "abnormal": false,
+      "center_world_m": [
+        0.08078425677413228,
+        1.1485157294594195,
+        0.08269228666999603
+      ],
+      "inward_normal_world": [
+        -0.05911871866659116,
+        -0.9051523548194781,
+        0.4209562823714292
+      ],
+      "center_triangle_index": 223819,
+      "visible_region_enclosing_radius_m": 0.012202767722493601,
+      "landmark_points_world_m": [
+        [
+          0.09156512276099033,
+          1.1452550587150974,
+          0.08267820505621676
+        ],
+        [
+          0.08869709657824808,
+          1.1430783369375401,
+          0.07739670629025139
+        ],
+        [
+          0.08416198393669937,
+          1.1425246795981934,
+          0.0738479732995767
+        ],
+        [
+          0.07924012211133208,
+          1.1441494658138227,
+          0.07246314020444244
+        ],
+        [
+          0.07429288844051178,
+          1.145591342808798,
+          0.07392291366530615
+        ],
+        [
+          0.07098645030339529,
+          1.1480276007665076,
+          0.07754505936641025
+        ],
+        [
+          0.07006757505212192,
+          1.1509726876309008,
+          0.0827262922154855
+        ],
+        [
+          0.07179571188809301,
+          1.1521827668259752,
+          0.08828788510882184
+        ],
+        [
+          0.07615203344023456,
+          1.1527489755768752,
+          0.09262515536415622
+        ],
+        [
+          0.08197823924632129,
+          1.1518918872437056,
+          0.09435777013879583
+        ],
+        [
+          0.08749385891062017,
+          1.1498636554092736,
+          0.09276542967818793
+        ],
+        [
+          0.09109278874686248,
+          1.1475795888030365,
+          0.08842434664820416
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        74
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T081015.067435Z_25c8c004/sample.json",
+      "source_image_sha256": "98694c1652ef3df598d64fb25e30a1b4c196209d236f955c07a7d22940b6d724",
+      "source_camera_matrix": [
+        [
+          0.942780038999921,
+          -0.3334153536706243,
+          0.0,
+          0.0
+        ],
+        [
+          0.00901846581672072,
+          0.025501013857948576,
+          0.9996341158476583,
+          0.0
+        ],
+        [
+          -0.33329336227656875,
+          -0.9424350907245067,
+          0.027048741809382656,
+          0.0
+        ],
+        [
+          0.060662533691902214,
+          1.0916186529949956,
+          0.08432528436516015,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T081015.067435Z_25c8c004/sample.json",
+      "source_image_sha256": "98694c1652ef3df598d64fb25e30a1b4c196209d236f955c07a7d22940b6d724",
+      "depth_sha256": "92b8a741236ee288956b3947219399072381c75e5f48cd257ce269ce468f440a",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 487,
+      "cloud_sha256": "6514970ce4bf9fd51dfe4ad1f51cc577f59c6da7c788a27ba112a17d3e63a255"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "1efdc22163777409a9de759d8c2745954c03564b44cc500d1d323e77384d77e5"
+  },
+  "collect_small_raised_20261117T180345_eca77b": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_raised_20261117T180345_eca77b",
+    "class_name": "raised",
+    "class_id": 1,
+    "target_count": 50,
+    "region": {
+      "region_id": "raised_b2881d9a",
+      "class_name": "raised",
+      "class_id": 1,
+      "abnormal": true,
+      "center_world_m": [
+        0.08368339617694007,
+        1.0665869604621936,
+        0.075765652982219
+      ],
+      "inward_normal_world": [
+        0.017049257095623403,
+        0.4611404290904933,
+        0.887163360092561
+      ],
+      "center_triangle_index": 138510,
+      "visible_region_enclosing_radius_m": 0.016632301839674665,
+      "landmark_points_world_m": [
+        [
+          0.0711488330393033,
+          1.0593935982655274,
+          0.07097855514292159
+        ],
+        [
+          0.07201998405651876,
+          1.065397533828444,
+          0.06728482910948994
+        ],
+        [
+          0.07607575801862468,
+          1.0700176715222842,
+          0.06401020959664182
+        ],
+        [
+          0.08218661069632706,
+          1.073210816493236,
+          0.06390905661510612
+        ],
+        [
+          0.08852300250459989,
+          1.0738981083028598,
+          0.06605039239745444
+        ],
+        [
+          0.09381727411524318,
+          1.0716839507415405,
+          0.0693242767335144
+        ],
+        [
+          0.09650678498842771,
+          1.067561701288761,
+          0.07365479375259734
+        ],
+        [
+          0.09688541525020875,
+          1.0611473653413315,
+          0.07662230882479323
+        ],
+        [
+          0.09362678949815287,
+          1.0547199134342176,
+          0.07877505938608773
+        ],
+        [
+          0.08718851709068087,
+          1.0510754415406538,
+          0.07958857039944756
+        ],
+        [
+          0.07985552493515018,
+          1.0505716416356132,
+          0.07810881945630997
+        ],
+        [
+          0.07390077741562981,
+          1.0541249030076838,
+          0.07514302084038268
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        422,
+        122
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T180322.754111Z_d93acd2e/sample.json",
+      "source_image_sha256": "f3eac06c3d1bca55439a8bcec7f6cd5ab10cd36738b8b00f975063ca4ad9dd41",
+      "source_camera_matrix": [
+        [
+          -0.9754069458747383,
+          -0.22041163748612594,
+          0.0,
+          0.0
+        ],
+        [
+          0.15648533744638166,
+          -0.6925082850144919,
+          0.7042333521998084,
+          0.0
+        ],
+        [
+          -0.15522122633070343,
+          0.686914103252344,
+          0.7099685807480642,
+          0.0
+        ],
+        [
+          0.0779727935939848,
+          1.091858590799296,
+          0.10492338186973607,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T180322.754111Z_d93acd2e/sample.json",
+      "source_image_sha256": "f3eac06c3d1bca55439a8bcec7f6cd5ab10cd36738b8b00f975063ca4ad9dd41",
+      "depth_sha256": "1a5143606f416bb162d9eb9248cb48c9cf1f6172671e6fed4eb3d8318d211ecc",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 1304,
+      "cloud_sha256": "bc1db82da71448f1f2e81838bb795fb06d9174328d746e694c99d65bcaa68d4e"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "27875f9f1471b96c34ee2119cd9239ce2c0b99d0ecb2489315e24d81e8aec3fa"
+  },
+  "collect_small_raised_20261117T181836_4a1c39": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_raised_20261117T181836_4a1c39",
+    "class_name": "raised",
+    "class_id": 1,
+    "target_count": 50,
+    "region": {
+      "region_id": "raised_1f2d0d8b",
+      "class_name": "raised",
+      "class_id": 1,
+      "abnormal": true,
+      "center_world_m": [
+        0.08368339617694007,
+        1.0665869604621936,
+        0.075765652982219
+      ],
+      "inward_normal_world": [
+        0.017049257095623403,
+        0.4611404290904933,
+        0.887163360092561
+      ],
+      "center_triangle_index": 138510,
+      "visible_region_enclosing_radius_m": 0.016632301839674665,
+      "landmark_points_world_m": [
+        [
+          0.0711488330393033,
+          1.0593935982655274,
+          0.07097855514292159
+        ],
+        [
+          0.07201998405651876,
+          1.065397533828444,
+          0.06728482910948994
+        ],
+        [
+          0.07607575801862468,
+          1.0700176715222842,
+          0.06401020959664182
+        ],
+        [
+          0.08218661069632706,
+          1.073210816493236,
+          0.06390905661510612
+        ],
+        [
+          0.08852300250459989,
+          1.0738981083028598,
+          0.06605039239745444
+        ],
+        [
+          0.09381727411524318,
+          1.0716839507415405,
+          0.0693242767335144
+        ],
+        [
+          0.09650678498842771,
+          1.067561701288761,
+          0.07365479375259734
+        ],
+        [
+          0.09688541525020875,
+          1.0611473653413315,
+          0.07662230882479323
+        ],
+        [
+          0.09362678949815287,
+          1.0547199134342176,
+          0.07877505938608773
+        ],
+        [
+          0.08718851709068087,
+          1.0510754415406538,
+          0.07958857039944756
+        ],
+        [
+          0.07985552493515018,
+          1.0505716416356132,
+          0.07810881945630997
+        ],
+        [
+          0.07390077741562981,
+          1.0541249030076838,
+          0.07514302084038268
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        422,
+        122
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T180322.754111Z_d93acd2e/sample.json",
+      "source_image_sha256": "f3eac06c3d1bca55439a8bcec7f6cd5ab10cd36738b8b00f975063ca4ad9dd41",
+      "source_camera_matrix": [
+        [
+          -0.9754069458747383,
+          -0.22041163748612594,
+          0.0,
+          0.0
+        ],
+        [
+          0.15648533744638166,
+          -0.6925082850144919,
+          0.7042333521998084,
+          0.0
+        ],
+        [
+          -0.15522122633070343,
+          0.686914103252344,
+          0.7099685807480642,
+          0.0
+        ],
+        [
+          0.0779727935939848,
+          1.091858590799296,
+          0.10492338186973607,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T180322.754111Z_d93acd2e/sample.json",
+      "source_image_sha256": "f3eac06c3d1bca55439a8bcec7f6cd5ab10cd36738b8b00f975063ca4ad9dd41",
+      "depth_sha256": "1a5143606f416bb162d9eb9248cb48c9cf1f6172671e6fed4eb3d8318d211ecc",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 1304,
+      "cloud_sha256": "bc1db82da71448f1f2e81838bb795fb06d9174328d746e694c99d65bcaa68d4e"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "bed903a4f04d36803f42aea3f1484f91c995ff841b4dda7222add9612b4393f9"
+  },
+  "collect_small_raised_20261118T165946_31011e": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_raised_20261118T165946_31011e",
+    "class_name": "raised",
+    "class_id": 1,
+    "target_count": 50,
+    "region": {
+      "region_id": "raised_4574cc74",
+      "class_name": "raised",
+      "class_id": 1,
+      "abnormal": true,
+      "center_world_m": [
+        0.05738205752891166,
+        1.0434970284679441,
+        0.1355435332878022
+      ],
+      "inward_normal_world": [
+        0.05895668031285009,
+        0.5222819813805324,
+        -0.8507324149059524
+      ],
+      "center_triangle_index": 319024,
+      "visible_region_enclosing_radius_m": 0.008780462472038694,
+      "landmark_points_world_m": [
+        [
+          0.05105500964463342,
+          1.044299924477453,
+          0.13514987382499863
+        ],
+        [
+          0.051403051903578245,
+          1.0406895320249712,
+          0.13408045875230018
+        ],
+        [
+          0.05365471174808473,
+          1.0384402976321134,
+          0.13265524145899116
+        ],
+        [
+          0.05698131866568124,
+          1.0376185510300249,
+          0.1319782866954064
+        ],
+        [
+          0.060392185516533844,
+          1.03790589346654,
+          0.13271303123180736
+        ],
+        [
+          0.062159875238636544,
+          1.0452889684896727,
+          0.129383153277996
+        ],
+        [
+          0.06287805488729198,
+          1.0478923615265792,
+          0.13049007062099494
+        ],
+        [
+          0.062287264361041386,
+          1.0499306384579312,
+          0.13213118370816562
+        ],
+        [
+          0.06080608180969293,
+          1.0481866715858221,
+          0.13814210687947825
+        ],
+        [
+          0.057809816366744,
+          1.0497718645464758,
+          0.1375242940928024
+        ],
+        [
+          0.05480570781672334,
+          1.04937847979887,
+          0.13699305250187221
+        ],
+        [
+          0.05233513560108572,
+          1.04734794913734,
+          0.1362951893976354
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        74
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T165923.553592Z_c4a7a6e7/sample.json",
+      "source_image_sha256": "244483eaf308c59932404ed34371afb17a649f9784d0df16313a7527436b389b",
+      "source_camera_matrix": [
+        [
+          -0.9976844576150364,
+          0.06801266818314552,
+          0.0,
+          0.0
+        ],
+        [
+          0.049513361477918585,
+          0.7263163247436913,
+          0.6855749582984881,
+          0.0
+        ],
+        [
+          0.04662778215342891,
+          0.6839874804244783,
+          -0.7280020443336862,
+          0.0
+        ],
+        [
+          0.05901402990428167,
+          1.067436590282801,
+          0.11006346173612312,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T165923.553592Z_c4a7a6e7/sample.json",
+      "source_image_sha256": "244483eaf308c59932404ed34371afb17a649f9784d0df16313a7527436b389b",
+      "depth_sha256": "3931a04a6ba0c03555a18d0e59adb0e65cfbd34de381cfb05147954162412bc4",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 487,
+      "cloud_sha256": "3f046b500fa44ee4c57c3e4c7da94483281fa94e3d6e36239e95689fcdfdcddc"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "bed903a4f04d36803f42aea3f1484f91c995ff841b4dda7222add9612b4393f9"
+  },
+  "collect_small_raised_20261118T170633_edea65": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_raised_20261118T170633_edea65",
+    "class_name": "raised",
+    "class_id": 1,
+    "target_count": 50,
+    "region": {
+      "region_id": "raised_b03d16f9",
+      "class_name": "raised",
+      "class_id": 1,
+      "abnormal": true,
+      "center_world_m": [
+        0.05738205752891166,
+        1.0434970284679441,
+        0.1355435332878022
+      ],
+      "inward_normal_world": [
+        0.05895668031285009,
+        0.5222819813805324,
+        -0.8507324149059524
+      ],
+      "center_triangle_index": 319024,
+      "visible_region_enclosing_radius_m": 0.008780462472038694,
+      "landmark_points_world_m": [
+        [
+          0.05105500964463342,
+          1.044299924477453,
+          0.13514987382499863
+        ],
+        [
+          0.051403051903578245,
+          1.0406895320249712,
+          0.13408045875230018
+        ],
+        [
+          0.05365471174808473,
+          1.0384402976321134,
+          0.13265524145899116
+        ],
+        [
+          0.05698131866568124,
+          1.0376185510300249,
+          0.1319782866954064
+        ],
+        [
+          0.060392185516533844,
+          1.03790589346654,
+          0.13271303123180736
+        ],
+        [
+          0.062159875238636544,
+          1.0452889684896727,
+          0.129383153277996
+        ],
+        [
+          0.06287805488729198,
+          1.0478923615265792,
+          0.13049007062099494
+        ],
+        [
+          0.062287264361041386,
+          1.0499306384579312,
+          0.13213118370816562
+        ],
+        [
+          0.06080608180969293,
+          1.0481866715858221,
+          0.13814210687947825
+        ],
+        [
+          0.057809816366744,
+          1.0497718645464758,
+          0.1375242940928024
+        ],
+        [
+          0.05480570781672334,
+          1.04937847979887,
+          0.13699305250187221
+        ],
+        [
+          0.05233513560108572,
+          1.04734794913734,
+          0.1362951893976354
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        74
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T165923.553592Z_c4a7a6e7/sample.json",
+      "source_image_sha256": "244483eaf308c59932404ed34371afb17a649f9784d0df16313a7527436b389b",
+      "source_camera_matrix": [
+        [
+          -0.9976844576150364,
+          0.06801266818314552,
+          0.0,
+          0.0
+        ],
+        [
+          0.049513361477918585,
+          0.7263163247436913,
+          0.6855749582984881,
+          0.0
+        ],
+        [
+          0.04662778215342891,
+          0.6839874804244783,
+          -0.7280020443336862,
+          0.0
+        ],
+        [
+          0.05901402990428167,
+          1.067436590282801,
+          0.11006346173612312,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T165923.553592Z_c4a7a6e7/sample.json",
+      "source_image_sha256": "244483eaf308c59932404ed34371afb17a649f9784d0df16313a7527436b389b",
+      "depth_sha256": "3931a04a6ba0c03555a18d0e59adb0e65cfbd34de381cfb05147954162412bc4",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 487,
+      "cloud_sha256": "3f046b500fa44ee4c57c3e4c7da94483281fa94e3d6e36239e95689fcdfdcddc"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "bed903a4f04d36803f42aea3f1484f91c995ff841b4dda7222add9612b4393f9"
+  },
+  "collect_small_ulcerated_20261117T173555_d9bedb": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_ulcerated_20261117T173555_d9bedb",
+    "class_name": "ulcerated",
+    "class_id": 2,
+    "target_count": 50,
+    "region": {
+      "region_id": "ulcerated_311b674d",
+      "class_name": "ulcerated",
+      "class_id": 2,
+      "abnormal": true,
+      "center_world_m": [
+        0.11018730236359499,
+        1.0735465284200398,
+        0.11276440767098227
+      ],
+      "inward_normal_world": [
+        -0.4874646503021747,
+        0.7266659977051905,
+        0.4840813387075549
+      ],
+      "center_triangle_index": 166029,
+      "visible_region_enclosing_radius_m": 0.020119028748852037,
+      "landmark_points_world_m": [
+        [
+          0.10469260893258983,
+          1.0564819579656506,
+          0.11177542591068397
+        ],
+        [
+          0.10713205734080378,
+          1.0562533526730642,
+          0.10294672626282597
+        ],
+        [
+          0.11041515180379677,
+          1.0619780171329483,
+          0.09684738830174967
+        ],
+        [
+          0.11440026510353062,
+          1.069723475578142,
+          0.09540354083130595
+        ],
+        [
+          0.11676004594345406,
+          1.0778546510316476,
+          0.09906959053531014
+        ],
+        [
+          0.11699942185690451,
+          1.0838879447716188,
+          0.10582914052526984
+        ],
+        [
+          0.11415638111209714,
+          1.087140038977557,
+          0.11359260723072172
+        ],
+        [
+          0.11053440220795249,
+          1.0870766933763178,
+          0.11985640157053122
+        ],
+        [
+          0.10703279848461704,
+          1.0842495662837774,
+          0.12409598969715832
+        ],
+        [
+          0.10427242911246615,
+          1.0789139798759577,
+          0.12578231776895238
+        ],
+        [
+          0.10260642815448726,
+          1.0718675140947327,
+          0.12455380654211304
+        ],
+        [
+          0.10348963097405281,
+          1.0623076610469602,
+          0.11995305438811814
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        105
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T170125.442735Z_ff0fe3b6/sample.json",
+      "source_image_sha256": "e4547c1ca5f30fd09767d1184ff4544858c9c213a609756f74d7c76cc6ec4b2a",
+      "source_camera_matrix": [
+        [
+          -0.6720071858008071,
+          -0.7405446254157001,
+          0.0,
+          0.0
+        ],
+        [
+          0.09811896851052723,
+          -0.08903805339944813,
+          0.9911835819187419,
+          0.0
+        ],
+        [
+          -0.7340156743902065,
+          0.6660824894971774,
+          0.13249568647594837,
+          0.0
+        ],
+        [
+          0.06994760099666152,
+          1.110062043549028,
+          0.12002799486975468,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T170125.442735Z_ff0fe3b6/sample.json",
+      "source_image_sha256": "e4547c1ca5f30fd09767d1184ff4544858c9c213a609756f74d7c76cc6ec4b2a",
+      "depth_sha256": "543864df7d9bfbb2291d2f3ece5a6437c4d5b6809e45f619669dd7e354ed3bd2",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 965,
+      "cloud_sha256": "8e7a8fe32f6ad3f97b84908a654d40b243096eb02ea7eab3dae4e1adaab07854"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "27875f9f1471b96c34ee2119cd9239ce2c0b99d0ecb2489315e24d81e8aec3fa"
+  },
+  "collect_small_ulcerated_20261117T174135_e86167": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_ulcerated_20261117T174135_e86167",
+    "class_name": "ulcerated",
+    "class_id": 2,
+    "target_count": 50,
+    "region": {
+      "region_id": "ulcerated_311b674d",
+      "class_name": "ulcerated",
+      "class_id": 2,
+      "abnormal": true,
+      "center_world_m": [
+        0.11018730236359499,
+        1.0735465284200398,
+        0.11276440767098227
+      ],
+      "inward_normal_world": [
+        -0.4874646503021747,
+        0.7266659977051905,
+        0.4840813387075549
+      ],
+      "center_triangle_index": 166029,
+      "visible_region_enclosing_radius_m": 0.020119028748852037,
+      "landmark_points_world_m": [
+        [
+          0.10469260893258983,
+          1.0564819579656506,
+          0.11177542591068397
+        ],
+        [
+          0.10713205734080378,
+          1.0562533526730642,
+          0.10294672626282597
+        ],
+        [
+          0.11041515180379677,
+          1.0619780171329483,
+          0.09684738830174967
+        ],
+        [
+          0.11440026510353062,
+          1.069723475578142,
+          0.09540354083130595
+        ],
+        [
+          0.11676004594345406,
+          1.0778546510316476,
+          0.09906959053531014
+        ],
+        [
+          0.11699942185690451,
+          1.0838879447716188,
+          0.10582914052526984
+        ],
+        [
+          0.11415638111209714,
+          1.087140038977557,
+          0.11359260723072172
+        ],
+        [
+          0.11053440220795249,
+          1.0870766933763178,
+          0.11985640157053122
+        ],
+        [
+          0.10703279848461704,
+          1.0842495662837774,
+          0.12409598969715832
+        ],
+        [
+          0.10427242911246615,
+          1.0789139798759577,
+          0.12578231776895238
+        ],
+        [
+          0.10260642815448726,
+          1.0718675140947327,
+          0.12455380654211304
+        ],
+        [
+          0.10348963097405281,
+          1.0623076610469602,
+          0.11995305438811814
+        ]
+      ],
+      "source_pixel_circle": [
+        400,
+        400,
+        105
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T170125.442735Z_ff0fe3b6/sample.json",
+      "source_image_sha256": "e4547c1ca5f30fd09767d1184ff4544858c9c213a609756f74d7c76cc6ec4b2a",
+      "source_camera_matrix": [
+        [
+          -0.6720071858008071,
+          -0.7405446254157001,
+          0.0,
+          0.0
+        ],
+        [
+          0.09811896851052723,
+          -0.08903805339944813,
+          0.9911835819187419,
+          0.0
+        ],
+        [
+          -0.7340156743902065,
+          0.6660824894971774,
+          0.13249568647594837,
+          0.0
+        ],
+        [
+          0.06994760099666152,
+          1.110062043549028,
+          0.12002799486975468,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261117T170125.442735Z_ff0fe3b6/sample.json",
+      "source_image_sha256": "e4547c1ca5f30fd09767d1184ff4544858c9c213a609756f74d7c76cc6ec4b2a",
+      "depth_sha256": "543864df7d9bfbb2291d2f3ece5a6437c4d5b6809e45f619669dd7e354ed3bd2",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 965,
+      "cloud_sha256": "8e7a8fe32f6ad3f97b84908a654d40b243096eb02ea7eab3dae4e1adaab07854"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "27875f9f1471b96c34ee2119cd9239ce2c0b99d0ecb2489315e24d81e8aec3fa"
+  },
+  "collect_small_ulcerated_20261118T171137_df6403": {
+    "schema": "gastric_lesion_photo_collection_v1",
+    "batch_id": "collect_small_ulcerated_20261118T171137_df6403",
+    "class_name": "ulcerated",
+    "class_id": 2,
+    "target_count": 50,
+    "region": {
+      "region_id": "ulcerated_173e1afb",
+      "class_name": "ulcerated",
+      "class_id": 2,
+      "abnormal": true,
+      "center_world_m": [
+        0.10969531109411457,
+        1.0729256167109118,
+        0.11263306781511305
+      ],
+      "inward_normal_world": [
+        -0.9231527118889202,
+        -0.06279815771827765,
+        0.37926964276003233
+      ],
+      "center_triangle_index": 165907,
+      "visible_region_enclosing_radius_m": 0.006898276344783646,
+      "landmark_points_world_m": [
+        [
+          0.10887235196004869,
+          1.0665480032501422,
+          0.11275492100929208
+        ],
+        [
+          0.11005574178716858,
+          1.0669862001358312,
+          0.10976215248056814
+        ],
+        [
+          0.11162112019089629,
+          1.0686086152537733,
+          0.10760902817844435
+        ],
+        [
+          0.11169212352363463,
+          1.0722932498062876,
+          0.1067572021766798
+        ],
+        [
+          0.11277091311051088,
+          1.0750511584506632,
+          0.10760287263667206
+        ],
+        [
+          0.11288379581176489,
+          1.0773172252514707,
+          0.10985626132557179
+        ],
+        [
+          0.11314549865142591,
+          1.0779751405063238,
+          0.11326341789328032
+        ],
+        [
+          0.11128724602625412,
+          1.077630296530069,
+          0.11617906568059842
+        ],
+        [
+          0.1095093126096965,
+          1.0758972490747722,
+          0.1180106906536891
+        ],
+        [
+          0.10799069845877851,
+          1.073371072004562,
+          0.11840009681846327
+        ],
+        [
+          0.10753002180571337,
+          1.0704752582196349,
+          0.11756380551238002
+        ],
+        [
+          0.10786689978574315,
+          1.0679453180294414,
+          0.11559472808846558
+        ]
+      ],
+      "source_pixel_circle": [
+        576,
+        400,
+        103
+      ],
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T171123.687386Z_52f237ba/sample.json",
+      "source_image_sha256": "6ef44880faee0d434330948db5bb77f75cf914042742098f9ebc37122e31b549",
+      "source_camera_matrix": [
+        [
+          -0.1985719692030557,
+          -0.9800863089783576,
+          0.0,
+          0.0
+        ],
+        [
+          -0.251046515812861,
+          0.050863684708023695,
+          0.9666377462504482,
+          0.0
+        ],
+        [
+          -0.9473884208417599,
+          0.19194716077895516,
+          -0.25614735509829945,
+          0.0
+        ],
+        [
+          0.08935213456603247,
+          1.0876520817444508,
+          0.10657482532977007,
+          1.0
+        ]
+      ],
+      "geometry_sha256": "9c83bb69b2c0f76135a07ff840e8c44b146f0bbbbee27efeb1fa871f8809d642",
+      "meters_per_unit": 1.0,
+      "annotation_basis": "user confirmed class and circumscribed visible region",
+      "limitation": "visible extent only; not an exact semantic mask or proof of hidden extent"
+    },
+    "source_surface": {
+      "source_sample_path": "/home/multirobo/gastric-single-frame-20261117/orbit_v6/scouts/20261118T171123.687386Z_52f237ba/sample.json",
+      "source_image_sha256": "6ef44880faee0d434330948db5bb77f75cf914042742098f9ebc37122e31b549",
+      "depth_sha256": "9fdcd2f5c9b3f2de4dfc1d9c24e6eb990c720ea9c9892b9bd9d6799cd3a05cdd",
+      "instance_ids_sha256": "9e5c8b8be1f426d36d2012735d2a1c01352b82ac6450e5803a57b1c5c8eb5557",
+      "source_pixel_stride": 6,
+      "cloud_count": 933,
+      "cloud_sha256": "63de451c865539b4a04ca64d0bcaaff7c2e2bfe3c3cbad4841b02c734812302f"
+    },
+    "random_seed": 20261117,
+    "distance_unit": "mm",
+    "accepted_distance_range_mm": [
+      30,
+      60
+    ],
+    "distance_definition": "actual optical-axis first visible stomach hit",
+    "minimum_clearance_mm": 5,
+    "marked_center_image_margin_fraction": 0.15,
+    "view_change_range_deg": [
+      5,
+      10
+    ],
+    "angular_reference": "registered seed sightline",
+    "whole_ROI_inside_circle_required": false,
+    "near_duplicate_pose_limits": {
+      "translation_mm": 2,
+      "angle_deg": 5
+    },
+    "near_duplicate_image_hash": "256-bit difference hash",
+    "minimum_hash_hamming": 4,
+    "maximum_geometry_proposals": 2400,
+    "maximum_rendered_candidates": 250,
+    "label_basis": "user-confirmed seed region; output views pending review",
+    "training_split_exported": false,
+    "script_sha256": "bed903a4f04d36803f42aea3f1484f91c995ff841b4dda7222add9612b4393f9"
+  }
+}

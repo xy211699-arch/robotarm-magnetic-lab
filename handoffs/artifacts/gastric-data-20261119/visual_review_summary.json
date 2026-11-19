@@ -1,0 +1,56 @@
+{
+  "reviewed_utc": "2026-11-19T01:46:23.712761+00:00",
+  "reviewer": "Codex",
+  "overview_sheets_viewed": 35,
+  "overview_sample_count": 558,
+  "original_resolution_images_viewed_this_resume": 5,
+  "original_observations": [
+    {
+      "sample_id": "20261118T074327.457116Z_153ac87a_0001",
+      "original_class": "normal",
+      "suggested_class": null,
+      "status": "pending_view_review",
+      "image": "orbit_v6/collect_small_normal_20261118T074325_89ad4b/images/normal_0001.png",
+      "basis": "No obvious UI/text or central lesion; original image viewed, semantic approval pending.",
+      "raw_label_modified": false
+    },
+    {
+      "sample_id": "20261118T074330.132478Z_92e2dc13_0001",
+      "original_class": "normal",
+      "suggested_class": null,
+      "status": "pending_view_review",
+      "image": "orbit_v6/collect_small_normal_20261118T074325_89ad4b/images/normal_0002.png",
+      "basis": "Red fragment clipped at the top edge; whole-image normal label requires review; do not infer its class from this fragment.",
+      "raw_label_modified": false
+    },
+    {
+      "sample_id": "20261118T075113.838718Z_96f1a496_0001",
+      "original_class": "normal",
+      "suggested_class": null,
+      "status": "pending_view_review",
+      "image": "orbit_v6/collect_small_normal_20261118T075051_0b9c0c/images/normal_0009.png",
+      "basis": "Bright foreground geometry, dark opening and upper boundary visible; scene/normal-label review pending.",
+      "raw_label_modified": false
+    },
+    {
+      "sample_id": "20261117T181840.535560Z_af02bf36_0001",
+      "original_class": "raised",
+      "suggested_class": null,
+      "status": "pending_view_review",
+      "image": "orbit_v6/collect_small_raised_20261117T181836_4a1c39/images/raised_0003.png",
+      "basis": "Central raised target visible; additional ulcerated target at upper left intersects image boundary. Mixed-lesion whole-image ambiguity.",
+      "raw_label_modified": false
+    },
+    {
+      "sample_id": "20261118T171147.722887Z_9145cae0_0001",
+      "original_class": "ulcerated",
+      "suggested_class": null,
+      "status": "pending_view_review",
+      "image": "orbit_v6/collect_small_ulcerated_20261118T171137_df6403/images/ulcerated_0006.png",
+      "basis": "Central ulcerated target visible; additional raised target cropped at lower-right/bottom edge. Replacement still ambiguous for whole-image labeling.",
+      "raw_label_modified": false
+    }
+  ],
+  "automatic_label_approval": false,
+  "scope": "Overview review plus five specific original-resolution images; remaining originals not individually approved."
+}

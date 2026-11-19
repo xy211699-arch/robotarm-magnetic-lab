@@ -1,0 +1,34 @@
+[
+  {
+    "source_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/assets/stomach/new_stomach_v1/new_stomach_physics.usda",
+    "expected_sha256": "d24885ab1cf9182d8f13993e5d69d57b6a9a6b39027541f656191309be262954",
+    "actual_sha256": "d24885ab1cf9182d8f13993e5d69d57b6a9a6b39027541f656191309be262954",
+    "matches": true,
+    "bytes": 1375,
+    "bundle_path": "external_assets/d24885ab1cf9182d8f13993e5d69d57b6a9a6b39027541f656191309be262954/new_stomach_physics.usda"
+  },
+  {
+    "source_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/assets/stomach/new_stomach_v1/new_stomach_visual.usd",
+    "expected_sha256": "d89826fc0309840e567d1be6a23a6a59215e6284b265a288523b0e887d5ff58a",
+    "actual_sha256": "d89826fc0309840e567d1be6a23a6a59215e6284b265a288523b0e887d5ff58a",
+    "matches": true,
+    "bytes": 29842086,
+    "bundle_path": "external_assets/d89826fc0309840e567d1be6a23a6a59215e6284b265a288523b0e887d5ff58a/new_stomach_visual.usd"
+  },
+  {
+    "source_path": "/mnt/isaac-linux/isaacsim/.worktrees/new-stomach-rl-preflight-20261008/assets/stomach/new_stomach_v1/textures/newcolor.png",
+    "expected_sha256": "615ccc1e13aa29e2a7ea972a5aed8dfc0bae1a33eddc6a14ec5549ac3c12ff2a",
+    "actual_sha256": "615ccc1e13aa29e2a7ea972a5aed8dfc0bae1a33eddc6a14ec5549ac3c12ff2a",
+    "matches": true,
+    "bytes": 18622518,
+    "bundle_path": "external_assets/615ccc1e13aa29e2a7ea972a5aed8dfc0bae1a33eddc6a14ec5549ac3c12ff2a/newcolor.png"
+  },
+  {
+    "source_path": "/mnt/isaac-linux/isaacsim/extscache/omni.kit.viewport.menubar.lighting-107.3.2+107.3.0/data/usd/Default.usda",
+    "expected_sha256": "9ad0f0c37bc3b0aebdf78abca9f8affc779b9e83d971a4d5b03e74947b803dd4",
+    "actual_sha256": "9ad0f0c37bc3b0aebdf78abca9f8affc779b9e83d971a4d5b03e74947b803dd4",
+    "matches": true,
+    "bytes": 1927,
+    "bundle_path": "external_assets/9ad0f0c37bc3b0aebdf78abca9f8affc779b9e83d971a4d5b03e74947b803dd4/Default.usda"
+  }
+]

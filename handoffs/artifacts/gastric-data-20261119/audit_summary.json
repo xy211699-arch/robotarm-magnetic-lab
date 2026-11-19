@@ -1,0 +1,107 @@
+{
+  "schema": "gastric_offline_audit_v1",
+  "started_utc": "2026-11-19T01:38:04.126635+00:00",
+  "finished_utc": "2026-11-19T01:38:49.794472+00:00",
+  "source": "/home/multirobo/gastric-single-frame-20261117",
+  "runtime": {
+    "python": "3.12.3",
+    "numpy": "1.26.4",
+    "Pillow": "10.2.0"
+  },
+  "source_file_count": 5661,
+  "source_bytes": 20606511887,
+  "source_modified_during_audit": [],
+  "image_file_count": 974,
+  "image_decode_failures": 0,
+  "orbit_sample_count": 558,
+  "capture_technical_failures": 0,
+  "classification_rows": 380,
+  "classification_rows_by_class": {
+    "normal": 108,
+    "raised": 129,
+    "ulcerated": 143
+  },
+  "complete_batch_candidate_counts": {
+    "normal": 100,
+    "raised": 100,
+    "ulcerated": 100
+  },
+  "incomplete_rows": 80,
+  "classification_approved_counts": {
+    "normal": 0,
+    "raised": 0,
+    "ulcerated": 0
+  },
+  "classification_pending_counts": {
+    "normal": 108,
+    "raised": 129,
+    "ulcerated": 143
+  },
+  "classification_label_policy": "unresolved_whole_image_vs_central_target",
+  "complete_candidate_capture_group_ids": {
+    "normal": [
+      "normal_1af0c171_small_reference",
+      "normal_2ebb80b5_small_reference",
+      "normal_3b08e43d_small_reference",
+      "normal_bc538b28_small_reference",
+      "normal_ce778a40_small_reference"
+    ],
+    "raised": [
+      "raised_1f2d0d8b_small_reference",
+      "raised_b03d16f9_small_reference"
+    ],
+    "ulcerated": [
+      "ulcerated_173e1afb_small_reference",
+      "ulcerated_311b674d_small_reference"
+    ]
+  },
+  "distance_in_range_before_dedup": 499,
+  "distance_technical_candidates_after_conservative_dedup": 411,
+  "distance_selected_by_source_kind": {
+    "classification": 308,
+    "pilot": 22,
+    "scout": 81
+  },
+  "distance_final_accepted": 0,
+  "distance_target": 500,
+  "distance_minimum_candidate_shortfall": 89,
+  "duplicate_pair_counts": {
+    "exact_pose": 82,
+    "near_image_dhash": 10,
+    "near_pose": 20
+  },
+  "orphan_or_partial_capture_dirs": 5,
+  "external_asset_versions": 4,
+  "external_asset_mismatches": 0,
+  "source_python_parse_issues": [],
+  "historical_review": {
+    "path": "/home/multirobo/gastric-single-frame-20261117/image_reviews/review_20261118T095704Z_cb480d/image_integrity_checks.json",
+    "sha256_actual_now": "7fb5ea3ecb32f7f39c188acdb548fc814b4511bf685ff5af64b41aefd90ef0e3",
+    "historical_result": {
+      "images": 200,
+      "file_issues": 0,
+      "asset_issues": 0
+    },
+    "scope": "historical result only; new checks are capture_checks.json"
+  },
+  "classification_visual_review_200_csv_found": [],
+  "unverified": [
+    "full-resolution semantic review",
+    "whole-image versus central-target classification policy",
+    "GPU replay and first-hit raycast recomputation",
+    "independent train/validation/test allocation"
+  ],
+  "notes": [
+    "Saved center Euclidean depth is compared only at optical-axis center; no off-axis depth substitution.",
+    "All canonical images are decoded, hashed, fingerprinted and paired with source metadata.",
+    "Source scout/pose relations take precedence over arbitrary capture group IDs.",
+    "Source directory contents are archived, including outside-orbit debug data; only orbit samples count toward targets."
+  ],
+  "visual_review": {
+    "sheets_viewed": 35,
+    "overview_samples": 558,
+    "originals_viewed_this_resume": 5,
+    "semantic_approval": false,
+    "records": "classification_visual_review.csv"
+  }
+}

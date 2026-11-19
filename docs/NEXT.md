@@ -4,7 +4,7 @@
 
 当前开展 [DINOv3胃部视觉表征Linear Probe实验](design/2026-11-17-dinov3-gastric-vision-linear-probe.md)。冻结DINOv3官方预训练视觉编码器，分别训练线性分类头与回归头，评估病灶特征识别与胃壁距离预测，为后续多模态操作效果预测提供依据。
 
-当前处于数据准备阶段，已有 [初步病灶样本](https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-lesion-classification-v1) 供流程检查。正式数据集、DINOv3特征提取及线性评测按本方案交付；本次提交仅发布任务和文档，不启动采集或训练。
+当前处于数据准备阶段，已有 [初步病灶样本](https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-lesion-classification-v1) 供流程检查。本次已离线整理并核验磁盘采集证据，交付独立的[候选数据预发行版](https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-candidates-20261119-v1)，状态与索引见[交接报告](../handoffs/reports/GASTRIC-DATA-UPLOAD-20261119.md)。完整分类候选为正常100、肿起旧50+新50、溃烂旧50+新50，全部语义标签待复核；两个200张版本共享正常100张。距离经范围与保守去重检查为411张技术候选，至少还缺89张，正式验收未完成。标签口径、原分辨率复核、独立分组和GPU首交点回放待处理；特征提取与训练另行安排。
 
 ## 阶段一：数据采集
 

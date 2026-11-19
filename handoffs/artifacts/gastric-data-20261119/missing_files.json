@@ -1,0 +1,62 @@
+[
+  {
+    "capture_dir": "orbit_v6/collect_small_raised_20261117T180345_eca77b/captures/20261117T180414.111789Z_09b00544",
+    "missing": [
+      "image.png",
+      "sample.json",
+      "depth_m.npy",
+      "instance_ids.npy",
+      "config.json",
+      "replay_config.json",
+      "SHA256SUMS.json"
+    ]
+  },
+  {
+    "capture_dir": "orbit_v6/collect_small_raised_20261118T165946_31011e/captures/20261118T170010.327400Z_d2aee12b",
+    "missing": [
+      "image.png",
+      "sample.json",
+      "depth_m.npy",
+      "instance_ids.npy",
+      "config.json",
+      "replay_config.json",
+      "SHA256SUMS.json"
+    ]
+  },
+  {
+    "capture_dir": "orbit_v6/collect_small_ulcerated_20261117T173555_d9bedb/captures/20261117T173725.319472Z_1828d377",
+    "missing": [
+      "image.png",
+      "sample.json",
+      "depth_m.npy",
+      "instance_ids.npy",
+      "config.json",
+      "replay_config.json",
+      "SHA256SUMS.json"
+    ]
+  },
+  {
+    "capture_dir": "orbit_v6/scouts/20261118T072434.359141Z_0d000e5c",
+    "missing": [
+      "image.png",
+      "sample.json",
+      "depth_m.npy",
+      "instance_ids.npy",
+      "config.json",
+      "replay_config.json",
+      "SHA256SUMS.json"
+    ]
+  },
+  {
+    "capture_dir": "orbit_v6/scouts/20261118T165412.243533Z_1dcb5f45",
+    "missing": [
+      "image.png",
+      "sample.json",
+      "depth_m.npy",
+      "instance_ids.npy",
+      "config.json",
+      "replay_config.json",
+      "SHA256SUMS.json"
+    ]
+  }
+]

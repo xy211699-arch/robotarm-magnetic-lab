@@ -1,0 +1,52 @@
+{
+  "schema": "gastric_delivery_policy_v1",
+  "classes": {
+    "normal": 0,
+    "raised": 1,
+    "ulcerated": 2
+  },
+  "class_names_zh": {
+    "normal": "正常胃壁",
+    "raised": "肿起",
+    "ulcerated": "溃烂"
+  },
+  "classification_targets": {
+    "normal": 100,
+    "raised": 50,
+    "ulcerated": 50
+  },
+  "image_resolution": [
+    801,
+    801
+  ],
+  "position_unit": "m",
+  "quaternion_order": "wxyz",
+  "optical_axis_local": [
+    0,
+    0,
+    -1
+  ],
+  "distance_definition": "Camera optical center along optical axis to first visible stomach-wall intersection",
+  "distance_unit": "mm",
+  "distance_valid_range_mm": [
+    30,
+    60
+  ],
+  "distance_target": 500,
+  "capture_type": "static_pose_sampling_paused_timeline",
+  "trajectory_id_nullable": true,
+  "classification_label_policy": "pending_whole_image_vs_central_target_decision",
+  "duplicate_policy": {
+    "exact_pose_translation_mm": 1e-05,
+    "exact_pose_angle_deg": 0.0001,
+    "near_pose_translation_mm": 2,
+    "near_pose_angle_deg": 5,
+    "dhash_bits": 256,
+    "near_image_hamming_strictly_below": 4,
+    "rule": "Connected components of exact bytes/pixels, exact pose, near pose or near image; retain one technically valid in-range candidate."
+  },
+  "split_policy": "unassigned; preserve scout/geometry/duplicate ancestry; no random frame split or invented independent groups",
+  "version_policy": "old and resampled lesions remain separate candidates, shared normal frames have one sample identity; recency does not approve quality",
+  "distance_acceptance": "411 technical candidates; final dataset acceptance pending visual/source coverage review and GPU first-hit replay",
+  "source_mutation_allowed": false
+}
