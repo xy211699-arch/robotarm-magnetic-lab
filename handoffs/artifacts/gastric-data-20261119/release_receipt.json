@@ -1,0 +1,89 @@
+{
+  "schema": "gastric_release_receipt_v1",
+  "verified_utc": "2026-11-19T02:07:08.711615+00:00",
+  "repository": "xy211699-arch/robotarm-magnetic-lab",
+  "branch": "handoff/gastric-data-upload-20261119",
+  "base_commit": "75364992141eb148186305c88c2c738999fdaf1a",
+  "audit_commit": "580fbda82d3011774282d765d6c0179ffbbfc5dd",
+  "tag_commit": "580fbda82d3011774282d765d6c0179ffbbfc5dd",
+  "release_id": 450783847,
+  "release_tag": "gastric-candidates-20261119-v1",
+  "release_url": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-candidates-20261119-v1",
+  "published_at": "2026-11-19T02:03:52Z",
+  "draft": false,
+  "prerelease": true,
+  "assets": [
+    {
+      "asset_id": 765821999,
+      "name": "README.md",
+      "bytes": 1885,
+      "sha256": "b4001e72df06bfaf78f6f6c3fa85b934a8c8f115f021e76d91a2771506cfa038",
+      "github_digest": "sha256:b4001e72df06bfaf78f6f6c3fa85b934a8c8f115f021e76d91a2771506cfa038",
+      "download_url": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/download/gastric-candidates-20261119-v1/README.md",
+      "state": "uploaded",
+      "downloaded_and_byte_compared": true
+    },
+    {
+      "asset_id": 765821967,
+      "name": "SHA256SUMS",
+      "bytes": 333,
+      "sha256": "17d016c3409ff2d57644ccd1bdcb6cd05e1799d1dd12ee8098190da1fe89e09c",
+      "github_digest": "sha256:17d016c3409ff2d57644ccd1bdcb6cd05e1799d1dd12ee8098190da1fe89e09c",
+      "download_url": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/download/gastric-candidates-20261119-v1/SHA256SUMS",
+      "state": "uploaded",
+      "downloaded_and_byte_compared": true
+    },
+    {
+      "asset_id": 765821908,
+      "name": "archive_member_index.json",
+      "bytes": 1278240,
+      "sha256": "ed60cd33991797bfd7c19bb4f0e05fc874ffd1825756a5716df9bb6f16244f81",
+      "github_digest": "sha256:ed60cd33991797bfd7c19bb4f0e05fc874ffd1825756a5716df9bb6f16244f81",
+      "download_url": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/download/gastric-candidates-20261119-v1/archive_member_index.json",
+      "state": "uploaded",
+      "downloaded_and_byte_compared": true
+    },
+    {
+      "asset_id": 765821909,
+      "name": "gastric-candidates-20261119-v1.tar.zst.part-001",
+      "bytes": 1572864000,
+      "sha256": "41836a6e204a2560a69c356b4ee54facc78016284b10f41eb8016b3f5e3d362c",
+      "github_digest": "sha256:41836a6e204a2560a69c356b4ee54facc78016284b10f41eb8016b3f5e3d362c",
+      "download_url": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/download/gastric-candidates-20261119-v1/gastric-candidates-20261119-v1.tar.zst.part-001",
+      "state": "uploaded",
+      "downloaded_and_byte_compared": false
+    },
+    {
+      "asset_id": 765821942,
+      "name": "gastric-candidates-20261119-v1.tar.zst.part-002",
+      "bytes": 407144835,
+      "sha256": "0889c315d2f76d184ad600cf2664e726c512b9ff5ecd09ec8fe2e0e0eea553a8",
+      "github_digest": "sha256:0889c315d2f76d184ad600cf2664e726c512b9ff5ecd09ec8fe2e0e0eea553a8",
+      "download_url": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/download/gastric-candidates-20261119-v1/gastric-candidates-20261119-v1.tar.zst.part-002",
+      "state": "uploaded",
+      "downloaded_and_byte_compared": false
+    },
+    {
+      "asset_id": 765821911,
+      "name": "package_manifest.json",
+      "bytes": 1080,
+      "sha256": "18163a08b2994be7d042a1cb2221317e175ae2362011af7e6ea13ba04fbfad36",
+      "github_digest": "sha256:18163a08b2994be7d042a1cb2221317e175ae2362011af7e6ea13ba04fbfad36",
+      "download_url": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/download/gastric-candidates-20261119-v1/package_manifest.json",
+      "state": "uploaded",
+      "downloaded_and_byte_compared": true
+    }
+  ],
+  "full_archive": {
+    "name": "gastric-candidates-20261119-v1.tar.zst",
+    "bytes": 1980008835,
+    "sha256": "5fba309f6b7b17028a0adc1502e355178444f581e8ddd998e67359b6d7f1bb08"
+  },
+  "verification": {
+    "github_names_sizes_sha256": "all six exact matches",
+    "small_assets_download": "four files downloaded and byte-compared successfully",
+    "large_volume_redownload": false,
+    "local_archive": "zstd integrity, every member SHA-256/size, volume concatenation SHA-256 passed"
+  },
+  "final_branch_head": "The receipt commit and its final remote verification are identified by Git history; release tag intentionally pins audit_commit."
+}

@@ -1,6 +1,6 @@
 # 胃部数据整理与上传交接
 
-状态为`partial`：原始证据清点、离线技术核验和分卷归档已完成；分类语义及500张距离数据尚未正式验收。本次延续`handoff/gastric-data-upload-20261119`，fetch核对的基准为`75364992141eb148186305c88c2c738999fdaf1a`。交付提交身份以本报告的Git历史和远端核验为准，避免在提交内引用自身SHA。
+状态为`partial`：原始证据清点、离线技术核验和分卷归档已完成；分类语义及500张距离数据尚未正式验收。本次延续`handoff/gastric-data-upload-20261119`，fetch核对的基准为`75364992141eb148186305c88c2c738999fdaf1a`。审计提交head为`580fbda82d3011774282d765d6c0179ffbbfc5dd`，已推送并经`ls-remote`逐字核对；Release标签固定此提交。最终交接head为保存上传回执的本报告所在提交，身份以Git历史及推送后的远端核验为准，避免在提交内引用自身SHA。
 
 ## 工件与复现
 
@@ -47,7 +47,7 @@ Git保存[脚本和使用方法](../../scripts/gastric_capture/README.md)、[数
 
 ## 数据包和恢复
 
-新版本使用独立[候选数据预发行版](https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-candidates-20261119-v1)，不修改已有`gastric-lesion-classification-v1`和无标题空草稿。先保存草稿，所有附件上传并核对后再发布为prerelease。上传完成状态与实际URL将在本节补记。
+新版本使用独立[候选数据预发行版](https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-candidates-20261119-v1)，不修改已有`gastric-lesion-classification-v1`和无标题空草稿。先保存草稿，所有附件上传并核对后已于2026-11-19 02:03:52 UTC发布为prerelease。Release ID为450783847，6个附件全部`uploaded`；实际地址、大小、校验值见[下载清单](../artifacts/gastric-data-20261119/DOWNLOADS.md)及[上传回执](../artifacts/gastric-data-20261119/release_receipt.json)。服务器SHA-256与本地逐项相符，4个小附件另经实际下载字节比对；两个大分卷未重新下载。
 
 完整包`gastric-candidates-20261119-v1.tar.zst`为1,980,008,835字节，SHA-256：`5fba309f6b7b17028a0adc1502e355178444f581e8ddd998e67359b6d7f1bb08`。Release仅上传分卷和说明/清单，避免完整包与分卷重复上传。
 
@@ -77,8 +77,14 @@ sha256sum -c ../audit/SHA256SUMS.source
 | 审批机制下相同`pwd` | 退出0，路径为`/home/multirobo/gastric-data-upload-20261119`；后续必要命令按审批执行 |
 | `/usr/bin/python3 scripts/gastric_capture/audit_delivery.py --source /home/multirobo/gastric-single-frame-20261117 --out /home/multirobo/gastric-delivery-20261119/audit-v1` | 退出0，以上为本次实测结果 |
 | `/usr/bin/python3 scripts/gastric_capture/package_delivery.py --source /home/multirobo/gastric-single-frame-20261117 --audit /home/multirobo/gastric-delivery-20261119/audit-v1 --repo /home/multirobo/gastric-data-upload-20261119 --out /home/multirobo/gastric-delivery-20261119/package-v1` | 退出0，压缩/成员/拼接哈希全部通过 |
-| `python scripts/research_workflow.py check` | 文档更新后退出0，管理路径、文档链接及任务引用通过；上传回执提交前再核对 |
+| `python scripts/research_workflow.py check` | 文档和上传回执更新后退出0，管理路径、文档链接及任务引用通过 |
 | `gh api repos/xy211699-arch/robotarm-magnetic-lab/releases` | 退出0，核对已有Release及附件，原版本不覆盖 |
+| `git commit -m "Archive gastric capture audit and candidate package manifests"`、`git push origin HEAD:refs/heads/handoff/gastric-data-upload-20261119`（SSH443） | 均退出0，审计提交580fbda；`git ls-remote --heads`与本地HEAD完全一致 |
+| `gh release create gastric-candidates-20261119-v1 --repo xy211699-arch/robotarm-magnetic-lab --target 580fbda82d3011774282d765d6c0179ffbbfc5dd --draft --prerelease --notes-file /home/multirobo/gastric-delivery-20261119/package-v1/README.md`（另设中文标题） | 退出0，新建独立草稿 |
+| `gh release upload gastric-candidates-20261119-v1 --repo xy211699-arch/robotarm-magnetic-lab`，追加DOWNLOADS所列6个本地文件路径 | 退出0，没有clobber/覆盖；6个服务器摘要全部匹配 |
+| `gh release edit gastric-candidates-20261119-v1 --repo xy211699-arch/robotarm-magnetic-lab --draft=false --prerelease --latest=false` | 退出0，公开发布为预发行版 |
+| `gh release download gastric-candidates-20261119-v1 --repo xy211699-arch/robotarm-magnetic-lab --pattern README.md --pattern SHA256SUMS --pattern package_manifest.json --pattern archive_member_index.json --dir /home/multirobo/gastric-delivery-20261119/download-verification` | 退出0，4个下载文件与本地逐字节相同 |
+| `gh api`查询发布tag、Release和附件 | 退出0，tag指向580fbda，draft=false，prerelease=true，6个附件名称/大小/摘要一致 |
 
 SSH22超时和HTTPS证书错误通过GitHub SSH443恢复，仍使用已知主机校验：`git -c core.sshCommand='ssh -o BatchMode=yes -o ConnectTimeout=8 -o Hostname=ssh.github.com -o HostKeyAlias=github.com -p 443' fetch origin handoff/gastric-data-upload-20261119`。推送使用同一SSH配置，禁止force；最终检查暂存内容只包含本任务脚本、配置、说明和必要清单。暂存检查发现生成CSV的CRLF被视为空白问题，仅对Git副本转换为LF并核对所有CSV字段相等，Git外审计及数据包未改写；修复后`git diff --cached --check`通过。
 

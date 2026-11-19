@@ -25,3 +25,5 @@
 离线复查入口：/usr/bin/python3 scripts/gastric_capture/audit_delivery.py --source SOURCE --out NEW_AUDIT_DIRECTORY。审计不启动仿真、不写原始数据、不自动确认类别。打包入口见scripts/gastric_capture/package_delivery.py --help。
 
 Git中的CSV清单仅将审计输出的CRLF换行为LF，已核对所有字段值一致；Git外审计原件及已校验数据包保持不变。
+
+数据分卷及说明已发布为[独立预发行版](https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-candidates-20261119-v1)，全部附件下载地址、大小和哈希见[DOWNLOADS.md](DOWNLOADS.md)，服务器核验与小附件下载结果见[release_receipt.json](release_receipt.json)。
