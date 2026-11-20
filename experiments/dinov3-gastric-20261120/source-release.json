@@ -1,0 +1,26 @@
+{
+  "schema": "gastric_package_v1",
+  "full_archive": {
+    "name": "gastric-candidates-20261119-v1.tar.zst",
+    "bytes": 1980008835,
+    "sha256": "5fba309f6b7b17028a0adc1502e355178444f581e8ddd998e67359b6d7f1bb08"
+  },
+  "download_assets": [
+    {
+      "name": "gastric-candidates-20261119-v1.tar.zst.part-001",
+      "bytes": 1572864000,
+      "sha256": "41836a6e204a2560a69c356b4ee54facc78016284b10f41eb8016b3f5e3d362c"
+    },
+    {
+      "name": "gastric-candidates-20261119-v1.tar.zst.part-002",
+      "bytes": 407144835,
+      "sha256": "0889c315d2f76d184ad600cf2664e726c512b9ff5ecd09ec8fe2e0e0eea553a8"
+    }
+  ],
+  "member_count": 5731,
+  "source_file_count": 5661,
+  "member_bytes": 20669594101,
+  "verification": "zstd test plus every extracted member SHA-256 and byte count matched; no extraction to disk",
+  "member_manifest_sha256": "17b83a814538017444612814cec4ea58636d7d863a61b159eac7ff5d4225c5d4",
+  "restore": "If split: concatenate .part-001, .part-002, ... in numeric order to the full_archive name. Verify full SHA-256, then zstd -dc ARCHIVE | tar -xf -."
+}

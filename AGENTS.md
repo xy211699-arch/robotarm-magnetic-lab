@@ -4,7 +4,7 @@
 
 先读 [项目介绍](docs/PROJECT.md)、[已有实现](docs/IMPLEMENTED.md)、[下一阶段](docs/NEXT.md) 和 [基础入口](docs/ENTRYPOINTS.md)，核对分支、HEAD与已有修改。用户最新指示及之后明确采用的本地方案优先于旧合同；261017任务.docx是暂定研究材料，不是完整实施规格。正文GRU与配图Transformer尚未统一，不替用户选型。
 
-当前视觉任务为 [DINOv3胃部视觉表征Linear Probe](docs/design/2026-11-17-dinov3-gastric-vision-linear-probe.md)，优先读取该方案与NEXT。冻结DINOv3，仅训练病灶分类与胃壁距离回归的线性头；每种病灶50张，正常胃壁总数与全部病灶总数相等，距离图像500张。采集需标注、保留复现信息、无软件界面，并按轨迹或场景分组划分数据。准确checkpoint、特征读取、距离口径与训练配置在实施前明确；本次提交发布方案和上下文，不自动采集、下载模型或训练。
+当前视觉任务为 [DINOv3胃部视觉表征Linear Probe](docs/design/2026-11-17-dinov3-gastric-vision-linear-probe.md)，优先读取该方案与NEXT。冻结DINOv3，仅训练病灶分类与胃壁距离回归的线性头；每种病灶50张，正常胃壁总数与全部病灶总数相等，距离图像500张。采集需标注、保留复现信息、无软件界面，并按轨迹或场景分组划分数据。已发布 [试验划分、协议与结果](experiments/dinov3-gastric-20261120/README.md)。本次发布记录已经完成的仿真线性探测。独立病灶来源和正式距离采集目标仍见 NEXT。
 
 ## 已有实现和新方向
 

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "as_of": "2026-11-17",
-  "source_commit": "04873ed682162167daf878164764091df7a0ceb9",
-  "scope": "DINOv3冻结视觉特征的病灶分类与胃壁距离回归；本次发布任务文档，不执行采集或训练。",
+  "as_of": "2026-11-20",
+  "source_commit": "b8c4986a1c138a5a090e5b9202eb846b2b98ea70",
+  "scope": "自有胃部仿真数据的 DINOv3 冻结特征初次评估及结果发布。",
   "direction": {
     "status": "provisional",
     "source_document": "261017任务.docx",
@@ -16,13 +16,13 @@
     {
       "id": "DINOV3-GASTRIC-LINEAR-PROBE",
       "title": "DINOv3胃部视觉表征Linear Probe",
-      "status": "authorized",
-      "authorization_scope": "task_documentation_and_publication",
-      "execution_started": false,
+      "status": "partial",
+      "authorization_scope": "simulation_probe_and_publication",
+      "execution_started": true,
       "contract": "docs/design/2026-11-17-dinov3-gastric-vision-linear-probe.md",
       "plan": null,
-      "report": null,
-      "summary": "数据准备中：每类病灶50张，正常胃壁与病灶总数相等，距离图像500张；DINOv3冻结编码器，仅训练分类与回归线性头，正式评测未执行。"
+      "report": "experiments/dinov3-gastric-20261120/README.md",
+      "summary": "已完成 200 张原图的病灶同批次留出和 312 张原图的距离分组留出评估。独立病灶来源和正式距离采集目标待完成。"
     }
   ],
   "history_entry": "docs/archive/README.md",
@@ -30,14 +30,14 @@
     "models": [
       "DINOv3"
     ],
-    "checkpoint": null,
+    "checkpoint": "dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth",
     "official_source": "https://github.com/facebookresearch/dinov3",
     "protocol": "frozen_encoder_linear_probe",
     "data_source": "own_Isaac_Lab_simulation",
     "tasks": [
       {
         "name": "lesion_classification",
-        "lesion_type_count": null,
+        "lesion_type_count": 2,
         "images_per_lesion_type": 50,
         "normal_images_equal_total_lesion_images": true,
         "target_count_rule": {
@@ -86,11 +86,12 @@
       "zero_shot",
       "downstream_action_prediction"
     ],
-    "experiment_results_available": false
+    "experiment_results_available": true
   },
   "data_preparation": {
-    "status": "preliminary_samples_available",
+    "status": "simulation_probe_artifacts_published",
     "preliminary_release": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-lesion-classification-v1",
-    "formal_dataset_accepted": false
+    "formal_dataset_accepted": false,
+    "candidate_release": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-candidates-20261119-v1"
   }
 }

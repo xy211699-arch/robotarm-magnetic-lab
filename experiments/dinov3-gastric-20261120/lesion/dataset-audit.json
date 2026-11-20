@@ -1,0 +1,85 @@
+{
+  "ready": true,
+  "is_fixture": false,
+  "evaluation_scope": "within-source assessment on disjoint original and view blocks",
+  "label_source": "Original archived target-region classes, stored as pending semantic review; visibility pass verified.",
+  "original_capture_groups_by_class": {
+    "normal": 5,
+    "raised": 1,
+    "ulcerated": 1
+  },
+  "original_counts_by_split": {
+    "train": {
+      "normal": 60,
+      "raised": 35,
+      "ulcerated": 35
+    },
+    "val": {
+      "normal": 20,
+      "raised": 8,
+      "ulcerated": 7
+    },
+    "test": {
+      "normal": 20,
+      "raised": 7,
+      "ulcerated": 8
+    }
+  },
+  "materialized_counts_by_split": {
+    "train": {
+      "normal": 600,
+      "raised": 350,
+      "ulcerated": 350
+    },
+    "val": {
+      "normal": 20,
+      "raised": 8,
+      "ulcerated": 7
+    },
+    "test": {
+      "normal": 20,
+      "raised": 7,
+      "ulcerated": 8
+    }
+  },
+  "view_blocks_by_split": {
+    "train": 15,
+    "val": 7,
+    "test": 7
+  },
+  "shared_capture_groups_by_class": {
+    "normal": [],
+    "raised": [
+      "raised_b03d16f9_small_reference"
+    ],
+    "ulcerated": [
+      "ulcerated_173e1afb_small_reference"
+    ]
+  },
+  "linked_close_pairs": 0,
+  "linked_close_pairs_across_splits": 0,
+  "augmentation_only_in": "train",
+  "within_batch_sector_degrees": 30,
+  "near_duplicate_criteria": "translation <2 mm and rotation <5 degrees, or 256-bit dHash Hamming <4, or exact hash",
+  "source_manifest_sha256": "52b68cabe930fc64da3cd95ab4a4b9c1ca91873897a2cda0d9d2d401fe8bba0e",
+  "augmentation_manifest_sha256": "e491366cba6d7b965dada59f46abc37efa413bc1013aa0367f027105a6e3806a",
+  "capture_record_sha256": {
+    "collect_small_normal_20261117T184508_a9cdb1/classification_manifest.jsonl": "5039814c93b847ba426d67cb1db5ffc25f6ff42623d25a0f9f61a9d1aae441ed",
+    "collect_small_normal_20261118T074044_e8a930/classification_manifest.jsonl": "95e54fed4e2b633e9c2abfb28b2bf0e76f99415656eb2c042ea200ca37f51260",
+    "collect_small_normal_20261118T074325_89ad4b/classification_manifest.jsonl": "73a1f88544ecdd0070dea6921b88618c58daf681665a7ac437811fb8a60a567f",
+    "collect_small_normal_20261118T075051_0b9c0c/classification_manifest.jsonl": "15292db98a8a548105a3cba3277defcb14560c9389df676bf8266a7b439da025",
+    "collect_small_normal_20261118T081019_916b31/classification_manifest.jsonl": "f092bcbe3d9cb42f1f2d387074ff06b22a334e44c73418e24156d746914f5d54",
+    "collect_small_raised_20261118T170633_edea65/classification_manifest.jsonl": "dee35a4400394374190483dc2ba4632287608a84bd0f9b01dd0c3e01c27884b2",
+    "collect_small_ulcerated_20261118T171137_df6403/classification_manifest.jsonl": "05e81acbf3edad1d5c7a179d03617bd84b2710ac8ae3645880108ce3af41981b",
+    "collect_small_normal_20261117T184508_a9cdb1/all_attempts.jsonl": "18308518ec405763eea90e54aa67ed36bdb05a4a17267c4895cd46a11db2129b",
+    "collect_small_normal_20261118T074044_e8a930/all_attempts.jsonl": "0604721bdc6797251ac0808f8a5de8c105bb6c7bc939417a8a4b0d1738ca4c62",
+    "collect_small_normal_20261118T074325_89ad4b/all_attempts.jsonl": "7bd53a37acb5de2a3dadb03910eda1707df2fa7766f5ce7249fbbdb202d0702f",
+    "collect_small_normal_20261118T075051_0b9c0c/all_attempts.jsonl": "402d10a3f1cc6d04cc3bb9e66f5af661390498386b7d1b87d7ddfbecaba8e653",
+    "collect_small_normal_20261118T081019_916b31/all_attempts.jsonl": "ae8b73f835ecd8c1841d2f67887661b32dccfc55f1e697a394f59c16fb2480c6",
+    "collect_small_raised_20261118T170633_edea65/all_attempts.jsonl": "f4731800c158a64ed8365a0746e8d0f2f62ff8dad740b51a628dc57fb394f1cf",
+    "collect_small_ulcerated_20261118T171137_df6403/all_attempts.jsonl": "54059d2790dab9276073db07cccb9c1a26562441a3a3890d0b52d178374e7476"
+  },
+  "split_planner_sha256": "d73becb4fd641a18293a36faac5d6bc37f95959b3ba5bf0da6ac2cf1a818e1d2",
+  "image_root": "/root/gpufree-data/dinov3-lab/datasets/raw/gastric-aug-light-roll-v1",
+  "scope_note": "Do not treat the lesion results as independent-source, new-lesion, or clinical generalization."
+}

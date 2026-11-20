@@ -16,6 +16,10 @@
 
 [learning](../source/robotarm_magnetic_lab/robotarm_magnetic_lab/learning)、[new_stomach_rl脚本](../scripts/new_stomach_rl) 和对应tests保留Actor、PPO、collector、恢复及监督实现。四组、N8和旧预算只是历史设置，不约束新模型或实验矩阵；代码存在不等于当前效果成立，历史证据见 [历史入口](archive/README.md)。
 
+## 胃部视觉试验
+
+[已完成的 DINOv3 冻结特征试验](../experiments/dinov3-gastric-20261120/README.md)提供病灶分类和胃壁距离回归的固定划分、线性头、留出结果及数据审计。分类按既有来源内的局部视角留出，距离按仿真采集组留出。独立病灶采集、场景首交点回放和仿真之外的泛化仍待验证。
+
 ## 新方向尚缺内容
 
-DINOv3特征提取与线性探测、正式病灶及距离数据采集仍按 [当前方案](design/2026-11-17-dinov3-gastric-vision-linear-probe.md) 交付，现有通用相机和RGB-D记录代码可复用，但不代表任务标签、几何距离真值或评测已经完成。实物触觉编码、异步多模态历史、分模式效果预测、统一技能选择与执行接管等仍需设计和验证，具体任务见 [下一阶段](NEXT.md)。
+实物触觉编码、异步多模态历史、分模式效果预测、统一技能选择和执行接管仍需设计与验证，具体任务见 [下一阶段](NEXT.md)。

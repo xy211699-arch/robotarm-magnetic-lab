@@ -1,0 +1,63 @@
+{
+  "original_count": 411,
+  "retained_count": 312,
+  "excluded_count": 99,
+  "source_manifest_sha256": "aca77c4359c8cac39441126645fc45580df65ee2b821940c3370ec9093abf051",
+  "bin_width_mm": 2,
+  "bin_cap": 40,
+  "bin_rule": "left closed, right open, except the last bin includes 60 mm",
+  "seed": 42,
+  "selection_rule": "proportional by source capture group within each bin, largest remainder and seeded SHA-256 order",
+  "grouping_rule": "connected capture groups, scout frames grouped by recorded scene, source scout links, duplicate pairs and identity clusters",
+  "split_objective": "balance sizes and distance bins with 30\u201332 mm in training and test, validation below 34 mm, and 58\u201360 mm in all splits",
+  "target_ratios": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "splits": {
+    "train": {
+      "count": 208,
+      "fraction": 0.6666666666666666,
+      "groups": 7,
+      "min_mm": 30.048387336528105,
+      "max_mm": 59.66675112792358,
+      "mean_mm": 46.230443022955114,
+      "median_mm": 47.468365991131535,
+      "source_kind_counts": {
+        "classification": 127,
+        "scout": 61,
+        "pilot": 20
+      }
+    },
+    "val": {
+      "count": 40,
+      "fraction": 0.1282051282051282,
+      "groups": 2,
+      "min_mm": 32.66129593335814,
+      "max_mm": 58.20820180045304,
+      "mean_mm": 47.46814478550785,
+      "median_mm": 49.96558522891297,
+      "source_kind_counts": {
+        "scout": 5,
+        "classification": 35
+      }
+    },
+    "test": {
+      "count": 64,
+      "fraction": 0.20512820512820512,
+      "groups": 2,
+      "min_mm": 30.04560434669516,
+      "max_mm": 58.139568252476025,
+      "mean_mm": 46.54562998837807,
+      "median_mm": 49.725840315246444,
+      "source_kind_counts": {
+        "classification": 55,
+        "scout": 9
+      }
+    }
+  },
+  "fixed_groups": 11,
+  "scene_ids_shared_across_splits": true,
+  "status": "split_candidate_for_review"
+}

@@ -1,0 +1,57 @@
+{
+  "config": {
+    "status": "deployment-defaults-pending-real-data-review",
+    "project_source_commit": "b8c4986a1c138a5a090e5b9202eb846b2b98ea70",
+    "dinov3_source_commit": "6876159a11b4df116f30f667f8c9888617df0751",
+    "dinov3_source": "/root/gpufree-data/dinov3-lab/src/dinov3",
+    "architecture": "dinov3_vitb16",
+    "pretraining_dataset": "LVD-1689M",
+    "weights": "/root/gpufree-data/dinov3-lab/weights/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth",
+    "expected_weight_sha256_prefix": "73cec8be",
+    "expected_weight_sha256": "73cec8be7427c8655ceced13ce62f6e20a1fa90d1b4d4a550df17a1144081a7c",
+    "image_size": 256,
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "resize": "square-bilinear-antialias-no-crop",
+    "feature": "x_norm_clstoken",
+    "feature_dimension": 768,
+    "precision": "bf16",
+    "batch_size": 32,
+    "seed": 42,
+    "classification": {
+      "C": 1.0,
+      "max_iter": 2000
+    },
+    "regression": {
+      "alpha": 1.0
+    }
+  },
+  "layers": [
+    11,
+    12
+  ],
+  "alphas": [
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0
+  ],
+  "head": "StandardScaler + Ridge(svd), CPU",
+  "validation_rule": "lowest validation MAE, then RMSE, then layer 12, then smaller alpha",
+  "seed": 42,
+  "manifest_sha256": "5ff80ce9d3de66e570f92458fab10442ab679c6a326a9b6b1b41e859771ba4f2",
+  "commands": [
+    "/root/gpufree-data/dinov3-lab/datasets/manifests/dinov3_wall_probe.py validate /root/gpufree-data/dinov3-lab/runs/dinov3-wall-cap40-aug-20261119"
+  ],
+  "fixed_fit_split": "train",
+  "started_unix": 1795067205.2892082
+}

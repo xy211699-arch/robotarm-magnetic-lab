@@ -1,0 +1,59 @@
+{
+  "image_count": 35,
+  "layers": [
+    12
+  ],
+  "feature": "layer-normalized CLS token",
+  "framing": "256 squared, RGB, bilinear antialias, ImageNet normalization",
+  "batch_size": 32,
+  "precision": "BF16 autocast; features saved as FP32",
+  "warmup_batches": 2,
+  "seconds_extraction_including_io_sha_and_decode": 0.9947650850517675,
+  "peak_allocated_bytes": 618876416,
+  "peak_reserved_bytes": 851443712,
+  "gpu": "NVIDIA L40",
+  "torch": "2.7.1+cu128",
+  "cuda_runtime": "12.8",
+  "torchvision": "0.22.1+cu128",
+  "sklearn": "1.7.2",
+  "python": "3.11.18",
+  "weights_sha256": "73cec8be7427c8655ceced13ce62f6e20a1fa90d1b4d4a550df17a1144081a7c",
+  "manifest_sha256": "819a5163a9f7d0771656c7c12ab814bb4bf2f09b75f140cf9408bc3fdafae89b",
+  "extractor_sha256": "588f80c9103c8c26fb5412a0a2a2d7bcdc515664e7eb2019afa7c90839493e77",
+  "config": {
+    "status": "deployment-defaults-pending-real-data-review",
+    "project_source_commit": "b8c4986a1c138a5a090e5b9202eb846b2b98ea70",
+    "dinov3_source_commit": "6876159a11b4df116f30f667f8c9888617df0751",
+    "dinov3_source": "/root/gpufree-data/dinov3-lab/src/dinov3",
+    "architecture": "dinov3_vitb16",
+    "pretraining_dataset": "LVD-1689M",
+    "weights": "/root/gpufree-data/dinov3-lab/weights/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth",
+    "expected_weight_sha256_prefix": "73cec8be",
+    "expected_weight_sha256": "73cec8be7427c8655ceced13ce62f6e20a1fa90d1b4d4a550df17a1144081a7c",
+    "image_size": 256,
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "resize": "square-bilinear-antialias-no-crop",
+    "feature": "x_norm_clstoken",
+    "feature_dimension": 768,
+    "precision": "bf16",
+    "batch_size": 32,
+    "seed": 42,
+    "classification": {
+      "C": 1.0,
+      "max_iter": 2000
+    },
+    "regression": {
+      "alpha": 1.0
+    }
+  },
+  "note": "Peak CUDA allocated/reserved after warm-up reset; includes model. Timings exclude warm-up, loading, and writing cache."
+}

@@ -15,3 +15,11 @@ source/isaaclab_tasks/test/golden_images/**/*.png filter=lfs diff=lfs merge=lfs 
 
 *.bat text eol=crlf
 *.sh text eol=lf
+
+# Preserve the exact bytes of checksummed run records.
+experiments/dinov3-gastric-20261120/lesion/* -text
+experiments/dinov3-gastric-20261120/wall-distance/* -text
+experiments/dinov3-gastric-20261120/source-release.json -text
+experiments/dinov3-gastric-20261120/SHA256SUMS -text
+experiments/dinov3-gastric-20261120/figures/* -text
+experiments/dinov3-gastric-20261120/scripts/* -text

@@ -21,6 +21,7 @@
 
 # Small source illustration used by the repository README.
 !docs/assets/readme/research-framework.png
+!experiments/dinov3-gastric-20261120/figures/*.png
 
 # Python
 .DS_Store

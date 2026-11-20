@@ -1,0 +1,26 @@
+{
+  "manifest_sha256": "5ff80ce9d3de66e570f92458fab10442ab679c6a326a9b6b1b41e859771ba4f2",
+  "source_manifest_sha256": "0598bd327d29c42e1d6ad44f6415f30727f97e51fc8260c95f5d7d2ca2eea8af",
+  "counts": {
+    "train": 2000,
+    "val": 40,
+    "test": 64
+  },
+  "groups": {
+    "train": 7,
+    "val": 2,
+    "test": 2
+  },
+  "unique_source_frames": 312,
+  "pre_augmentation_train_frames": 208,
+  "renderer_center_max_delta_mm": 0.0011249845920531243,
+  "geometry_projection_max_delta_mm": 1.0658141036401503e-13,
+  "truth_check": "Original capture metadata and stored renderer center checked; scene raycast not rerun.",
+  "definition": "Camera optical center along local -Z optical axis to first visible gastric wall hit.",
+  "distance_unit": "mm",
+  "range_mm": [
+    30,
+    60
+  ],
+  "scope": "User-selected capped dataset; within-simulation grouped evaluation, some scene IDs shared."
+}

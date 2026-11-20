@@ -1,0 +1,41 @@
+{
+  "macro_f1": 1.0,
+  "accuracy": 1.0,
+  "cls_layer": 12,
+  "C": 0.01,
+  "fit_seconds": 0.03046609996818006,
+  "validation": {
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "class_names": [
+      "normal",
+      "raised",
+      "ulcerated"
+    ],
+    "support": {
+      "normal": 20,
+      "raised": 8,
+      "ulcerated": 7
+    },
+    "confusion_matrix": [
+      [
+        20,
+        0,
+        0
+      ],
+      [
+        0,
+        8,
+        0
+      ],
+      [
+        0,
+        0,
+        7
+      ]
+    ]
+  },
+  "protocol_sha256": "a6ab1132eb170c67b2d20d42794361a11ba2eb319ce892f3043585aeeefe9b32",
+  "model_sha256": "f78fc0cfe3342f9d401dc37bac9a747c31776075062d75043afecad5be6202c7",
+  "fit_features_sha256": "6aff1aef08196be46340919644ab54e990404f3900a64e1f9369eab5b2c25c32"
+}
