@@ -1,0 +1,7 @@
+{
+  "model": "dinov3",
+  "readout": "block_12_cls",
+  "model_sha256": "f78fc0cfe3342f9d401dc37bac9a747c31776075062d75043afecad5be6202c7",
+  "test_manifest_sha256": "0a6854d57803fea427b842010afcca3cb17a1f029da110950a515e8c1bc8dd15",
+  "original_predictions_reproduced": 35
+}

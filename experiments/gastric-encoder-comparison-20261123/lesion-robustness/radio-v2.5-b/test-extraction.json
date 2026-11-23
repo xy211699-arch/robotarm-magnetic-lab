@@ -1,0 +1,15 @@
+{
+  "image_count": 420,
+  "batch_size": 32,
+  "image_size": 256,
+  "warmup_batches": 2,
+  "precision": "BF16 autocast with FP32 pooled features",
+  "feature_dimensions": {
+    "summary": 2304
+  },
+  "seconds_extraction_including_io_sha_and_decode": 10.80215957807377,
+  "peak_allocated_bytes": 661370368,
+  "peak_reserved_bytes": 813694976,
+  "gpu": "NVIDIA L40",
+  "cuda_runtime": "12.8"
+}

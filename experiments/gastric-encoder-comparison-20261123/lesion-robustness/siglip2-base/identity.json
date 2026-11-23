@@ -1,0 +1,7 @@
+{
+  "model": "siglip2-base",
+  "readout": "summary",
+  "model_sha256": "d4b6fa8de5b772fe7e24654caddcca436c689f052313948c0be6c2c79647b1cb",
+  "test_manifest_sha256": "0a6854d57803fea427b842010afcca3cb17a1f029da110950a515e8c1bc8dd15",
+  "original_predictions_reproduced": 35
+}

@@ -1,0 +1,32 @@
+{
+  "manifest_sha256": "0a6854d57803fea427b842010afcca3cb17a1f029da110950a515e8c1bc8dd15",
+  "frozen_baseline_sha256": "7a5dd5be0b53662da7ab0e878d067111d9696ba04a3631286cc202f42e2012b0",
+  "source_split_sha256": "819a5163a9f7d0771656c7c12ab814bb4bf2f09b75f140cf9408bc3fdafae89b",
+  "source_original_counts": {
+    "normal": 20,
+    "raised": 7,
+    "ulcerated": 8
+  },
+  "augmentation_only": "Test-only; no model fitting or configuration selection.",
+  "angles_clockwise_degrees": [
+    0,
+    90,
+    180,
+    270
+  ],
+  "exposure_ev": [
+    -0.25,
+    0.0,
+    0.25
+  ],
+  "exposure": "Decode sRGB, multiply linear RGB by 2**EV, clip and re-encode sRGB.",
+  "n_unique_originals": 35,
+  "n_variants": 385,
+  "condition_counts": {
+    "original": 35,
+    "exposure_only": 70,
+    "rotation_and_exposure": 210,
+    "rotation_only": 105
+  },
+  "scope": "Within-source lesion viewing robustness. Transformed views are paired with 35 existing originals."
+}

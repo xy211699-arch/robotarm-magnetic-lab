@@ -1,0 +1,24 @@
+{
+  "source_commit": "8d7cb05d9cd3c273ddee3056a9093d4eb4cc60d4",
+  "shared_probe_sha256": "1e13532aa530039a0dcb2ce3852399a9cbc299f1f136d254d86c4e34a1f62335",
+  "models": {
+    "dinov3": {
+      "protocol.json": "a6ab1132eb170c67b2d20d42794361a11ba2eb319ce892f3043585aeeefe9b32",
+      "frozen-selection.json": "0fab3ffb9a721f189ad4b2564bb580ccbf918752410d84c465b9d1580c6b8b7b",
+      "frozen-linear-head.joblib": "f78fc0cfe3342f9d401dc37bac9a747c31776075062d75043afecad5be6202c7",
+      "test/predictions.csv": "ff2e39faea9bbcc0e9ba4f47eae297b6d11e52cb93b2d1c96569faf9736bd3a0"
+    },
+    "radio-v2.5-b": {
+      "protocol.json": "9b31830a70de7effb26cb7e3db9a0afa02b92ed2570fe1968d3fae246fe9c17a",
+      "frozen-selection.json": "c8d95b4db686ed873c2843b1045095cc153f2ef04a940eba4902ddd80b3c6b62",
+      "frozen-linear-head.joblib": "b49f3c36858c81ef13053fe1a3d9dff6a613b832dcf1f5cc728633b988c79af3",
+      "test/predictions.csv": "6bf407b264227eda636a3a1702123b548681ebed8f7c43ff6f5900201e9525f6"
+    },
+    "siglip2-base": {
+      "protocol.json": "b010b823fae70e27da6321932db3aee034de0f7054f52c9ecf1f81c42dbeb319",
+      "frozen-selection.json": "03ad3059a0d4701561d18358ffd37487298f995fd7e753bbbc4e282f1fb7f7e1",
+      "frozen-linear-head.joblib": "d4b6fa8de5b772fe7e24654caddcca436c689f052313948c0be6c2c79647b1cb",
+      "test/predictions.csv": "6bf407b264227eda636a3a1702123b548681ebed8f7c43ff6f5900201e9525f6"
+    }
+  }
+}
