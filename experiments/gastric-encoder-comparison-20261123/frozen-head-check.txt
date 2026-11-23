@@ -1,0 +1,4 @@
+radio-v2.5-b/lesion: 35 stored predictions reproduced from the frozen head and test features
+radio-v2.5-b/wall-distance: 64 stored predictions reproduced from the frozen head and test features
+siglip2-base/lesion: 35 stored predictions reproduced from the frozen head and test features
+siglip2-base/wall-distance: 64 stored predictions reproduced from the frozen head and test features

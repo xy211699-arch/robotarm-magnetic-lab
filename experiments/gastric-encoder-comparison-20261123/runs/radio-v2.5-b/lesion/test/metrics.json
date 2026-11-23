@@ -1,0 +1,81 @@
+{
+  "accuracy": 1.0,
+  "macro_f1": 1.0,
+  "class_names": [
+    "normal",
+    "raised",
+    "ulcerated"
+  ],
+  "support": {
+    "normal": 20,
+    "raised": 7,
+    "ulcerated": 8
+  },
+  "confusion_matrix": [
+    [
+      20,
+      0,
+      0
+    ],
+    [
+      0,
+      7,
+      0
+    ],
+    [
+      0,
+      0,
+      8
+    ]
+  ],
+  "group_accuracy": [
+    {
+      "group_id": "view-block-20261118T074327.457116Z_153ac87a_0001",
+      "n": 20,
+      "accuracy": 1.0
+    },
+    {
+      "group_id": "view-block-20261118T170644.491208Z_f6e33360_0001",
+      "n": 2,
+      "accuracy": 1.0
+    },
+    {
+      "group_id": "view-block-20261118T170656.664126Z_9068afa8_0001",
+      "n": 5,
+      "accuracy": 1.0
+    },
+    {
+      "group_id": "view-block-20261118T171137.922221Z_35327f8a_0001",
+      "n": 1,
+      "accuracy": 1.0
+    },
+    {
+      "group_id": "view-block-20261118T171145.859147Z_9d265acc_0001",
+      "n": 1,
+      "accuracy": 1.0
+    },
+    {
+      "group_id": "view-block-20261118T171147.722887Z_9145cae0_0001",
+      "n": 2,
+      "accuracy": 1.0
+    },
+    {
+      "group_id": "view-block-20261118T171155.572190Z_ae297065_0001",
+      "n": 4,
+      "accuracy": 1.0
+    }
+  ],
+  "protocol_sha256": "9b31830a70de7effb26cb7e3db9a0afa02b92ed2570fe1968d3fae246fe9c17a",
+  "model_sha256": "b49f3c36858c81ef13053fe1a3d9dff6a613b832dcf1f5cc728633b988c79af3",
+  "frozen_selection_sha256": "c8d95b4db686ed873c2843b1045095cc153f2ef04a940eba4902ddd80b3c6b62",
+  "test_command": [
+    "encoder_probe.py",
+    "test",
+    "--lab",
+    "/root/gpufree-data/dinov3-lab",
+    "--job",
+    "/root/gpufree-data/dinov3-lab/encoder-comparison-20261123",
+    "--encoder",
+    "radio-v2.5-b"
+  ]
+}

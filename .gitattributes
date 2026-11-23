@@ -23,3 +23,6 @@ experiments/dinov3-gastric-20261120/source-release.json -text
 experiments/dinov3-gastric-20261120/SHA256SUMS -text
 experiments/dinov3-gastric-20261120/figures/* -text
 experiments/dinov3-gastric-20261120/scripts/* -text
+
+# Preserve the checksummed three-encoder run files.
+experiments/gastric-encoder-comparison-20261123/** -text

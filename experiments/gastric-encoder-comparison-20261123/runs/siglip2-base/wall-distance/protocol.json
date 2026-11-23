@@ -1,0 +1,78 @@
+{
+  "task": "wall-distance",
+  "manifest_sha256": "5ff80ce9d3de66e570f92458fab10442ab679c6a326a9b6b1b41e859771ba4f2",
+  "split_counts": {
+    "train": 2000,
+    "val": 40,
+    "test": 64
+  },
+  "original_split_counts": {
+    "train": 208,
+    "val": 40,
+    "test": 64
+  },
+  "augmentation_only_in_train": true,
+  "backbone": {
+    "model_id": "google/siglip2-base-patch16-256",
+    "license": "Apache-2.0",
+    "weights_source": "https://huggingface.co/google/siglip2-base-patch16-256/tree/3f9f96cb90da5dbc758b01813f2f6f1aee24c1ab",
+    "weights_sha256": "6125cacc01fa93bdc98a0c5101cefcd69b2ed1f8ab4f38d86f4ad5984f5dc863",
+    "source_commit": "3f9f96cb90da5dbc758b01813f2f6f1aee24c1ab",
+    "config_sha256": "7b5aedcb8893e31376e129c1ffd7a5392f1a806dbc793ce53eda220c2ec59edf",
+    "processor_sha256": "d14ba2ee3fd816f3de8abaddc31953565128eaf37c73ad4bed32101a98465aff",
+    "processor_config": {
+      "do_convert_rgb": null,
+      "do_normalize": true,
+      "do_rescale": true,
+      "do_resize": true,
+      "image_mean": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "image_processor_type": "SiglipImageProcessor",
+      "image_std": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "processor_class": "SiglipProcessor",
+      "resample": 2,
+      "rescale_factor": 0.00392156862745098,
+      "size": {
+        "height": 256,
+        "width": 256
+      }
+    },
+    "preprocess": "Official Transformers vision image processor, 256 × 256.",
+    "readouts": {
+      "summary": "Official final attention-pooler output of the vision tower.",
+      "patch_mean": "Mean of the final post-layer-norm spatial tokens."
+    },
+    "vision_parameters": 92930304,
+    "software": {
+      "torch": "2.7.1+cu128",
+      "torchvision": "0.22.1+cu128",
+      "Pillow": "13.0.0",
+      "numpy": "2.4.6",
+      "scikit-learn": "1.7.2",
+      "timm": "1.0.22",
+      "transformers": "4.57.3"
+    }
+  },
+  "seed": 42,
+  "script_sha256": "1e13532aa530039a0dcb2ce3852399a9cbc299f1f136d254d86c4e34a1f62335",
+  "candidates": [
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0
+  ],
+  "selection": "Minimize validation MAE, then RMSE, then favor summary and smaller alpha.",
+  "batch_size": 32,
+  "scope": "Grouped simulation holdout; some scene IDs shared.",
+  "linear_head": "StandardScaler + Ridge (SVD)",
+  "fitted_split": "train",
+  "hyperparameter_selection_split": "val"
+}

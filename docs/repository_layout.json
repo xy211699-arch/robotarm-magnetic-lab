@@ -31,7 +31,8 @@
     "version_history/2026-10-25-readme-visual-refresh.md",
     "docs/design/2026-11-17-dinov3-gastric-vision-linear-probe.md",
     "version_history/2026-11-17-dinov3-gastric-vision-plan.md",
-    "experiments/dinov3-gastric-20261120/README.md"
+    "experiments/dinov3-gastric-20261120/README.md",
+    "experiments/gastric-encoder-comparison-20261123/README.md"
   ],
   "required_paths": [
     "AGENTS.md",

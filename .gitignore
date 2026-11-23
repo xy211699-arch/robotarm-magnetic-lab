@@ -97,3 +97,6 @@ _build
 /.superpowers/
 /.worktrees/
 /.local-preflight-pytest*/
+
+# Published comparison preview.
+!experiments/gastric-encoder-comparison-20261123/wall-distance-comparison.png

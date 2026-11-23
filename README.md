@@ -34,13 +34,15 @@
 
 这些模块作为后续开发基础；多模态编码、操作效果预测与统一技能选择正在设计，详细边界见 [已有实现](docs/IMPLEMENTED.md)。
 
-## DINOv3 胃部视觉线性探测
+## 胃部视觉编码器线性探测
 
 使用自有胃部仿真图像完成两项冻结特征实验。新版病灶分类包含 **200 张原图**，按采集组和局部视角划分，35 张测试原图全部与采集标签一致，Macro-F1 为 1.000。胃壁距离在分箱限额筛选后保留 **312 张原图**，64 张测试原图的 MAE 为 4.48 mm，RMSE 为 5.98 mm。
 
 ![正常胃壁、肿起与溃烂原图及类别划分](experiments/dinov3-gastric-20261120/figures/lesion-data.png)
 
 **评估范围。** 肿起和溃烂各只有一个采集来源，分类结果属于同批次留出，类别语义仍待复核。距离回归按仿真采集组留出，部分场景跨集合。[实验报告、完整图表、划分清单与训练工件](experiments/dinov3-gastric-20261120/README.md) · [数据发布](https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/gastric-candidates-20261119-v1) · [开发计划](docs/NEXT.md)
+
+**三编码器对比。** RADIOv2.5-B 与 SigLIP2-B 已在同一数据划分上完成验证与测试。分类结果三者同为 35/35。距离测试的最低 MAE 为 DINOv3 的 4.48 mm，最低 RMSE 为 RADIOv2.5-B 的 5.36 mm。[完整对比与图表](experiments/gastric-encoder-comparison-20261123/README.md)
 
 ## 基础入口
 

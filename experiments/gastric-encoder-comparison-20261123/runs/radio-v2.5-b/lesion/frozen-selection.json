@@ -1,0 +1,42 @@
+{
+  "readout": "summary",
+  "C": 0.01,
+  "macro_f1": 1.0,
+  "accuracy": 1.0,
+  "fit_seconds": 0.09428822493646294,
+  "validation": {
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "class_names": [
+      "normal",
+      "raised",
+      "ulcerated"
+    ],
+    "support": {
+      "normal": 20,
+      "raised": 8,
+      "ulcerated": 7
+    },
+    "confusion_matrix": [
+      [
+        20,
+        0,
+        0
+      ],
+      [
+        0,
+        8,
+        0
+      ],
+      [
+        0,
+        0,
+        7
+      ]
+    ]
+  },
+  "train_target_mean_mm": null,
+  "protocol_sha256": "9b31830a70de7effb26cb7e3db9a0afa02b92ed2570fe1968d3fae246fe9c17a",
+  "model_sha256": "b49f3c36858c81ef13053fe1a3d9dff6a613b832dcf1f5cc728633b988c79af3",
+  "features_sha256": "09dece20c58c2af78bf11ecd1b37d4712deebbbfe10e50dd3a641502f21ee765"
+}

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "as_of": "2026-11-20",
+  "as_of": "2026-11-23",
   "source_commit": "b8c4986a1c138a5a090e5b9202eb846b2b98ea70",
-  "scope": "自有胃部仿真数据的 DINOv3 冻结特征初次评估及结果发布。",
+  "scope": "冻结 DINOv3、RADIOv2.5 与 SigLIP2 的胃部仿真对比及结果发布。",
   "direction": {
     "status": "provisional",
     "source_document": "261017任务.docx",
@@ -22,13 +22,16 @@
       "contract": "docs/design/2026-11-17-dinov3-gastric-vision-linear-probe.md",
       "plan": null,
       "report": "experiments/dinov3-gastric-20261120/README.md",
-      "summary": "已完成 200 张原图的病灶同批次留出和 312 张原图的距离分组留出评估。独立病灶来源和正式距离采集目标待完成。"
+      "summary": "三编码器的病灶同批次留出和距离分组留出评估均已完成。独立病灶来源和正式距离采集目标待完成。",
+      "comparison_report": "experiments/gastric-encoder-comparison-20261123/README.md"
     }
   ],
   "history_entry": "docs/archive/README.md",
   "next_stage": {
     "models": [
-      "DINOv3"
+      "DINOv3",
+      "RADIOv2.5",
+      "SigLIP2"
     ],
     "checkpoint": "dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth",
     "official_source": "https://github.com/facebookresearch/dinov3",
@@ -80,13 +83,18 @@
       "linear_head_training_time",
       "GPU_memory"
     ],
-    "expected_result_groups": 2,
+    "expected_result_groups": 6,
     "excluded": [
       "encoder_fine_tuning",
       "zero_shot",
       "downstream_action_prediction"
     ],
-    "experiment_results_available": true
+    "experiment_results_available": true,
+    "checkpoints": {
+      "DINOv3": "dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth",
+      "RADIOv2.5": "nvidia/RADIO radio-v2.5-b_half.pth.tar",
+      "SigLIP2": "google/siglip2-base-patch16-256"
+    }
   },
   "data_preparation": {
     "status": "simulation_probe_artifacts_published",

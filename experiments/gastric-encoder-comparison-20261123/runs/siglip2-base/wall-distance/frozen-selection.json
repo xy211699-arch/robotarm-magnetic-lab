@@ -1,0 +1,22 @@
+{
+  "readout": "summary",
+  "alpha": 0.1,
+  "mae": 3.541606951876124,
+  "rmse": 4.315513140287557,
+  "fit_seconds": 0.3271784679964185,
+  "validation": {
+    "mae": 3.541606951876124,
+    "rmse": 4.315513140287557,
+    "signed_bias_mm": 1.3068907127868545,
+    "mean_baseline": {
+      "mae": 6.730582085910304,
+      "rmse": 7.838920425509428
+    },
+    "n": 40,
+    "unit": "mm"
+  },
+  "train_target_mean_mm": 44.96260556030987,
+  "protocol_sha256": "372e3882748b5290f99ed8657c4efdbf334f4914af08b0cf48617bd426c4f11c",
+  "model_sha256": "71b58c2b894a0762056b826a6c0d6794a70e04eb1be54441b938b7804c10543f",
+  "features_sha256": "6dafc625ed959d44f874c61c32c1af4405405071366c7c37bb531516c6f2e344"
+}

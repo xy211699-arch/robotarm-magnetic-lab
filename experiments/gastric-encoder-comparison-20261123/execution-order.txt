@@ -1,0 +1,4 @@
+2026-11-23T13:38:34+08:00 validate radio-v2.5-b
+2026-11-23T13:40:30+08:00 validate siglip2-base
+2026-11-23T13:42:24+08:00 test radio-v2.5-b
+2026-11-23T13:42:36+08:00 test siglip2-base
