@@ -22,7 +22,7 @@ records the absolute path mapping and explains exporter paths left in comments.
 After extraction, a USD 25.11+ environment can verify the closure with:
 
 ```bash
-PYTHONPATH=/tmp/usdcore python3 - <<'PYVERIFY'
+python3 - <<'PYVERIFY'
 from pxr import UsdUtils
 layers, assets, unresolved = UsdUtils.ComputeAllDependencies('/home/multirobo/Desktop/sim of FF/Stage.usd')
 assert len(layers) == 19 and not assets and not unresolved
