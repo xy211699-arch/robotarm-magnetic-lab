@@ -1,0 +1,80 @@
+{
+  "mandatory_robotarm_stage": {
+    "absolute_path_notes": "ASSET_PATHS.md inside the archive",
+    "archive": "legacy-robotarm-stage-20261124.zip",
+    "external_asset_dependencies": [],
+    "extract_at": "/home/multirobo/Desktop",
+    "raw_urdf": {
+      "historical_strict_sha256": "1d6e12d461207e65ac30b4ddfcbc2d136f5cbeb9f7ac0f9e9c9852511133a613",
+      "original_path": "/home/multirobo/Desktop/robotarm/urdf/robotarm.urdf",
+      "path": "robotarm/urdf/robotarm.urdf",
+      "sha256": "1d6e12d461207e65ac30b4ddfcbc2d136f5cbeb9f7ac0f9e9c9852511133a613"
+    },
+    "root_scene": {
+      "historical_acceptance_sha256": "0d5afec84d42989a7910899b4ef78369c454e34185c89052ab25b33fac4a6671",
+      "path": "sim of FF/Stage.usd",
+      "sha256": "0d5afec84d42989a7910899b4ef78369c454e34185c89052ab25b33fac4a6671"
+    },
+    "unresolved_dependencies": [],
+    "usd_layer_count": 19,
+    "usd_layers": [
+      "asm/urdf/asm_5/payloads/Physics/mujoco.usda",
+      "asm/urdf/asm_5/payloads/Physics/physics.usda",
+      "asm/urdf/asm_5/payloads/Physics/physx.usda",
+      "asm/urdf/asm_5/payloads/base.usda",
+      "asm/urdf/asm_5/payloads/geometries.usd",
+      "asm/urdf/asm_5/payloads/instances.usda",
+      "asm/urdf/asm_5/payloads/materials.usda",
+      "asm/urdf/asm_5/payloads/robot.usda",
+      "robotarm/urdf/robotarm_2/payloads/Physics/mujoco.usda",
+      "robotarm/urdf/robotarm_2/payloads/Physics/physics.usda",
+      "robotarm/urdf/robotarm_2/payloads/Physics/physx.usda",
+      "robotarm/urdf/robotarm_2/payloads/base.usda",
+      "robotarm/urdf/robotarm_2/payloads/geometries.usd",
+      "robotarm/urdf/robotarm_2/payloads/instances.usda",
+      "robotarm/urdf/robotarm_2/payloads/materials.usda",
+      "robotarm/urdf/robotarm_2/payloads/robot.usda",
+      "sim of FF/Stage.usd",
+      "sim of FF/asm.usd",
+      "sim of FF/robotarm.usd"
+    ]
+  },
+  "optional_legacy_stomach": {
+    "absolute_path_notes": "ASSET_PATHS.md inside the archive",
+    "archive": "legacy-stomach-source-20261124.zip",
+    "external_asset_dependencies": [
+      "assets/stomach/textures/NEW STOMACH.tga"
+    ],
+    "extract_at": "repository root",
+    "source": {
+      "original_path": "/home/multirobo/Desktop/stomach_obj/stomach_capsule_test_v1.usd",
+      "path": "assets/stomach/stomach_capsule_test_v1_source.usd",
+      "sha256": "072696f4550ec5acdb07fa66f64fbc9e3618df1d977836aee3c001303cad0008"
+    },
+    "texture": {
+      "original_path": "/home/multirobo/Desktop/stomach_obj/textures/NEW STOMACH.tga",
+      "path": "assets/stomach/textures/NEW STOMACH.tga",
+      "sha256": "6c21d00400044804810b26d99567d83c9eaef3b1be0ffc9a314a82dc270d246a"
+    }
+  },
+  "release": {
+    "assets": [
+      {
+        "bytes": 836766,
+        "name": "legacy-robotarm-stage-20261124.zip",
+        "sha256": "4938a10e84a6769441eeeeb3ed08d6bf7ab940a76e89e6765e0d1bd3547a015a",
+        "url": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/download/legacy-assets-20261124/legacy-robotarm-stage-20261124.zip"
+      },
+      {
+        "bytes": 20559744,
+        "name": "legacy-stomach-source-20261124.zip",
+        "sha256": "8565c67d2a5c126329dcfdea6a14ade70ad9e4ca43e349fe44d278833bc023e9",
+        "url": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/download/legacy-assets-20261124/legacy-stomach-source-20261124.zip"
+      }
+    ],
+    "tag": "legacy-assets-20261124",
+    "url": "https://github.com/xy211699-arch/robotarm-magnetic-lab/releases/tag/legacy-assets-20261124"
+  },
+  "repository": "https://github.com/xy211699-arch/robotarm-magnetic-lab",
+  "schema": "robotarm_magnetic_lab.asset_release_manifest.v1"
+}
